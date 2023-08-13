@@ -1,14 +1,7 @@
+include("code_generate_parameters.jl")
+
 open_file(dir) = open(str_aux->read(str_aux, String), dir)
-it_has_a_char(str_) = begin
-    cont = 1
-    for x in str_
-        if(Int(x) >= 33 && Int(x) <= 125) #Verify if the char is between A and z in ASCII.
-            return true, cont
-        end
-        cont += 1
-    end
-    return false, 0
-end
+
 output_file_setup(dir; reset_folder=true) = begin
     if isdir(dir)
         if (reset_folder)
@@ -19,16 +12,16 @@ output_file_setup(dir; reset_folder=true) = begin
         mkdir(dir)
     end
 end
+
 write_file(file_dir, txt_string) = begin
     open(file_dir, "w") do io
         write(io, txt_string)
     end;
 end
+
 delete_item(vec, item) = setdiff!(vec, [item])
+
 function_dict = Dict()
-
-include("code_generate_parameters.jl")
-
 
 gen_long_str(vec, tabs, line_gen_func) = begin
     str_aux = ""
@@ -37,20 +30,24 @@ gen_long_str(vec, tabs, line_gen_func) = begin
     end
     return str_aux
 end
+# ****************************************************************
 
 
-# *******************
+
+# ***********************************
 # Packet Codes!!!!!
 # ***********************************
 # Forma do vetor para gerar o packet:
 #  is_rand? | type | length | name
 # 
 # Ex:
-# vec = [
-#   [true, "bit", "[7:0]", "addr"],
-#   [false, "bit", "[7:0]", "data"],
-#   [false, "bit", "1", "value"],
-#   [true, "bit", "1", "bit_"]]
+# packet_vec = [
+#   [true , "bit", "[7:0]", "addr" ],
+#   [false, "bit", "[7:0]", "data" ],
+#   [false, "bit", "1"    , "value"],
+#   [true , "bit", "1"    , "bit_" ]]
+#
+# Esse vetor vem do arquivo VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
 gen_line_convert_to_string(vec, tabs) = "$(tabs)string_aux = {string_aux, \$sformatf(\"** $(vec[4]) value: %2h\\n\", $(vec[4]))};\n"
 gen_line_object_utils(vec, tabs) = "$(tabs)`uvm_field_int($(vec[4]), UVM_ALL_ON)\n"
@@ -58,12 +55,13 @@ gen_line_instanciate_obj(vec, tabs) = "$(tabs)$((vec[1]) ? "rand" : "    ") $(ve
 
 gen_packet_base(prefix_name, vec) = """
     class $(prefix_name)_packet extends uvm_sequence_item;
+
     $(gen_long_str(vec, "    ", gen_line_instanciate_obj))
         `uvm_object_utils_begin($(prefix_name)_packet)
     $(gen_long_str(vec, "        ", gen_line_object_utils))    `uvm_object_utils_end
 
         function new(string name="$(prefix_name)_packet");
-            super.new();
+            super.new(name);
         endfunction: new
 
         // Type your constraints!
@@ -82,17 +80,21 @@ gen_packet_base(prefix_name, vec) = """
 
     endclass: $(prefix_name)_packet
     """
-# *********************************************************
+# ****************************************************************
 
 
-# *******************
+
+# ***********************************
 # Package Codes!!!!!
 # ***********************************
 # Forma do vetor para gerar o pkg:
-#  Just [name]
+#  class_file_1 | class_file_2 | ...
 # 
 # Ex:
-# vec = ["agent", "driver", "monitor", "sequence_lib"]
+# pkg_vec = ["agent", "driver", "monitor", "sequence_lib"]
+#
+# Esse vetor vem do arquivo global_vectors.jl, mas pode
+# ser sobrescrito em VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
 priority_dict = Dict(
     "packet" => 1,
@@ -129,6 +131,7 @@ gen_pkg_base(prefix_name, vec_in) = begin
     vec = vector_to_pattern(prefix_name, vec_in)
     return """
         package $(prefix_name)_pkg;
+
             import uvm_pkg::*;
             `include "uvm_macros.svh"
 
@@ -139,10 +142,11 @@ gen_pkg_base(prefix_name, vec_in) = begin
         endpackage: $(prefix_name)_pkg
         """
     end
-# *********************************************************
+# ****************************************************************
 
 
-# *******************
+
+# ***********************************
 # Sequencer Codes!!!!!
 # ***********************************
 # Não é necessário um vetor!!!
@@ -150,6 +154,7 @@ gen_pkg_base(prefix_name, vec_in) = begin
 
 gen_sequencer_base(prefix_name, vec) = """
     class $(prefix_name)_sequencer extends uvm_sequencer#($(prefix_name)_packet);
+
         `uvm_component_utils($(prefix_name)_sequencer)
 
         function new(string name, uvm_component parent);
@@ -158,8 +163,7 @@ gen_sequencer_base(prefix_name, vec) = """
 
     endclass: $(prefix_name)_sequencer
     """
-# *********************************************************
-
+# ****************************************************************
 
 
 
@@ -171,6 +175,7 @@ gen_sequencer_base(prefix_name, vec) = """
 
 gen_sequence_base(prefix_name, vec) = """
     class $(prefix_name)_base_sequence extends uvm_sequence#($(prefix_name)_packet);
+
         `uvm_object_utils($(prefix_name)_base_sequence)
 
         function new(string name="$(prefix_name)_base_sequence");
@@ -188,9 +193,13 @@ gen_sequence_base(prefix_name, vec) = """
             phase.drop_objection(this, get_type_name());
             `uvm_info("Sequence", "phase.drop_objection", UVM_HIGH)
         endtask: post_body
+
     endclass: $(prefix_name)_base_sequence
 
+    //==============================================================//
+
     class $(prefix_name)_random_seq extends $(prefix_name)_base_sequence;
+
         `uvm_object_utils($(prefix_name)_random_seq)
 
         function new(string name="$(prefix_name)_random_seq");
@@ -204,32 +213,39 @@ gen_sequence_base(prefix_name, vec) = """
                 // void'(req.randomize() with {field_1==value_1; field_2==value_2;});
             `uvm_send(req)
         endtask: body
+
     endclass: $(prefix_name)_random_seq
+
+    //==============================================================//
     """
-# *********************************************************
+# ****************************************************************
 
 
-# *******************
+
+# ***********************************
 # Interface Codes!!!!!
 # ***********************************
 # Forma do vetor para gerar a interface:
 #  [clock_name , 
 #       [reset_name , is_negedge?] , 
-#       [[type , length , name] , [] , [] ...] 
+#       [[type , length , name] , [] , [], ...] 
 #       ]
 # 
 # Ex:
+# if_vec = ["clock_name", ["reset_name", true], signals_if_config]
 # signals_if_config = [
-#     ["bit", "[7:0]", "addr"],
-#     ["bit", "[7:0]", "data"],
-#     ["bit", "1", "bit_"],
-#     ["logic", "[12:0]", "oioi3"] ]
-# vec = ["clock_name", ["reset_name", true], signals_if_config]
+#     ["bit"  , "[7:0]" , "addr" ],
+#     ["bit"  , "[7:0]" , "data" ],
+#     ["bit"  , "1"     , "bit_" ],
+#     ["logic", "[12:0]", "oioi3"]]
+#
+# Esses vetores vem do arquivo VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
 gen_line_if_signal(vec, tabs; end_of_line=";") = "$(tabs)$(vec[1]) $((vec[2]=="1") ? "     " : vec[2]) $(vec[3])$(end_of_line)\n"
 
 gen_if_base(prefix_name, vec) = """
     interface $(prefix_name)_if (input $(vec[1]), input $(vec[2][1]) );
+
         import uvm_pkg::*;    
         `include "uvm_macros.svh"
         import $(prefix_name)_pkg::*;
@@ -277,7 +293,8 @@ gen_if_base(prefix_name, vec) = """
 
     endinterface : $(prefix_name)_if
     """
-# *********************************************************
+# ****************************************************************
+
 
 
 # *******************
@@ -286,14 +303,16 @@ gen_if_base(prefix_name, vec) = """
 # Forma do vetor para gerar o driver:
 #  [clock_name , [reset_name , is_negedge?] ]
 # 
-# OBS: Recomendo pegar o vetor da interface. "if_vec[1:2]"
-# 
 # Ex:
 # vec = ["clock_name", ["reset_name", true]]
+# 
+# É usado uma parte do vetor da interface: "if_vec[1:2]"
+# Esse vetor vem do arquivo VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
 
 gen_driver_base(prefix_name, vec) = """
     class $(prefix_name)_driver extends uvm_driver#($(prefix_name)_packet);
+
         `uvm_component_utils($(prefix_name)_driver)
     
         $(prefix_name)_vif vif;
@@ -307,9 +326,9 @@ gen_driver_base(prefix_name, vec) = """
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             if($(prefix_name)_vif_config::get(this, "", "vif", vif))
-                `uvm_info("$(uppercase(prefix_name)) DRIVER", "Virtual interface was successfully get!", UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) DRIVER", "Virtual interface was successfully got!", UVM_MEDIUM)
             else
-                `uvm_error("$(uppercase(prefix_name)) DRIVER", "None interface was setted!")        
+                `uvm_error("$(uppercase(prefix_name)) DRIVER", "No interface was set!")
         endfunction: build_phase
 
         virtual task run_phase (uvm_phase phase);
@@ -366,25 +385,29 @@ gen_driver_base(prefix_name, vec) = """
         function void report_phase(uvm_phase phase);
             `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Report: $(uppercase(prefix_name)) DRIVER sent %0d packets", num_sent), UVM_LOW)
         endfunction : report_phase
+
     endclass: $(prefix_name)_driver
     """
-# *********************************************************
+# ****************************************************************
 
 
-# *******************
+
+# ***********************************
 # Monitor Codes!!!!!
 # ***********************************
 # Forma do vetor para gerar o monitor:
 #  [clock_name , [reset_name , is_negedge?] ]
 # 
-# OBS: Recomendo pegar o vetor da interface. "if_vec[1:2]"
-# 
 # Ex:
 # vec = ["clock_name", ["reset_name", true]]
+# 
+# É usado uma parte do vetor da interface: "if_vec[1:2]"
+# Esse vetor vem do arquivo VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
 
 gen_monitor_base(prefix_name, vec) = """
     class $(prefix_name)_monitor extends uvm_monitor;
+
         `uvm_component_utils($(prefix_name)_monitor)
     
         $(prefix_name)_vif vif;
@@ -402,9 +425,9 @@ gen_monitor_base(prefix_name, vec) = """
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             if($(prefix_name)_vif_config::get(this, "", "vif", vif))
-                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Virtual interface was successfully get!", UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Virtual interface was successfully got!", UVM_MEDIUM)
             else
-                `uvm_error("$(uppercase(prefix_name)) MONITOR", "None interface was setted!")        
+                `uvm_error("$(uppercase(prefix_name)) MONITOR", "No interface was set!")        
         endfunction: build_phase
 
         virtual task run_phase (uvm_phase phase);
@@ -417,7 +440,7 @@ gen_monitor_base(prefix_name, vec) = """
             forever begin
                 pkt = $(prefix_name)_packet::type_id::create("pkt", this);
 
-                // concurrent blocks for packet driving and transaction recording
+                // concurrent blocks for packet collection and transaction recording
                 fork
                     // collect packet
                     begin
@@ -446,12 +469,14 @@ gen_monitor_base(prefix_name, vec) = """
         function void report_phase(uvm_phase phase);
             `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Report: $(uppercase(prefix_name)) MONITOR collected %0d packets", num_pkt_col), UVM_LOW)
         endfunction : report_phase
+
     endclass: $(prefix_name)_monitor
     """
-# *********************************************************
+# ****************************************************************
 
 
-# *******************
+
+# ***********************************
 # Agent Codes!!!!!
 # ***********************************
 # Não é necessário um vetor!!!
@@ -459,6 +484,7 @@ gen_monitor_base(prefix_name, vec) = """
 
 gen_agent_base(prefix_name, vec) = """
     class $(prefix_name)_agent extends uvm_agent;
+
         uvm_active_passive_enum is_active = UVM_ACTIVE;
 
         `uvm_component_utils_begin($(prefix_name)_agent)
@@ -479,10 +505,10 @@ gen_agent_base(prefix_name, vec) = """
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
 
-            monitor      = $(prefix_name)_monitor::type_id::create("monitor", this);
+            monitor       = $(prefix_name)_monitor::type_id::create("monitor", this);
             if (is_active) begin
-                sequencer    = $(prefix_name)_sequencer::type_id::create("sequencer", this);
-                driver       = $(prefix_name)_driver::type_id::create("driver", this);
+                sequencer = $(prefix_name)_sequencer::type_id::create("sequencer", this);
+                driver    = $(prefix_name)_driver::type_id::create("driver", this);
             end
         endfunction: build_phase
 
@@ -503,23 +529,27 @@ gen_agent_base(prefix_name, vec) = """
 
     endclass: $(prefix_name)_agent
     """
-# *********************************************************
+# ****************************************************************
 
 
 
 
 
 
-
-# *******************
+# ***********************************
 # Tests Codes!!!!!
 # ***********************************
-# É necessário um vetor!!!
-# stub_if_names = ["vip_test"] Liste o nove das interfaces (VIPs)
+# Forma do vetor para gerar os tests:
+#  vip1_name | vip2_name | ...
+# 
+# Ex:
+# stub_if_names = ["vip_test"]
+# 
+# Esse vetor vem do arquivo code_generate_parameters.jl
 # ***********************************
-gen_instance_line(vip_name, tabs) = """$(tabs)$(vip_name)_agent agent_$(vip_name);\n"""
-gen_creation_line(vip_name, tabs) = """$(tabs)agent_$(vip_name) = $(vip_name)_agent::type_id::create("agent_$(vip_name)", this);\n"""
-gen_sequences_config_line(vip_name, tabs) = """$(tabs)uvm_config_wrapper::set(this, "agent_$(vip_name).sequencer.run_phase", "default_sequence", $(vip_name)_random_seq::get_type());\n"""
+gen_line_VIP_instance(vip_name, tabs) = """$(tabs)$(vip_name)_agent agent_$(vip_name);\n"""
+gen_line_VIP_creation(vip_name, tabs) = """$(tabs)agent_$(vip_name) = $(vip_name)_agent::type_id::create("agent_$(vip_name)", this);\n"""
+gen_line_sequences_config(vip_name, tabs) = """$(tabs)uvm_config_wrapper::set(this, "agent_$(vip_name).sequencer.run_phase", "default_sequence", $(vip_name)_random_seq::get_type());\n"""
 
 test_gen() = (!run_test_gen) ? "" : begin
     output_file_setup("generated_files/test_top")
@@ -528,10 +558,11 @@ end
 
 gen_test_base() = """
     class base_test extends uvm_test;
+
         `uvm_component_utils(base_test)
 
         // VIPs instances - begin
-    $( gen_long_str(stub_if_names, "    ", gen_instance_line) )    // VIPs instances - end
+    $( gen_long_str(stub_if_names, "    ", gen_line_VIP_instance) )    // VIPs instances - end
 
         uvm_objection obj;
 
@@ -543,9 +574,9 @@ gen_test_base() = """
             super.build_phase(phase);
 
             // VIPs creation - begin
-    $( gen_long_str(stub_if_names, "        ", gen_creation_line) )        // VIPs creation - end
+    $( gen_long_str(stub_if_names, "        ", gen_line_VIP_creation) )        // VIPs creation - end
 
-            `uvm_info("BASE TEST", "Build phase runnig", UVM_HIGH)
+            `uvm_info("BASE TEST", "Build phase running", UVM_HIGH)
             uvm_config_db#(int)::set(this, "*", "recording_detail", 1);
         endfunction
 
@@ -564,9 +595,13 @@ gen_test_base() = """
             obj = phase.get_objection();
             obj.set_drain_time(this, 200ns);
         endtask: run_phase
+
     endclass: base_test
 
+    //==============================================================//
+
     class random_test extends base_test;
+
         `uvm_component_utils(random_test)
 
         function new(string name, uvm_component parent);
@@ -579,31 +614,36 @@ gen_test_base() = """
             super.build_phase(phase);
 
             // Random sequences config - begin
-    $( gen_long_str(stub_if_names, "        ", gen_sequences_config_line) )        // Random sequences config - end
+    $( gen_long_str(stub_if_names, "        ", gen_line_sequences_config) )        // Random sequences config - end
             
         endfunction: build_phase
+
     endclass: random_test
+
+    //==============================================================//
     """
-# *********************************************************
+# ****************************************************************
 
 
-# *******************
+
+# ***********************************
 # Top Codes!!!!!
 # ***********************************
+# A geração do top usa o arquivo stub_parameters.jl
 # É necessário ter gerado o STUB para gerar o arquivo stub_parameters.jl!!!!
 # ***********************************
-gen_import_line(vip_name, tabs) = """$(tabs)import $(vip_name)_pkg::*;\n"""
-gen_interfaces_instances_line(vip_name, tabs) = """$(tabs)$(vip_name)_if vif_$(vip_name)(.$(clk_rst_names[1])($(clk_rst_names[1])), .$(clk_rst_names[2][1])($(clk_rst_names[2][1])));\n"""
-gen_send_if_to_vip_line(vip_name, tabs) = """$(tabs)$(vip_name)_vif_config::set(null,"uvm_test_top.agent_$(vip_name).*","vif",vif_$(vip_name));\n"""
-gen_if_connection_line(signal_name, vip_name, tabs) = """$(tabs).$(signal_name[3])(vif_$(vip_name).$(signal_name[3])),\n"""
+gen_line_import(vip_name, tabs) = """$(tabs)import $(vip_name)_pkg::*;\n"""
+gen_line_interfaces_instances(vip_name, tabs) = """$(tabs)$(vip_name)_if vif_$(vip_name)(.$(clk_rst_names[1])($(clk_rst_names[1])), .$(clk_rst_names[2][1])($(clk_rst_names[2][1])));\n"""
+gen_line_send_if_to_vip(vip_name, tabs) = """$(tabs)$(vip_name)_vif_config::set(null,"uvm_test_top.agent_$(vip_name).*","vif",vif_$(vip_name));\n"""
+gen_line_if_connection(signal_name, vip_name, tabs) = """$(tabs).$(signal_name[3])(vif_$(vip_name).$(signal_name[3])),\n"""
 gen_top_if_connection_signals(if_vector, tabs) = begin
     str = ""
     for x in if_vector
-        str *= "\n$(tabs)// Sgnals from $(x[1])'s interface - begin\n"
-        gen_line(signal_name, tabs) = gen_if_connection_line(signal_name, x[1], tabs)
+        str *= "\n$(tabs)// Signals from $(x[1])'s interface - begin\n"
+        gen_line(signal_name, tabs) = gen_line_if_connection(signal_name, x[1], tabs)
         str *= gen_long_str(x[2], tabs*"    ", gen_line)
         str = (x == if_vector[end]) ? str[1:end-2]*"\n" : str
-        str *= "$(tabs)// Sgnals from $(x[1])'s interface - end\n"
+        str *= "$(tabs)// Signals from $(x[1])'s interface - end\n"
     end
     return str
 end
@@ -617,11 +657,12 @@ end
 
 gen_top_base() = """
     module top;
+
         import uvm_pkg::*;
         `include "uvm_macros.svh"
 
         // VIP imports - begin
-    $( gen_long_str(stub_if_names, "        ", gen_import_line) )    // VIP imports - end
+    $( gen_long_str(stub_if_names, "        ", gen_line_import) )    // VIP imports - end
 
         `include "tests.sv"
 
@@ -629,7 +670,7 @@ gen_top_base() = """
         bit run_clock;
 
         // Virtual interfaces instances - begin
-    $( gen_long_str(stub_if_names, "        ", gen_interfaces_instances_line) )    // Virtual interfaces instances - end
+    $( gen_long_str(stub_if_names, "        ", gen_line_interfaces_instances) )    // Virtual interfaces instances - end
 
 
         stub dut(
@@ -638,9 +679,9 @@ gen_top_base() = """
 
         initial begin
             $(clk_rst_names[1]) = 0;
-            $(clk_rst_names[2][1]) = 1;
-            #3 $(clk_rst_names[2][1]) = 0;
-            #3 $(clk_rst_names[2][1]) = 1;
+            $(clk_rst_names[2][1]) = $( (clk_rst_names[2][2]) ? "1" : "0" );
+            #3 $(clk_rst_names[2][1]) = $( (clk_rst_names[2][2]) ? "0" : "1" );
+            #3 $(clk_rst_names[2][1]) = $( (clk_rst_names[2][2]) ? "1" : "0" );
         end
         always #2 $(clk_rst_names[1])=~$(clk_rst_names[1]);
 
@@ -649,41 +690,46 @@ gen_top_base() = """
             \$dumpvars;
 
             // Virtual interfaces send to VIPs - begin
-    $( gen_long_str(stub_if_names, "            ", gen_send_if_to_vip_line) )        // Virtual interfaces instances - end
+    $( gen_long_str(stub_if_names, "            ", gen_line_send_if_to_vip) )        // Virtual interfaces send to VIPs - end
 
             run_test("random_test");
         end
 
     endmodule: top
     """
-# *********************************************************
+# ****************************************************************
 
 
 
 
 
 
-
-
-# *******************
+# ***********************************
 # Stub Codes!!!!!
 # ***********************************
-# É necessário um vetor!!!
-# stub_if_names = ["vip_test"] Liste o nove das interfaces (VIPs)
+# Forma do vetor para gerar os stubs:
+#  vip1_name | vip2_name | ...
+# 
+# Ex:
+# stub_if_names = ["vip_test"]
+# 
+# Esse vetor vem do arquivo code_generate_parameters.jl
+#
+# Também é usado o arquivo /generated_files/(VIP name)/parameter_folder/(VIP name)_parameters.jl
+# Que é gerado na geração do VIP
 # ***********************************
-gen_stub_if_signals_line(vec, tabs) = gen_line_if_signal(vec, tabs; end_of_line=",")
+gen_line_stub_if_signals(vec, tabs) = gen_line_if_signal(vec, tabs; end_of_line=",")
 gen_stub_if_signals(if_vector, gen_line, tabs) = begin
     str = ""
     for x in if_vector
-        str *= "\n$(tabs)// Sgnals from $(x[1])'s interface - begin\n"
+        str *= "\n$(tabs)// Signals from $(x[1])'s interface - begin\n"
         str *= gen_long_str(x[2], tabs*"    ", gen_line)
         str = (x == if_vector[end]) ? str[1:end-2]*"\n" : str
-        str *= "$(tabs)// Sgnals from $(x[1])'s interface - end\n"
+        str *= "$(tabs)// Signals from $(x[1])'s interface - end\n"
     end
     return str
 end
-stub_parameters_str_file_gen(if_vector, stub_if_names, clk_name, rst_name) = "if_vector = $(if_vector)\nstub_if_names = $(stub_if_names)\nclk_rst_names = $([clk_name, rst_name])"
-
+gen_stub_parameters_str_file(if_vector, stub_if_names, clk_name, rst_name) = "if_vector = $(if_vector)\nstub_if_names = $(stub_if_names)\nclk_rst_names = $([clk_name, rst_name])"
 update_signals_if_config(signals_if_config) = begin
     out_vec = []
     for x in signals_if_config
@@ -697,20 +743,19 @@ update_signals_if_config(signals_if_config) = begin
     end
     return out_vec
 end
-
 get_interface_signals() = begin
     if_gather = []
-    item_to_deleat = []
+    item_to_delete = []
     for x in stub_if_names
         try
             include(pwd()*"/generated_files/"*x*"/parameter_folder/"*x*"_parameters.jl")
             push!(if_gather,[x,update_signals_if_config(signals_if_config)])
         catch
             println("It was not possible to open the VIP '$(x)'")
-            push!(item_to_deleat,x) 
+            push!(item_to_delete,x) 
         end
     end
-    setdiff!(stub_if_names, item_to_deleat)
+    setdiff!(stub_if_names, item_to_delete)
     return if_gather
 end
 
@@ -721,11 +766,11 @@ stub_gen() = (!run_stub_gen) ? "" : begin
 
     output_file_setup("generated_files/rtl")
     write_file("generated_files/rtl/stub.sv", gen_stub_base([clk_name, rst_name], if_vector))
-    write_file("generated_files/rtl/stub_parameters.jl", stub_parameters_str_file_gen(if_vector, stub_if_names, clk_name, rst_name))
+    write_file("generated_files/rtl/stub_parameters.jl", gen_stub_parameters_str_file(if_vector, stub_if_names, clk_name, rst_name))
 end
 
 gen_stub_base(clk_rst_names, vec) = """
-    module stub (input $(clk_rst_names[1]), input $(clk_rst_names[2][1]), $(gen_stub_if_signals(vec, gen_stub_if_signals_line, "    "))    );
+    module stub (input $(clk_rst_names[1]), input $(clk_rst_names[2][1]), $(gen_stub_if_signals(vec, gen_line_stub_if_signals, "    "))    );
 
         always @(posedge $(clk_rst_names[1]) or $( (clk_rst_names[2][2]) ? "negedge" : "posedge" ) $(clk_rst_names[2][1])) begin
             if($( (clk_rst_names[2][2]) ? "~" : "" )$(clk_rst_names[2][1])) begin
@@ -742,15 +787,19 @@ gen_stub_base(clk_rst_names, vec) = """
 
     endmodule: stub
     """
-# *********************************************************
+# ****************************************************************
 
 
 
 
 
 
-
-
+# ***********************************
+# Master Gen Codes!!!!!
+# ***********************************
+# São usados os vetores presentes em global_vectors.jl
+# E/ou em VIP_parameters/(VIP name)_parameters.jl
+# ***********************************
 gen_files(vec_classes, vip_name) = begin
     for class_name in vec_classes
         vec_aux = function_dict[uppercase(class_name)]
