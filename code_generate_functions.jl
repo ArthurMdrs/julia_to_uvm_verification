@@ -1,3 +1,5 @@
+# THIS FILE IS DEPRECATED
+
 include("code_generate_parameters.jl")
 
 open_file(dir) = open(str_aux->read(str_aux, String), dir)
