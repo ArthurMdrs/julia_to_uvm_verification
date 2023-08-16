@@ -28,7 +28,8 @@ gen_stub_if_signals(if_vector, gen_line, tabs) = begin
     end
     return str
 end
-gen_stub_parameters_str_file(if_vector, stub_if_names, clk_name, rst_name) = "if_vector = $(if_vector)\nstub_if_names = $(stub_if_names)\nclk_rst_names = $([clk_name, rst_name])"
+gen_stub_parameters_str_file(if_vector, stub_if_names, clk_name, rst_name) = 
+    "if_vector = $(if_vector)\nstub_if_names = $(stub_if_names)\nclk_rst_names = $([clk_name, rst_name])"
 update_signals_if_config(signals_if_config) = begin
     out_vec = []
     for x in signals_if_config
@@ -65,7 +66,8 @@ stub_gen() = (!run_stub_gen) ? "" : begin
 
     output_file_setup("generated_files/rtl")
     write_file("generated_files/rtl/stub.sv", gen_stub_base([clk_name, rst_name], if_vector))
-    write_file("generated_files/rtl/stub_parameters.jl", gen_stub_parameters_str_file(if_vector, stub_if_names, clk_name, rst_name))
+    write_file("generated_files/rtl/stub_parameters.jl", 
+                gen_stub_parameters_str_file(if_vector, stub_if_names, clk_name, rst_name))
 end
 
 gen_stub_base(clk_rst_names, vec) = """

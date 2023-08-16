@@ -29,7 +29,8 @@ gen_files(vec_classes, vip_name) = begin
     for class_name in vec_classes
         # vec_aux["class_name"] = [gen_function, vector]
         vec_aux = function_dict[uppercase(class_name)]
-        write_file("generated_files/"*vip_name*"/sv/$(vip_name)_$(class_name).sv", vec_aux[1](vip_name, vec_aux[2]))
+        write_file("generated_files/"*vip_name*"/sv/$(vip_name)_$(class_name).sv", 
+                    vec_aux[1](vip_name, vec_aux[2]))
     end
 end
 
@@ -54,7 +55,8 @@ vip_files_gen() = (!run_vip_gen) ? "" : begin
         output_file_setup("generated_files/"*vip_name*"/parameter_folder")
 
         gen_files(vec_classes, vip_name)
-        write_file("generated_files/"*vip_name*"/parameter_folder/"*vip_name*"_parameters.jl", open_file("VIP_parameters/"*vip_name*"_parameters.jl"))
+        write_file("generated_files/"*vip_name*"/parameter_folder/"*vip_name*"_parameters.jl", 
+                    open_file("VIP_parameters/"*vip_name*"_parameters.jl"))
         
     end
 end

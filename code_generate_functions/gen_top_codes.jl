@@ -9,9 +9,12 @@
 # A função output_file_setup() vem de uvc_gen_codes.jl
 # A função write_file() vem de uvc_gen_codes.jl
 gen_line_import(vip_name, tabs) = """$(tabs)import $(vip_name)_pkg::*;\n"""
-gen_line_interfaces_instances(vip_name, tabs) = """$(tabs)$(vip_name)_if vif_$(vip_name)(.$(clk_rst_names[1])($(clk_rst_names[1])), .$(clk_rst_names[2][1])($(clk_rst_names[2][1])));\n"""
-gen_line_send_if_to_vip(vip_name, tabs) = """$(tabs)$(vip_name)_vif_config::set(null,"uvm_test_top.agent_$(vip_name).*","vif",vif_$(vip_name));\n"""
-gen_line_if_connection(signal_name, vip_name, tabs) = """$(tabs).$(signal_name[3])(vif_$(vip_name).$(signal_name[3])),\n"""
+gen_line_interfaces_instances(vip_name, tabs) = 
+    """$(tabs)$(vip_name)_if vif_$(vip_name)(.$(clk_rst_names[1])($(clk_rst_names[1])), .$(clk_rst_names[2][1])($(clk_rst_names[2][1])));\n"""
+gen_line_send_if_to_vip(vip_name, tabs) = 
+    """$(tabs)$(vip_name)_vif_config::set(null,"uvm_test_top.agent_$(vip_name).*","vif",vif_$(vip_name));\n"""
+gen_line_if_connection(signal_name, vip_name, tabs) = 
+    """$(tabs).$(signal_name[3])(vif_$(vip_name).$(signal_name[3])),\n"""
 gen_top_if_connection_signals(if_vector, tabs) = begin
     str = ""
     for x in if_vector

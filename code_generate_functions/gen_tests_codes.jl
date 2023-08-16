@@ -13,9 +13,12 @@
 # OBS.: Algumas funções vem de outros arquivos
 # A função output_file_setup() vem de uvc_gen_codes.jl
 # A função write_file() vem de uvc_gen_codes.jl
-gen_line_VIP_instance(vip_name, tabs) = """$(tabs)$(vip_name)_agent agent_$(vip_name);\n"""
-gen_line_VIP_creation(vip_name, tabs) = """$(tabs)agent_$(vip_name) = $(vip_name)_agent::type_id::create("agent_$(vip_name)", this);\n"""
-gen_line_sequences_config(vip_name, tabs) = """$(tabs)uvm_config_wrapper::set(this, "agent_$(vip_name).sequencer.run_phase", "default_sequence", $(vip_name)_random_seq::get_type());\n"""
+gen_line_VIP_instance(vip_name, tabs) = 
+    """$(tabs)$(vip_name)_agent agent_$(vip_name);\n"""
+gen_line_VIP_creation(vip_name, tabs) = 
+    """$(tabs)agent_$(vip_name) = $(vip_name)_agent::type_id::create("agent_$(vip_name)", this);\n"""
+gen_line_sequences_config(vip_name, tabs) = 
+    """$(tabs)uvm_config_wrapper::set(this, "agent_$(vip_name).sequencer.run_phase", "default_sequence", $(vip_name)_random_seq::get_type());\n"""
 
 test_gen() = (!run_test_gen) ? "" : begin
     output_file_setup("generated_files/test_top")

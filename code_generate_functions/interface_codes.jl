@@ -17,7 +17,8 @@
 #
 # Esses vetores vem do arquivo VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
-gen_line_if_signal(vec, tabs; end_of_line=";") = "$(tabs)$(vec[1]) $((vec[2]=="1") ? "     " : vec[2]) $(vec[3])$(end_of_line)\n"
+gen_line_if_signal(vec, tabs; end_of_line=";") = 
+    "$(tabs)$(vec[1]) $((vec[2]=="1") ? "     " : vec[2]) $(vec[3])$(end_of_line)\n"
 
 gen_if_base(prefix_name, vec) = """
     interface $(prefix_name)_if (input $(vec[1]), input $(vec[2][1]) );

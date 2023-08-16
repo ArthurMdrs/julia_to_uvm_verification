@@ -13,9 +13,12 @@
 #
 # Esse vetor vem do arquivo VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
-gen_line_convert_to_string(vec, tabs) = "$(tabs)string_aux = {string_aux, \$sformatf(\"** $(vec[4]) value: %2h\\n\", $(vec[4]))};\n"
-gen_line_object_utils(vec, tabs) = "$(tabs)`uvm_field_int($(vec[4]), UVM_ALL_ON)\n"
-gen_line_instanciate_obj(vec, tabs) = "$(tabs)$((vec[1]) ? "rand" : "    ") $(vec[2]) $((vec[3]=="1") ? "     " : vec[3]) $(vec[4]);\n"
+gen_line_convert_to_string(vec, tabs) = 
+    "$(tabs)string_aux = {string_aux, \$sformatf(\"** $(vec[4]) value: %2h\\n\", $(vec[4]))};\n"
+gen_line_object_utils(vec, tabs) = 
+    "$(tabs)`uvm_field_int($(vec[4]), UVM_ALL_ON)\n"
+gen_line_instanciate_obj(vec, tabs) = 
+    "$(tabs)$((vec[1]) ? "rand" : "    ") $(vec[2]) $((vec[3]=="1") ? "     " : vec[3]) $(vec[4]);\n"
 
 gen_packet_base(prefix_name, vec) = """
     class $(prefix_name)_packet extends uvm_sequence_item;
