@@ -10,9 +10,6 @@
 # Esse vetor vem do arquivo code_generate_parameters.jl
 # ***********************************
 
-# OBS.: Algumas funções vem de outros arquivos
-# A função output_file_setup() vem de uvc_gen_codes.jl
-# A função write_file() vem de uvc_gen_codes.jl
 gen_line_VIP_instance(vip_name, tabs) = 
     """$(tabs)$(vip_name)_agent agent_$(vip_name);\n"""
 gen_line_VIP_creation(vip_name, tabs) = 

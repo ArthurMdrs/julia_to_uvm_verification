@@ -5,9 +5,6 @@
 # É necessário ter gerado o STUB para gerar o arquivo stub_parameters.jl!!!!
 # ***********************************
 
-# OBS.: Algumas funções vem de outros arquivos
-# A função output_file_setup() vem de uvc_gen_codes.jl
-# A função write_file() vem de uvc_gen_codes.jl
 gen_line_import(vip_name, tabs) = """$(tabs)import $(vip_name)_pkg::*;\n"""
 gen_line_interfaces_instances(vip_name, tabs) = 
     """$(tabs)$(vip_name)_if vif_$(vip_name)(.$(clk_rst_names[1])($(clk_rst_names[1])), .$(clk_rst_names[2][1])($(clk_rst_names[2][1])));\n"""

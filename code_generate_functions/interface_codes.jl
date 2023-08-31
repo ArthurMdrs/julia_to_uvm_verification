@@ -30,8 +30,13 @@ gen_if_base(prefix_name, vec) = """
         // Interface Signals - Begin
     $(gen_long_str(vec[3], "    ", gen_line_if_signal))    // Interface Signals - End
 
-        // signal for transaction recording
+        // Signals for transaction recording
         bit monstart, drvstart;
+        
+        // Signal to control monitor activity
+        bit valid_data;
+        // Test packet
+        $(prefix_name)_packet pkt = new("PKT");
 
         task $(prefix_name)_reset();
             @($((vec[2][2]) ? "negedge" : "posedge") $(vec[2][1]));
@@ -43,13 +48,18 @@ gen_if_base(prefix_name, vec) = """
         // Gets a packet and drive it into the DUT
         task send_to_dut($(prefix_name)_packet req);
             // Logic to start recording transaction
+            //#1;
+            @(negedge clk);
 
             // trigger for transaction recording
-            #1;
             drvstart = 1'b1;
 
-            // Driver logic 
-            `uvm_info("$(uppercase(prefix_name)) INTERFACE", req.convert2string(), UVM_HIGH)
+            // Drive logic 
+            pkt.copy(req);
+            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Driving packet to DUT:%s", pkt.convert2string()), UVM_HIGH)
+            valid_data = 1'b1;
+            //#1;
+            @(negedge clk);
 
             // Reset trigger
             drvstart = 1'b0;
@@ -57,17 +67,25 @@ gen_if_base(prefix_name, vec) = """
 
         // Collect Packets
         task collect_packet($(prefix_name)_packet req);
+//if (!end_sim) begin
             // Logic to start recording transaction
-
+            //#1;
+            @(posedge clk iff valid_data);
+            valid_data = 1'b0;
+            
             // trigger for transaction recording
             monstart = 1'b1;
 
-            // Driver logic 
+            // Collect logic 
+            req.copy(pkt);
+            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Collected packet:%s", req.convert2string()), UVM_HIGH)
+            //#1;
+            @(posedge clk);
 
             // Reset trigger
             monstart = 1'b0;
         endtask : collect_packet
-
+//end end_sim = 1;
     endinterface : $(prefix_name)_if
     """
 # ****************************************************************

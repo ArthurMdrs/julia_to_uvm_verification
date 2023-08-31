@@ -4,29 +4,14 @@
 # São usados os vetores presentes em global_vectors.jl
 # E/ou em VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
-include("../code_generate_parameters.jl")
 
 function_dict = Dict()
 
-output_file_setup(dir; reset_folder=true) = begin
-    if isdir(dir)
-        if (reset_folder)
-            rm(dir, recursive=true, force = true)
-            mkdir(dir)
-        end
-    else
-        mkdir(dir)
-    end
-end
-write_file(file_dir, txt_string) = begin
-    open(file_dir, "w") do io
-        write(io, txt_string)
-    end;
-end
 open_file(dir) = open(str_aux->read(str_aux, String), dir)
 
 gen_files(vec_classes, vip_name) = begin
     for class_name in vec_classes
+        # The vector below works like this:
         # vec_aux["class_name"] = [gen_function, vector]
         vec_aux = function_dict[uppercase(class_name)]
         write_file("generated_files/"*vip_name*"/sv/$(vip_name)_$(class_name).sv", 

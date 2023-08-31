@@ -37,7 +37,8 @@ gen_agent_base(prefix_name, vec) = """
         function void connect_phase (uvm_phase phase);
             super.connect_phase(phase);
 
-            item_from_monitor_port.connect(monitor.item_collected_port);
+            //item_from_monitor_port.connect(monitor.item_collected_port);
+            monitor.item_collected_port.connect(item_from_monitor_port);
             
             if (is_active) begin
                 driver.seq_item_port.connect(sequencer.seq_item_export);
@@ -46,7 +47,7 @@ gen_agent_base(prefix_name, vec) = """
 
         function void start_of_simulation_phase (uvm_phase phase);
             super.start_of_simulation_phase(phase);
-            `uvm_info(get_type_name(), "Simulation initialized", UVM_HIGH)
+            `uvm_info("$(uppercase(prefix_name)) AGENT", "Simulation initialized", UVM_HIGH)
         endfunction: start_of_simulation_phase
 
     endclass: $(prefix_name)_agent

@@ -31,7 +31,7 @@ gen_monitor_base(prefix_name, vec) = """
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             if($(prefix_name)_vif_config::get(this, "", "vif", vif))
-                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Virtual interface was successfully got!", UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Virtual interface was successfully set!", UVM_MEDIUM)
             else
                 `uvm_error("$(uppercase(prefix_name)) MONITOR", "No interface was set!")        
         endfunction: build_phase

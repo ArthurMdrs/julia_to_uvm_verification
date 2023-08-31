@@ -16,13 +16,13 @@ gen_sequence_lib_base(prefix_name, vec) = """
         task pre_body();
             uvm_phase phase = get_starting_phase();
             phase.raise_objection(this, get_type_name());
-            `uvm_info("Sequence", "phase.raise_objection", UVM_HIGH)
+            `uvm_info("$(prefix_name) Sequence", "phase.raise_objection", UVM_HIGH)
         endtask: pre_body
 
         task post_body();
             uvm_phase phase = get_starting_phase();
             phase.drop_objection(this, get_type_name());
-            `uvm_info("Sequence", "phase.drop_objection", UVM_HIGH)
+            `uvm_info("$(prefix_name) Sequence", "phase.drop_objection", UVM_HIGH)
         endtask: post_body
 
     endclass: $(prefix_name)_base_sequence
@@ -38,11 +38,13 @@ gen_sequence_lib_base(prefix_name, vec) = """
         endfunction: new
         
         virtual task body();
-            `uvm_create(req)
-                void'(req.randomize());
-                // It is possible to put constraints into randomize, like below.
-                // void'(req.randomize() with {field_1==value_1; field_2==value_2;});
-            `uvm_send(req)
+            repeat(3) begin
+                `uvm_create(req)
+                    void'(req.randomize());
+                    // It is possible to put constraints into randomize, like below.
+                    // void'(req.randomize() with {field_1==value_1; field_2==value_2;});
+                `uvm_send(req)
+            end
         endtask: body
 
     endclass: $(prefix_name)_random_seq

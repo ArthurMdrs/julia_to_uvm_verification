@@ -13,10 +13,7 @@
 # Que é gerado na geração do VIP
 # ***********************************
 
-# OBS.: Algumas funções vem de outros arquivos
-# A função gen_line_if_signal() vem de interface_codes.jl
-# A função output_file_setup() vem de uvc_gen_codes.jl
-# A função write_file() vem de uvc_gen_codes.jl
+# OBS.: A função gen_line_if_signal() vem de interface_codes.jl
 gen_line_stub_if_signals(vec, tabs) = gen_line_if_signal(vec, tabs; end_of_line=",")
 gen_stub_if_signals(if_vector, gen_line, tabs) = begin
     str = ""
