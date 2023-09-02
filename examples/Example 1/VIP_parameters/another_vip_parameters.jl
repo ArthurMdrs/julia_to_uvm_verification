@@ -1,6 +1,3 @@
-# Nome da VIP (não é usado)
-# vip_name = "some_vip"
-
 # Vetor que define os atributos do packet
 packet_vec = [
   [true, "bit  ", " [7:0]", "data_to_send"],

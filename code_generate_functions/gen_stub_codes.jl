@@ -48,7 +48,7 @@ get_interface_signals() = begin
             include(pwd()*"/generated_files/"*x*"/parameter_folder/"*x*"_parameters.jl")
             push!(if_gather,[x,update_signals_if_config(signals_if_config)])
         catch
-            println("It was not possible to open the VIP '$(x)'")
+            println("It was not possible to open the VIP '$(x)' for stub/test generation.")
             push!(item_to_delete, x) 
         end
     end

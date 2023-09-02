@@ -20,8 +20,6 @@ gen_files(vec_classes, vip_name) = begin
 end
 
 vip_files_gen() = (!run_vip_gen) ? "" : begin
-    output_file_setup("generated_files"; reset_folder=reset_generated_files_folder)
-
     for vip_name in vip_names
         include("./global_vectors.jl")
         include("./VIP_parameters/"*vip_name*"_parameters.jl")

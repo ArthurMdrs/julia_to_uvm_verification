@@ -1,5 +1,5 @@
 test_script.jl
 
-generated_files/
+/generated_files/
 
-examples/
+/ignore/

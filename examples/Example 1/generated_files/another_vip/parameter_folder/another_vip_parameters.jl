@@ -1,4 +1,4 @@
-# Nome da VIP (não é usado)
+# Nome da VIP
 # vip_name = "some_vip"
 
 # Vetor que define os atributos do packet

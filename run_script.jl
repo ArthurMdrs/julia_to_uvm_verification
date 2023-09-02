@@ -37,7 +37,7 @@ include("code_generate_functions/agent_codes.jl")
 include("code_generate_functions/package_codes.jl")
 include("code_generate_functions/gen_uvc_codes.jl")
 
-# Codes for generating stub interface and DUT
+# Codes for generating stub DUT and interface
 include("code_generate_functions/interface_codes.jl")
 include("code_generate_functions/gen_stub_codes.jl")
 
@@ -49,6 +49,9 @@ include("code_generate_functions/gen_top_codes.jl")
 
 # Codes for generating run.f file
 include("code_generate_functions/gen_run_file_codes.jl")
+
+# Set up the output folder
+output_file_setup("generated_files"; reset_folder=reset_generated_files_folder)
 
 # Run generation functions
 vip_files_gen();
