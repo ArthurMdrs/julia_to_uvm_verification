@@ -1,7 +1,7 @@
 # ***********************************
 # Agent Codes!!!!!
 # ***********************************
-# Não é necessário um vetor!!!
+# No vector is necessary!!!
 # ***********************************
 
 gen_agent_base(prefix_name, vec) = """

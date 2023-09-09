@@ -1,13 +1,13 @@
 # ***********************************
 # Interface Codes!!!!!
 # ***********************************
-# Forma do vetor para gerar a interface:
+# Form of the vector to generate the interface:
 #  [clock_name , 
 #       [reset_name , is_negedge?] , 
 #       [[type , length , name] , [] , [], ...] 
 #       ]
 # 
-# Ex:
+# E.g.:
 # if_vec = ["clock_name", ["reset_name", true], signals_if_config]
 # signals_if_config = [
 #     ["bit"  , "[7:0]" , "addr" ],
@@ -15,7 +15,7 @@
 #     ["bit"  , "1"     , "bit_" ],
 #     ["logic", "[12:0]", "oioi3"]]
 #
-# Esses vetores vem do arquivo VIP_parameters/(VIP name)_parameters.jl
+# These vectors come from the file VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
 gen_line_if_signal(vec, tabs; end_of_line=";") = 
     "$(tabs)$(vec[1]) $((vec[2]=="1") ? "     " : vec[2]) $(vec[3])$(end_of_line)\n"

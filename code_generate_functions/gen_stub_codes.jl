@@ -1,19 +1,19 @@
 # ***********************************
 # Stub Codes!!!!!
 # ***********************************
-# Forma do vetor para gerar os stubs:
+# Form of the vector to generate the stub:
 #  vip1_name | vip2_name | ...
 # 
-# Ex:
+# E.g.:
 # stub_if_names = ["vip_test"]
 # 
-# Esse vetor vem do arquivo code_generate_parameters.jl
+# This vector comes from the file code_generate_parameters.jl
 #
-# Também é usado o arquivo /generated_files/(VIP name)/parameter_folder/(VIP name)_parameters.jl
-# Que é gerado na geração do VIP
+# It is also used the file /generated_files/(VIP name)/parameter_folder/(VIP name)_parameters.jl
+# Which is generated in the VIP generation
 # ***********************************
 
-# OBS.: A função gen_line_if_signal() vem de interface_codes.jl
+# OBS.: The function gen_line_if_signal() comes from interface_codes.jl
 gen_line_stub_if_signals(vec, tabs) = gen_line_if_signal(vec, tabs; end_of_line=",")
 gen_stub_if_signals(if_vector, gen_line, tabs) = begin
     str = ""

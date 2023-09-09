@@ -1,14 +1,14 @@
 # *******************
 # Driver Codes!!!!!
 # ***********************************
-# Forma do vetor para gerar o driver:
+# Form of the vector to generate the driver:
 #  [clock_name , [reset_name , is_negedge?] ]
 # 
-# Ex:
+# E.g.:
 # vec = ["clock_name", ["reset_name", true]]
 # 
-# É usado uma parte do vetor da interface: "if_vec[1:2]"
-# Esse vetor vem do arquivo VIP_parameters/(VIP name)_parameters.jl
+# A part of the interface's vector is used: "if_vec[1:2]"
+# This vector comes from the file VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
 
 gen_driver_base(prefix_name, vec) = """

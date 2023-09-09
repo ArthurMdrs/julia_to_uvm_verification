@@ -1,30 +1,41 @@
-# Nome da VIP (não é usado)
-# vip_name = "some_vip"
-
-# Vetor que define os atributos do packet
+# Vector that specifies the packet's attributes
 packet_vec = [
   [true, "bit  ", " [7:0]", "data_to_send"],
   [true, "logic", "[15:0]", "random_data"]]
 
-# Vetor que define os sinais da interface
+# Vector that specifies the interface's signals
 signals_if_config = [
-  ["logic", "1", "other_ready_o"],
-  ["logic", "1", "other_valid_i"],
-  ["logic", "[7:0]", "other_address_i"],
-  ["logic", "[7:0]", "other_data_o"] ]
+  ["logic", "1", "another_ready_o"],
+  ["logic", "1", "another_valid_i"],
+  ["logic", "[7:0]", "another_data_i"],
+  ["logic", "[7:0]", "another_data_o"] ]
 
-# Variável que define se o reset é NBA ou NAA
+# Variable that defines if reset is active low or high
 rst_is_negedge_sensitive = true
 
-# Vetor que define o reset e do clock
+# Vector that defines clock and reset names
 if_vec = ["clk", ["rst_n", rst_is_negedge_sensitive], signals_if_config]
 
-# Descomentar e mudar APENAS SE NECESSÁRIO!!!
-# Isso irá sobrescrever os vetores definidos em global_vectors.jl
+# UNCOMMENT ONLY IF NECESSARY!!!
+# This will overwrite the vectors defined in global_vectors.jl
+# Check the documentation's "How to use" section for more info
 #
-# Vetor que define as classes que serão incluídas no package
-# pkg_vec = ["sequence_lib", "sequencer", "packet", "agent", "driver"]
-# Vetor que define as classes das quais serão geradas os arquivos
-# vec_classes = ["sequence_lib", "sequencer", "packet", "pkg", "if", "agent", "monitor"]
+# Variables that define which classes will be included in the package
+# pkg_classes.packet = false
+# pkg_classes.sequence_lib = false
+# pkg_classes.monitor = false
+# pkg_classes.sequencer = false
+# pkg_classes.driver = false
+# pkg_classes.agent = false
 #
-# Descomentar e mudar APENAS SE NECESSÁRIO!!!
+# Variables that define which classes will be generated as files
+# gen_classes.packet = false
+# gen_classes.sequence_lib = false
+# gen_classes.monitor = false
+# gen_classes.sequencer = false
+# gen_classes.driver = false
+# gen_classes.agent = false
+# gen_classes.pkg = false
+# gen_classes.interface = false
+#
+# UNCOMMENT ONLY IF NECESSARY!!!

@@ -1,14 +1,14 @@
 # ***********************************
 # Package Codes!!!!!
 # ***********************************
-# Forma do vetor para gerar o pkg:
+# Form of the vector to generate the pkg:
 #  class_file_1 | class_file_2 | ...
 # 
-# Ex:
+# E.g.:
 # pkg_vec = ["agent", "driver", "monitor", "sequence_lib"]
 #
-# Esse vetor vem do arquivo global_vectors.jl, mas pode
-# ser sobrescrito em VIP_parameters/(VIP name)_parameters.jl
+# This vector comes from the file global_vectors.jl, but it may 
+# be overwritten in VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
 priority_dict = Dict(
     "packet" => 1,

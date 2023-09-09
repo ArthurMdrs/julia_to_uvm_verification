@@ -1,7 +1,7 @@
 # ***********************************
 # Sequencer Codes!!!!!
 # ***********************************
-# Não é necessário um vetor!!!
+# No vector is necessary!!!
 # ***********************************
 
 gen_sequencer_base(prefix_name, vec) = """

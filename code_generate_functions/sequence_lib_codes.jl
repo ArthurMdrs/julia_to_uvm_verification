@@ -1,7 +1,7 @@
 # *******************
 # Sequence Lib Codes!!!!!
 # ***********************************
-# Não é necessário um vetor!!!
+# No vector is necessary!!!
 # ***********************************
 
 gen_sequence_lib_base(prefix_name, vec) = """

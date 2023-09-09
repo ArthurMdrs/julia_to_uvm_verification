@@ -1,17 +1,17 @@
 # ***********************************
 # Packet Codes!!!!!
 # ***********************************
-# Forma do vetor para gerar o packet:
+# Form of the vector to generate the packet:
 #  is_rand? | type | length | name
 # 
-# Ex:
+# E.g.:
 # packet_vec = [
 #   [true , "bit", "[7:0]", "addr" ],
 #   [false, "bit", "[7:0]", "data" ],
 #   [false, "bit", "1"    , "value"],
 #   [true , "bit", "1"    , "bit_" ]]
 #
-# Esse vetor vem do arquivo VIP_parameters/(VIP name)_parameters.jl
+# This vector comes from the file VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
 gen_line_convert_to_string(vec, tabs) = 
     "$(tabs)string_aux = {string_aux, \$sformatf(\"** $(vec[4]) value: %2h\\n\", $(vec[4]))};\n"

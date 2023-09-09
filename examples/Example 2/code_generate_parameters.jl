@@ -1,15 +1,15 @@
-# Essa variável define se a pasta dos arquivos gerados
-# é limpada antes de gerar novos arquivos
+# This variable determines if the generated files folder
+# will be cleared before a new generation
 reset_generated_files_folder = true
 
-# Vetor que define os nomes dos VIPs (ou UVCs)
+# Vector that defines the VIPs (or UVCs) names
 vip_names = ["some_vip", "another_vip"]
 
-# Vetor que define os nomes dos VIPs que serão incluídos
-# no stub DUT (DUT falso)
+# Vector that defines which VIPs will be included in the
+# stub DUT, top level, test library and run.f file
 stub_if_names = ["some_vip"]
 
-# Variáveis que definem que arquivos serão gerados
+# Flags that define which files will be generated
 run_vip_gen = true
 run_stub_gen = true
 run_test_gen = true

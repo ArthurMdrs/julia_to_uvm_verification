@@ -1,8 +1,8 @@
 # ***********************************
 # Top Codes!!!!!
 # ***********************************
-# A geração do top usa o arquivo stub_parameters.jl
-# É necessário ter gerado o STUB para gerar o arquivo stub_parameters.jl!!!!
+# The top generation uses the file stub_parameters.jl
+# It is required to have generated the STUB to create the stub_parameters.jl!!!!
 # ***********************************
 
 gen_line_import(vip_name, tabs) = """$(tabs)import $(vip_name)_pkg::*;\n"""

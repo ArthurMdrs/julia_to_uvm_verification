@@ -1,8 +1,8 @@
 # ***********************************
 # VIP Gen Codes!!!!!
 # ***********************************
-# São usados os vetores presentes em global_vectors.jl
-# E/ou em VIP_parameters/(VIP name)_parameters.jl
+# This uses the vectors found in global_vectors.jl
+# And/or in VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
 
 function_dict = Dict()

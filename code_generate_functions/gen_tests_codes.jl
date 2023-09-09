@@ -1,13 +1,13 @@
 # ***********************************
 # Tests Codes!!!!!
 # ***********************************
-# Forma do vetor para gerar os tests:
+# Form of the vector to generate the tests:
 #  vip1_name | vip2_name | ...
 # 
-# Ex:
+# E.g.:
 # stub_if_names = ["vip_test"]
 # 
-# Esse vetor vem do arquivo code_generate_parameters.jl
+# This vector comes from the file code_generate_parameters.jl
 # ***********************************
 
 gen_line_VIP_instance(vip_name, tabs) = 

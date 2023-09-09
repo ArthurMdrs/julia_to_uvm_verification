@@ -1,13 +1,13 @@
 # ***********************************
 # run.f Codes!!!!!
 # ***********************************
-# Forma do vetor para gerar o run.f:
+# Form of the vector to generate the run.f:
 #  vip1_name | vip2_name | ...
 # 
-# Ex:
+# E.g.:
 # stub_if_names = ["vip_test"]
 # 
-# Esse vetor vem do arquivo code_generate_parameters.jl
+# This vector comes from the file code_generate_parameters.jl
 # ***********************************
 
 gen_vip_include(vip_name, tabs) = """
