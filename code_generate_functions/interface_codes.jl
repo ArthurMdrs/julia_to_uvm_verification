@@ -28,7 +28,7 @@ gen_if_base(prefix_name, vec) = """
         import $(prefix_name)_pkg::*;
 
         // Interface Signals - Begin
-    $(gen_long_str(vec[3], "    ", gen_line_if_signal))    // Interface Signals - End
+$(gen_long_str(vec[3], "        ", gen_line_if_signal))        // Interface Signals - End
 
         // Signals for transaction recording
         bit monstart, drvstart;
@@ -67,7 +67,6 @@ gen_if_base(prefix_name, vec) = """
 
         // Collect Packets
         task collect_packet($(prefix_name)_packet req);
-//if (!end_sim) begin
             // Logic to start recording transaction
             //#1;
             @(posedge clk iff valid_data);
@@ -85,7 +84,7 @@ gen_if_base(prefix_name, vec) = """
             // Reset trigger
             monstart = 1'b0;
         endtask : collect_packet
-//end end_sim = 1;
+
     endinterface : $(prefix_name)_if
     """
 # ****************************************************************

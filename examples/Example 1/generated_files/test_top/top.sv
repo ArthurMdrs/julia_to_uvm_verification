@@ -30,10 +30,10 @@ module top;
         // Signals from some_vip's interface - end
 
         // Signals from another_vip's interface - begin
-            .other_ready_o(vif_another_vip.other_ready_o),
-            .other_valid_i(vif_another_vip.other_valid_i),
-            .other_address_i(vif_another_vip.other_address_i),
-            .other_data_o(vif_another_vip.other_data_o)
+            .another_ready_o(vif_another_vip.another_ready_o),
+            .another_valid_i(vif_another_vip.another_valid_i),
+            .another_data_i(vif_another_vip.another_data_i),
+            .another_data_o(vif_another_vip.another_data_o)
         // Signals from another_vip's interface - end
         );
 

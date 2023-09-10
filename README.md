@@ -40,7 +40,7 @@ These are flags that will tell the script what to generate. You can generate:
 - The top level module, which instantiates the interfaces and the DUT. It also has an initial block that performs a reset. To generate the top file, you need to also generate the stub DUT. The top level will be created in `generated_files/test_top/`.
 - A `run.f` file to make testing the generated VIPs easier. For now, this is only compatible with Cadence Design System's Xcelium. This will be created in `generated_files/test_top/`. Do `xrun -f run.f` in the command line in this folder to run the test.
 
-The other thing you will have to edit is the `VIP_parameters` folder. Inside this folder, it is necessary to exist one file for each generated VIP, which will contain the parameters for that VIP generation. The name of the file must be `(VIP name)_parameters.jl`. For example, a VIP named "random" would require the file `VIP_parameters/random_parameters.jl`. There are already some examples in there for you to copy and paste. Let's take a look at what these files must contain. 
+The other thing you will have to edit is the `VIP_parameters` folder. Inside this folder, it is required to exist one file for each generated VIP, which will contain the parameters for that VIP generation. The name of the file must be `(VIP name)_parameters.jl`. For example, a VIP named "random" would require the file `VIP_parameters/random_parameters.jl`. There are already some examples in there for you to copy and paste. Let's take a look at what these files must contain. 
 
 >packet_vec = [  
 >  [true, "bit  ", " [7:0]", "data_to_send"],  
@@ -62,19 +62,19 @@ When this is `true`, the DUT resets on the negative edge of the reset signal.
 
 This takes the last two variables and add it together with the clock name and reset name in a single vector. 
 
->pkg_vec = ["sequence_lib", "sequencer", "packet", "agent", "monitor", "driver"]
+>pkg_classes.(name) = false
 
-This will define which files will be included in the UVC package. Note that this is commented in the example files. That is because it is already defined in [global_vectors.jl](global_vectors.jl), and uncommenting it in the parameters file will only overwrite the global vector for this UVC only. This example vector already has all the possible options, so you can remove but not add names in it.
+These will define which files will be included in the UVC package. Note that this is commented out in the example files. That is because it is already defined in [global_vectors.jl](global_vectors.jl), and uncommenting it in the parameters file will only overwrite the global vector for this UVC only.
 
->vec_classes = ["sequence_lib", "sequencer", "packet", "agent", "monitor", "driver", "pkg", "if"]
+>gen_classes.(name) = false
 
-This will define which files/classes will be generated for the UVC. Like the `pkg_vec`, this is here to overwrite the vector defined in [global_vectors.jl](global_vectors.jl). This example vector already has all the possible options, so you can remove but not add names in it.
+These will define which files/classes will be generated for the UVC. Like the `pkg_classes`, this is here to overwrite the vector defined in [global_vectors.jl](global_vectors.jl).
 
 Now you know about all the preparations. To run the script, open the command prompt in the root directory and run the command `julia run_script.jl`. The `generated_files` folder will be created and all the files will be in it.
 
 ## How to test the generated files
 
-This program can generate a `run.f` file with all the necessary information to run the generated random test with Cadence's Xcelium. To run the test, open the command prompt in the `generated_files/test_top/` folder and run the command `xrun -f run.f`. If you don't have access to Xcelium, you will have to make your own run file. Support for other tools could be added in the future. 
+This program can generate a `run.f` file with all the necessary information to run the generated random test with Cadence's Xcelium. To run the test, open the command prompt in the `generated_files/test_top/` folder and run the command `xrun -f run.f`. If you don't have access to Xcelium, you will have to make your own run file. Support for other tools could be added in the future. Keep in mind that, in order for the test to work properly, all files and classes must be generated.
 
 At the beginning of the simulation, the components hierarchy is printed. Check if it corresponds to what you expected. The random sequence located in the sequence_lib.sv file generates and sends 3 random packets. If you simulate with UVM_HIGH verbosity level, you should see, for each packet, 2 messages with the packet info when driving a packet (one from the driver and one from the interface) and 2 messages with the packet info when collecting a packet (one from the interface and one from the monitor). If you don't want to see reports from the interface, run the simulation with verbosity level of UVM_MEDIUM or delete the uvm_info lines from the interfaces. At the end of the simulation, you should see a report from each UVC's driver and monitor saying that 3 packets were sent and 3 packets were collected.
 
@@ -94,14 +94,13 @@ You will find an examples folder in the root of the repository. Each contains th
 >All gen functions were enabled.  
 >The global vectors were not overriden.  
 >Notice that only some_vip was included in the test and stub. That's because another_vip is not in the stub_if_names vector.  
->Also, the port named "data" in the stub has type NOTYPE because its 
-name does not end with "_i" or "_o".
+>Also, the port named "data" in the stub has type NOTYPE because its name in some_vip_parameters.jl does not end with "_i" or "_o".
 
 - Example 3:
 
 >This example includes the generation of one VIP named "some_vip".  
 >The test and run.f gen functions were not enabled, so these files are not generated.  
->The global vectors were overriden. Note that pkg_vec does not contain "monitor", so the monitor is not included in the package. Also, vec_classes does not contain "driver", so this class is not generated.  
+>The global vectors were overriden. Note that pkg_classes.monitor is set to false, so the monitor is not included in the package. Also, gen_classes.driver is set to false, so this class is not generated. These overwrites can be observed in some_vip_parameters.jl.
 >Notice that rst_is_negedge_sensitive is false, so the dut is assumed to have an active high reset.
 
 ## Final words

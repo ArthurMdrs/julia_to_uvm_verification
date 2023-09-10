@@ -8,8 +8,8 @@ package some_vip_pkg;
 
     `include "some_vip_packet.sv"
     `include "some_vip_sequence_lib.sv"
-    `include "some_vip_sequencer.sv"
     `include "some_vip_monitor.sv"
+    `include "some_vip_sequencer.sv"
     `include "some_vip_driver.sv"
     `include "some_vip_agent.sv"
 

@@ -4,4 +4,4 @@ The global vectors were not overriden.
 Notice that only some_vip was included in the test and stub. That's  
 because another_vip is not in the stub_if_names vector.
 Also, the port named "data" in the stub has type NOTYPE because its 
-name does not end with "_i" or "_o".
+name in some_vip_parameters.jl does not end with "_i" or "_o".

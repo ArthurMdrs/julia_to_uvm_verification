@@ -6,10 +6,10 @@
 
         // Interface Signals - Begin
         logic       ready_o;
-    logic       valid_i;
-    logic [7:0] data_i;
-    logic [7:0] data;
-    // Interface Signals - End
+        logic       valid_i;
+        logic [7:0] data_i;
+        logic [7:0] data;
+        // Interface Signals - End
 
         // Signals for transaction recording
         bit monstart, drvstart;
@@ -48,7 +48,6 @@
 
         // Collect Packets
         task collect_packet(some_vip_packet req);
-//if (!end_sim) begin
             // Logic to start recording transaction
             //#1;
             @(posedge clk iff valid_data);
@@ -66,6 +65,6 @@
             // Reset trigger
             monstart = 1'b0;
         endtask : collect_packet
-//end end_sim = 1;
+
     endinterface : some_vip_if
     

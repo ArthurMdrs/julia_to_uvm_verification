@@ -7,10 +7,10 @@ module stub (input clk, input rst_n,
     // Signals from some_vip's interface - end
 
     // Signals from another_vip's interface - begin
-        output reg       other_ready_o,
-        input            other_valid_i,
-        input      [7:0] other_address_i,
-        output reg [7:0] other_data_o
+        output reg       another_ready_o,
+        input            another_valid_i,
+        input      [7:0] another_data_i,
+        output reg [7:0] another_data_o
     // Signals from another_vip's interface - end
     );
 

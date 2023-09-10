@@ -9,15 +9,31 @@ function_dict = Dict()
 
 open_file(dir) = open(str_aux->read(str_aux, String), dir)
 
-gen_files(vec_classes, vip_name) = begin
-    for class_name in vec_classes
-        # The vector below works like this:
-        # vec_aux["class_name"] = [gen_function, vector]
-        vec_aux = function_dict[uppercase(class_name)]
-        write_file("generated_files/"*vip_name*"/sv/$(vip_name)_$(class_name).sv", 
-                    vec_aux[1](vip_name, vec_aux[2]))
+gen_files(vip_name) = begin
+    for class_symbol in fieldnames(typeof(gen_classes))
+        class_name = String(class_symbol)
+        if class_name == "interface" class_name = "if" end
+        if getfield(gen_classes, class_symbol) == true
+            # The vector below works like this
+            # vec_aux["class_name"] = [gen_function, vector]
+            vec_aux = function_dict[uppercase(class_name)]
+            write_file("generated_files/"*vip_name*"/sv/$(vip_name)_$(class_name).sv", 
+                        vec_aux[1](vip_name, vec_aux[2]))
+        end
     end
 end
+
+# DEPRECATED CODE BEGIN
+# gen_files(vec_classes, vip_name) = begin
+#     for class_name in vec_classes
+#         # The vector below works like this:
+#         # vec_aux["class_name"] = [gen_function, vector]
+#         vec_aux = function_dict[uppercase(class_name)]
+#         write_file("generated_files/"*vip_name*"/sv/$(vip_name)_$(class_name).sv", 
+#                     vec_aux[1](vip_name, vec_aux[2]))
+#     end
+# end
+# DEPRECATED CODE END
 
 vip_files_gen() = (!run_vip_gen) ? "" : begin
     for vip_name in vip_names
@@ -25,7 +41,8 @@ vip_files_gen() = (!run_vip_gen) ? "" : begin
         include("./VIP_parameters/"*vip_name*"_parameters.jl")
 
         function_dict[uppercase("packet")] = [gen_packet_base, packet_vec]
-        function_dict[uppercase("pkg")] = [gen_pkg_base, pkg_vec]
+        # function_dict[uppercase("pkg")] = [gen_pkg_base, pkg_vec]
+        function_dict[uppercase("pkg")] = [gen_pkg_base, []]
         function_dict[uppercase("sequencer")] = [gen_sequencer_base,[]]
         function_dict[uppercase("sequence_lib")] = [gen_sequence_lib_base,[]]
         function_dict[uppercase("if")] = [gen_if_base, if_vec]
@@ -37,7 +54,8 @@ vip_files_gen() = (!run_vip_gen) ? "" : begin
         output_file_setup("generated_files/"*vip_name*"/sv")
         output_file_setup("generated_files/"*vip_name*"/parameter_folder")
 
-        gen_files(vec_classes, vip_name)
+        # gen_files(vec_classes, vip_name)
+        gen_files(vip_name)
         write_file("generated_files/"*vip_name*"/parameter_folder/"*vip_name*"_parameters.jl", 
                     open_file("VIP_parameters/"*vip_name*"_parameters.jl"))
         
