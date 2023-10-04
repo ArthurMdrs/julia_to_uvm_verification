@@ -1,10 +1,3 @@
-# DEPRECATED CODE BEGIN
-# Vector that defines which classes will be included in the package
-# pkg_vec = ["sequence_lib", "sequencer", "packet", "agent", "monitor", "driver"]
-# Vector that defines which classes will be generated as files
-# vec_classes = ["sequence_lib", "sequencer", "packet", "agent", "monitor", "driver", "pkg", "if"]
-# DEPRECATED CODE END
-
 # Struct used to define package and class generation vectors
 mutable struct classes_t
     packet::Bool
@@ -12,12 +5,13 @@ mutable struct classes_t
     monitor::Bool
     sequencer::Bool
     driver::Bool
+    coverage::Bool
     agent::Bool
     pkg::Bool
     interface::Bool
-    classes_t() = new(true,true,true,true,true,true,true,true)
-    classes_t(a,b,c,d,e,f,g,h) = new(a,b,c,d,e,f,g,h)
-    classes_t(a,b,c,d,e,f) = new(a,b,c,d,e,f,false,false)
+    classes_t() = new(true,true,true,true,true,true,true,true,true)
+    classes_t(a,b,c,d,e,f,g,h,i) = new(a,b,c,d,e,f,g,h,i)
+    classes_t(a,b,c,d,e,f,g) = new(a,b,c,d,e,f,g,false,false)
 end
 
 # Vector that defines which classes will be included in the package

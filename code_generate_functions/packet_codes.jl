@@ -37,8 +37,7 @@ gen_packet_base(prefix_name, vec) = """
             string string_aux;
 
             string_aux = {string_aux, "\\n***************************\\n"};
-    $(gen_long_str(vec, "        ", gen_line_convert_to_string))
-            string_aux = {string_aux, "***************************"};
+    $(gen_long_str(vec, "        ", gen_line_convert_to_string))        string_aux = {string_aux, "***************************"};
             return string_aux;
         endfunction: convert2string
 

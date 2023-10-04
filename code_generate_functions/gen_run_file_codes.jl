@@ -15,6 +15,7 @@ gen_vip_include(vip_name, tabs) = """
     $(tabs)-incdir ../$(vip_name)/sv
     $(tabs)../$(vip_name)/sv/$(vip_name)_pkg.sv
     $(tabs)../$(vip_name)/sv/$(vip_name)_if.sv
+
     """
     
 run_file_gen() = (!run_run_file_gen) ? "" : begin
@@ -27,16 +28,17 @@ gen_run_file_base() = """
         -timescale 1ns/1ns
         -access +rwc
         //-gui
+        -coverage all
+        -covoverwrite
         //+SVSEED=random
 
     // UVM options
         -uvmhome \$UVMHOME
-        +UVM_VERBOSITY=UVM_HIGH
+        +UVM_VERBOSITY=UVM_LOW
         +UVM_NO_RELNOTES
         //+UVM_TESTNAME=random_test
 
-    $( gen_long_str(stub_if_names, "    ", gen_vip_include) )
-    // RTL
+    $( gen_long_str(stub_if_names, "    ", gen_vip_include) )// RTL
         ../rtl/stub.sv
 
     // Top level

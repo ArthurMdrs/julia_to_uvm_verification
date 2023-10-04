@@ -33,12 +33,13 @@ include("code_generate_functions/sequence_lib_codes.jl")
 include("code_generate_functions/sequencer_codes.jl")
 include("code_generate_functions/driver_codes.jl")
 include("code_generate_functions/monitor_codes.jl")
+include("code_generate_functions/coverage_codes.jl")
 include("code_generate_functions/agent_codes.jl")
 include("code_generate_functions/package_codes.jl")
 include("code_generate_functions/gen_uvc_codes.jl")
-
-# Codes for generating stub DUT and interface
 include("code_generate_functions/interface_codes.jl")
+
+# Codes for generating stub DUT
 include("code_generate_functions/gen_stub_codes.jl")
 
 # Codes for generating test library example

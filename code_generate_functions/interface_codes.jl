@@ -34,7 +34,7 @@ $(gen_long_str(vec[3], "        ", gen_line_if_signal))        // Interface Sign
         bit monstart, drvstart;
         
         // Signal to control monitor activity
-        bit valid_data;
+        bit got_packet;
         // Test packet
         $(prefix_name)_packet pkt = new("PKT");
 
@@ -48,7 +48,6 @@ $(gen_long_str(vec[3], "        ", gen_line_if_signal))        // Interface Sign
         // Gets a packet and drive it into the DUT
         task send_to_dut($(prefix_name)_packet req);
             // Logic to start recording transaction
-            //#1;
             @(negedge clk);
 
             // trigger for transaction recording
@@ -57,8 +56,7 @@ $(gen_long_str(vec[3], "        ", gen_line_if_signal))        // Interface Sign
             // Drive logic 
             pkt.copy(req);
             `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Driving packet to DUT:%s", pkt.convert2string()), UVM_HIGH)
-            valid_data = 1'b1;
-            //#1;
+            got_packet = 1'b1;
             @(negedge clk);
 
             // Reset trigger
@@ -68,9 +66,8 @@ $(gen_long_str(vec[3], "        ", gen_line_if_signal))        // Interface Sign
         // Collect Packets
         task collect_packet($(prefix_name)_packet req);
             // Logic to start recording transaction
-            //#1;
-            @(posedge clk iff valid_data);
-            valid_data = 1'b0;
+            @(posedge clk iff got_packet);
+            got_packet = 1'b0;
             
             // trigger for transaction recording
             monstart = 1'b1;
@@ -78,7 +75,6 @@ $(gen_long_str(vec[3], "        ", gen_line_if_signal))        // Interface Sign
             // Collect logic 
             req.copy(pkt);
             `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Collected packet:%s", req.convert2string()), UVM_HIGH)
-            //#1;
             @(posedge clk);
 
             // Reset trigger

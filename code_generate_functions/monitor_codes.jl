@@ -20,7 +20,7 @@ gen_monitor_base(prefix_name, vec) = """
         $(prefix_name)_packet pkt;
         int num_pkt_col;
 
-        uvm_analysis_port#($(prefix_name)_packet) item_collected_port;
+        uvm_analysis_port #($(prefix_name)_packet) item_collected_port;
 
         function new(string name, uvm_component parent);
             super.new(name, parent);

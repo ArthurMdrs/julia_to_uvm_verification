@@ -7,11 +7,11 @@
 
 gen_line_import(vip_name, tabs) = """$(tabs)import $(vip_name)_pkg::*;\n"""
 gen_line_interfaces_instances(vip_name, tabs) = 
-    """$(tabs)$(vip_name)_if vif_$(vip_name)(.$(clk_rst_names[1])($(clk_rst_names[1])), .$(clk_rst_names[2][1])($(clk_rst_names[2][1])));\n"""
+    """$(tabs)$(vip_name)_if if_$(vip_name)(.$(clk_rst_names[1])($(clk_rst_names[1])), .$(clk_rst_names[2][1])($(clk_rst_names[2][1])));\n"""
 gen_line_send_if_to_vip(vip_name, tabs) = 
-    """$(tabs)$(vip_name)_vif_config::set(null,"uvm_test_top.agent_$(vip_name).*","vif",vif_$(vip_name));\n"""
+    """$(tabs)$(vip_name)_vif_config::set(null, "uvm_test_top.agent_$(vip_name).*", "vif", if_$(vip_name));\n"""
 gen_line_if_connection(signal_name, vip_name, tabs) = 
-    """$(tabs).$(signal_name[3])(vif_$(vip_name).$(signal_name[3])),\n"""
+    """$(tabs).$(signal_name[3])(if_$(vip_name).$(signal_name[3])),\n"""
 gen_top_if_connection_signals(if_vector, tabs) = begin
     str = ""
     for x in if_vector
@@ -45,13 +45,13 @@ gen_top_base() = """
         bit $(clk_rst_names[1]), $(clk_rst_names[2][1]);
         bit run_clock;
 
-        // Virtual interfaces instances - begin
-    $( gen_long_str(stub_if_names, "        ", gen_line_interfaces_instances) )    // Virtual interfaces instances - end
+        // Interfaces instances - begin
+    $( gen_long_str(stub_if_names, "        ", gen_line_interfaces_instances) )    // Interfaces instances - end
 
 
         stub dut(
             .$(clk_rst_names[1])($(clk_rst_names[1])),
-            .$(clk_rst_names[2][1])($(clk_rst_names[2][1])),$( gen_top_if_connection_signals(if_vector, "        ") )        );
+            .$(clk_rst_names[2][1])($(clk_rst_names[2][1])),$( gen_top_if_connection_signals(if_vector, "        ") )    );
 
         initial begin
             $(clk_rst_names[1]) = 0;

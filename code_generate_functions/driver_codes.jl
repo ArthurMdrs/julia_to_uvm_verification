@@ -12,7 +12,7 @@
 # ***********************************
 
 gen_driver_base(prefix_name, vec) = """
-    class $(prefix_name)_driver extends uvm_driver#($(prefix_name)_packet);
+    class $(prefix_name)_driver extends uvm_driver #($(prefix_name)_packet);
 
         `uvm_component_utils($(prefix_name)_driver)
     

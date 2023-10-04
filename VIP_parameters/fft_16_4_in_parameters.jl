@@ -5,8 +5,8 @@ packet_vec = [
 
 # Vector that specifies the interface's signals
 signals_if_config = [
-  ["logic", "1", "ready_o"],
-  ["logic", "1", "valid_i"],
+  ["logic", "", "ready_o"],
+  ["logic", "", "valid_i"],
   ["logic", "[7:0]", "data_i"],
   ["logic", "[7:0]", "data_o"] ]
 

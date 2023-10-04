@@ -39,6 +39,12 @@ gen_test_base() = """
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
 
+            // Edit to set some agent to passive
+            // uvm_config_db#(int)::set(this, "some_vip", "is_active", UVM_PASSIVE);
+
+            // Edit to disable some agent's coverage
+            // uvm_config_db#(int)::set(this, "some_vip", "cov_control", COV_DISABLE);
+
             // VIPs creation - begin
     $( gen_long_str(stub_if_names, "        ", gen_line_VIP_creation) )        // VIPs creation - end
 
