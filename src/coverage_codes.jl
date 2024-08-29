@@ -1,11 +1,11 @@
 # ***********************************
 # Coverage Codes!!!!!
 # ***********************************
-# Form of the vector to generate the packet:
+# Form of the vector to generate the transaction:
 #  is_rand? | type | length | name
 # 
 # E.g.:
-# packet_vec = [
+# tr_vec = [
 #   [true , "bit", "[7:0]", "addr" ],
 #   [false, "bit", "[7:0]", "data" ],
 #   [false, "bit", "1"    , "value"],
@@ -17,13 +17,16 @@
 gen_line_coverpoint(vec, tabs) = """
 $(tabs)cp_$(vec[4]): coverpoint cov_transaction.$(vec[4]);\n"""
 
-gen_coverage_base(prefix_name, vec) = """
-    class $(prefix_name)_coverage extends uvm_subscriber #($(prefix_name)_packet);
+gen_coverage_base(prefix_name, vec) = begin
+    name = use_short_names ? short_names_dict["coverage"] : "cov"
+    tr_name = use_short_names ? short_names_dict["transaction"] : "transaction"
+    return """
+    class $(prefix_name)_$(name) extends uvm_subscriber #($(prefix_name)_$(tr_name));
 
         real coverage_value;
-        $(prefix_name)_packet cov_transaction;
+        $(prefix_name)_$(tr_name) cov_transaction;
 
-        `uvm_component_utils_begin($(prefix_name)_coverage)
+        `uvm_component_utils_begin($(prefix_name)_$(name))
             `uvm_field_real(coverage_value, UVM_ALL_ON)
         `uvm_component_utils_end
 
@@ -45,7 +48,7 @@ gen_coverage_base(prefix_name, vec) = """
             `uvm_info("$(uppercase(prefix_name)) COVERAGE", \$sformatf("Coverage: %2.2f%%", get_coverage()), UVM_NONE)
         endfunction : report_phase
 
-        function void sample ($(prefix_name)_packet t);
+        function void sample ($(prefix_name)_$(tr_name) t);
             cov_transaction = t;
             $(prefix_name)_covergroup.sample();
         endfunction : sample
@@ -54,11 +57,12 @@ gen_coverage_base(prefix_name, vec) = """
             return $(prefix_name)_covergroup.get_inst_coverage();
         endfunction : get_coverage
 
-        function void write($(prefix_name)_packet t);      
+        function void write($(prefix_name)_$(tr_name) t);      
             sample(t); // sample coverage with this transaction
             coverage_value = get_coverage();
         endfunction : write
 
-    endclass : $(prefix_name)_coverage
+    endclass : $(prefix_name)_$(name)
     """
+    end
 # ****************************************************************

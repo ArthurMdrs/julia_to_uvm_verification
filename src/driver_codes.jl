@@ -11,10 +11,13 @@
 # This vector comes from the file VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
 
-gen_driver_base(prefix_name, vec) = """
-    class $(prefix_name)_driver extends uvm_driver #($(prefix_name)_packet);
+gen_driver_base(prefix_name, vec) = begin
+    name = use_short_names ? short_names_dict["driver"] : "driver"
+    tr_name = use_short_names ? short_names_dict["transaction"] : "transaction"
+    return """
+    class $(prefix_name)_$(name) extends uvm_driver #($(prefix_name)_$(tr_name));
 
-        `uvm_component_utils($(prefix_name)_driver)
+        `uvm_component_utils($(prefix_name)_$(name))
     
         $(prefix_name)_vif vif;
         int num_sent;
@@ -26,10 +29,10 @@ gen_driver_base(prefix_name, vec) = """
 
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
-            if($(prefix_name)_vif_config::get(this, "", "vif", vif))
+            if(uvm_config_db#($(prefix_name)_vif)::get(.cntxt(this), .inst_name(""), .field_name("vif"), .value(vif)))
                 `uvm_info("$(uppercase(prefix_name)) DRIVER", "Virtual interface was successfully set!", UVM_MEDIUM)
             else
-                `uvm_error("$(uppercase(prefix_name)) DRIVER", "No interface was set!")
+                `uvm_fatal("$(uppercase(prefix_name)) DRIVER", "No interface was set!")
         endfunction: build_phase
 
         virtual task run_phase (uvm_phase phase);
@@ -49,19 +52,19 @@ gen_driver_base(prefix_name, vec) = """
             forever begin
                 // Get new item from the sequencer
                 seq_item_port.get_next_item(req);
-                `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Packet to send is:%s", req.convert2string()), UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Sending transaction:%s", req.convert2string()), UVM_MEDIUM)
 
-                // concurrent blocks for packet driving and transaction recording
+                // concurrent blocks for transaction driving and transaction recording
                 fork
-                    // send packet
+                    // send transaction
                     begin
-                        // send packet via interface
+                        // send transaction via interface
                         vif.send_to_dut(req);
                     end
 
-                    // Start transaction recording at start of packet (vif.drvstart triggered from interface.send_to_dut())
+                    // Start transaction recording at start of transaction (vif.drvstart triggered from interface.send_to_dut())
                     begin
-                        @(posedge vif.drvstart) void'(begin_tr(req, "$(uppercase(prefix_name))_DRIVER_Packet"));
+                        @(posedge vif.drvstart) void'(begin_tr(req, "$(uppercase(prefix_name))_DRIVER_TR"));
                     end
                 join
 
@@ -84,9 +87,10 @@ gen_driver_base(prefix_name, vec) = """
         endfunction: start_of_simulation_phase
 
         function void report_phase(uvm_phase phase);
-            `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Report: $(uppercase(prefix_name)) DRIVER sent %0d packets", num_sent), UVM_LOW)
+            `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Report: $(uppercase(prefix_name)) DRIVER sent %0d transactions", num_sent), UVM_LOW)
         endfunction : report_phase
 
-    endclass: $(prefix_name)_driver
+    endclass: $(prefix_name)_$(name)
     """
+    end
 # ****************************************************************

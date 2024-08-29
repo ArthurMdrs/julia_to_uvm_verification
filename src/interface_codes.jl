@@ -20,23 +20,26 @@
 gen_line_if_signal(vec, tabs; end_of_line=";") = 
     "$(tabs)$(vec[1]) $((vec[2]=="1") ? "     " : vec[2]) $(vec[3])$(end_of_line)\n"
 
-gen_if_base(prefix_name, vec) = """
-    interface $(prefix_name)_if (input $(vec[1]), input $(vec[2][1]) );
+gen_if_base(prefix_name, vec) = begin 
+    name = use_short_names ? short_names_dict["interface"] : "interface"
+    tr_name = use_short_names ? short_names_dict["transaction"] : "transaction"
+    return """
+    interface $(prefix_name)_$(name) (input $(vec[1]), input $(vec[2][1]));
 
         import uvm_pkg::*;    
         `include "uvm_macros.svh"
         import $(prefix_name)_pkg::*;
 
         // Interface Signals - Begin
-$(gen_long_str(vec[3], "        ", gen_line_if_signal))        // Interface Signals - End
+    $(gen_long_str(vec[3], "    ", gen_line_if_signal))    // Interface Signals - End
 
         // Signals for transaction recording
         bit monstart, drvstart;
         
         // Signal to control monitor activity
-        bit got_packet;
-        // Test packet
-        $(prefix_name)_packet pkt = new("PKT");
+        bit got_tr;
+        // Test transaction
+        $(prefix_name)_$(tr_name) tr = new("TR");
 
         task $(prefix_name)_reset();
             @($((vec[2][2]) ? "negedge" : "posedge") $(vec[2][1]));
@@ -45,8 +48,8 @@ $(gen_long_str(vec[3], "        ", gen_line_if_signal))        // Interface Sign
             disable send_to_dut;
         endtask
 
-        // Gets a packet and drive it into the DUT
-        task send_to_dut($(prefix_name)_packet req);
+        // Gets a transaction and drive it into the DUT
+        task send_to_dut($(prefix_name)_$(tr_name) req);
             // Logic to start recording transaction
             @(negedge clk);
 
@@ -54,33 +57,34 @@ $(gen_long_str(vec[3], "        ", gen_line_if_signal))        // Interface Sign
             drvstart = 1'b1;
 
             // Drive logic 
-            pkt.copy(req);
-            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Driving packet to DUT:%s", pkt.convert2string()), UVM_HIGH)
-            got_packet = 1'b1;
+            tr.copy(req);
+            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Driving transaction to DUT:%s", tr.convert2string()), UVM_HIGH)
+            got_tr = 1'b1;
             @(negedge clk);
 
             // Reset trigger
             drvstart = 1'b0;
         endtask : send_to_dut
 
-        // Collect Packets
-        task collect_packet($(prefix_name)_packet req);
+        // Collect transactions
+        task collect_tr($(prefix_name)_$(tr_name) req);
             // Logic to start recording transaction
-            @(posedge clk iff got_packet);
-            got_packet = 1'b0;
+            @(posedge clk iff got_tr);
+            got_tr = 1'b0;
             
             // trigger for transaction recording
             monstart = 1'b1;
 
             // Collect logic 
-            req.copy(pkt);
-            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Collected packet:%s", req.convert2string()), UVM_HIGH)
+            req.copy(tr);
+            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Collected transaction:%s", req.convert2string()), UVM_HIGH)
             @(posedge clk);
 
             // Reset trigger
             monstart = 1'b0;
-        endtask : collect_packet
+        endtask : collect_tr
 
-    endinterface : $(prefix_name)_if
+    endinterface : $(prefix_name)_$(name)
     """
+end
 # ****************************************************************

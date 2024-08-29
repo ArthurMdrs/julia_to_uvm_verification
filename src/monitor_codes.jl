@@ -11,29 +11,32 @@
 # This vector comes from the file VIP_parameters/(VIP name)_parameters.jl
 # ***********************************
 
-gen_monitor_base(prefix_name, vec) = """
-    class $(prefix_name)_monitor extends uvm_monitor;
+gen_monitor_base(prefix_name, vec) = begin 
+    name = use_short_names ? short_names_dict["monitor"] : "monitor"
+    tr_name = use_short_names ? short_names_dict["transaction"] : "transaction"
+    return """
+    class $(prefix_name)_$(name) extends uvm_monitor;
 
-        `uvm_component_utils($(prefix_name)_monitor)
+        `uvm_component_utils($(prefix_name)_$(name))
     
         $(prefix_name)_vif vif;
-        $(prefix_name)_packet pkt;
-        int num_pkt_col;
+        $(prefix_name)_$(tr_name) tr;
+        int num_tr_col;
 
-        uvm_analysis_port #($(prefix_name)_packet) item_collected_port;
+        uvm_analysis_port #($(prefix_name)_$(tr_name)) item_collected_port;
 
         function new(string name, uvm_component parent);
             super.new(name, parent);
-            num_pkt_col = 0;
+            num_tr_col = 0;
             item_collected_port = new("item_collected_port", this);
         endfunction: new
 
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
-            if($(prefix_name)_vif_config::get(this, "", "vif", vif))
+            if(uvm_config_db#($(prefix_name)_vif)::get(.cntxt(this), .inst_name(""), .field_name("vif"), .value(vif)))
                 `uvm_info("$(uppercase(prefix_name)) MONITOR", "Virtual interface was successfully set!", UVM_MEDIUM)
             else
-                `uvm_error("$(uppercase(prefix_name)) MONITOR", "No interface was set!")        
+                `uvm_fatal("$(uppercase(prefix_name)) MONITOR", "No interface was set!")        
         endfunction: build_phase
 
         virtual task run_phase (uvm_phase phase);
@@ -44,26 +47,26 @@ gen_monitor_base(prefix_name, vec) = """
             `uvm_info("$(uppercase(prefix_name)) MONITOR", "Reset dropped", UVM_MEDIUM)
 
             forever begin
-                pkt = $(prefix_name)_packet::type_id::create("pkt", this);
+                tr = $(prefix_name)_$(tr_name)::type_id::create("tr", this);
 
-                // concurrent blocks for packet collection and transaction recording
+                // concurrent blocks for transaction collection and transaction recording
                 fork
-                    // collect packet
+                    // collect transaction
                     begin
-                        // collect packet from interface
-                        vif.collect_packet(pkt);
+                        // collect transaction from interface
+                        vif.collect_tr(tr);
                     end
 
-                    // Start transaction recording at start of packet (vif.monstart triggered from interface.collect_packet())
+                    // Start transaction recording at start of transaction (vif.monstart triggered from interface.collect_tr())
                     begin
-                        @(posedge vif.monstart) void'(begin_tr(pkt, "$(uppercase(prefix_name))_monitor_Packet"));
+                        @(posedge vif.monstart) void'(begin_tr(tr, "$(uppercase(prefix_name))_MONITOR_TR"));
                     end
                 join
 
-                end_tr(pkt);
-                `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Packet Collected:\\n%s", pkt.convert2string()), UVM_LOW)
-                item_collected_port.write(pkt);
-                num_pkt_col++;
+                end_tr(tr);
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Transaction Collected:\\n%s", tr.convert2string()), UVM_LOW)
+                item_collected_port.write(tr);
+                num_tr_col++;
             end
         endtask : run_phase
 
@@ -73,9 +76,10 @@ gen_monitor_base(prefix_name, vec) = """
         endfunction: start_of_simulation_phase
 
         function void report_phase(uvm_phase phase);
-            `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Report: $(uppercase(prefix_name)) MONITOR collected %0d packets", num_pkt_col), UVM_LOW)
+            `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Report: $(uppercase(prefix_name)) MONITOR collected %0d transactions", num_tr_col), UVM_LOW)
         endfunction : report_phase
 
-    endclass: $(prefix_name)_monitor
+    endclass: $(prefix_name)_$(name)
     """
+    end
 # ****************************************************************

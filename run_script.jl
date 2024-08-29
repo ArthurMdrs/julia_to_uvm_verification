@@ -1,58 +1,58 @@
-# The functions below will be used in many files, so we
-# will declare them here to avoid repeating code
-gen_long_str(vec, tabs, line_gen_func) = begin
-    str_aux = ""
-    for x in vec
-        str_aux *= line_gen_func(x, tabs)
-    end
-    return str_aux
-end
-output_file_setup(dir; reset_folder=true) = begin
-    if isdir(dir)
-        if (reset_folder)
-            rm(dir, recursive=true, force = true)
-            mkdir(dir)
-        end
+cwd = pwd()
+src_path = cwd * "/src"
+
+include_jl(file) = begin
+    if isfile(file)
+        include(file)
     else
-        mkdir(dir)
+        error("File not found: $file")
     end
 end
-write_file(file_dir, txt_string) = begin
-    open(file_dir, "w") do io
-        write(io, txt_string)
-    end;
+
+
+# Check for arguments
+if length(ARGS) >= 1
+    gen_params_file = ARGS[1]
+else
+    gen_params_file = "$(cwd)/code_generate_parameters.jl"
 end
+println("Using parameters file $(gen_params_file)")
+
+
+# Common functions
+include_jl("$(src_path)/common.jl")
 
 # Global parameters
-include("code_generate_parameters.jl")
-include("./global_vectors.jl")
+include_jl(gen_params_file)
+include_jl("./global_vectors.jl")
 
 # Codes for generating the UVC
-include("code_generate_functions/packet_codes.jl")
-include("code_generate_functions/sequence_lib_codes.jl")
-include("code_generate_functions/sequencer_codes.jl")
-include("code_generate_functions/driver_codes.jl")
-include("code_generate_functions/monitor_codes.jl")
-include("code_generate_functions/coverage_codes.jl")
-include("code_generate_functions/agent_codes.jl")
-include("code_generate_functions/package_codes.jl")
-include("code_generate_functions/gen_uvc_codes.jl")
-include("code_generate_functions/interface_codes.jl")
+include_jl("$(src_path)/transaction_codes.jl")
+include_jl("$(src_path)/sequence_lib_codes.jl")
+include_jl("$(src_path)/sequencer_codes.jl")
+include_jl("$(src_path)/driver_codes.jl")
+include_jl("$(src_path)/monitor_codes.jl")
+include_jl("$(src_path)/coverage_codes.jl")
+include_jl("$(src_path)/agent_codes.jl")
+include_jl("$(src_path)/package_codes.jl")
+include_jl("$(src_path)/gen_uvc_codes.jl")
+include_jl("$(src_path)/interface_codes.jl")
 
 # Codes for generating stub DUT
-include("code_generate_functions/gen_stub_codes.jl")
+include_jl("$(src_path)/gen_stub_codes.jl")
 
 # Codes for generating test library example
-include("code_generate_functions/gen_tests_codes.jl")
+include_jl("$(src_path)/gen_tests_codes.jl")
 
 # Codes for generating top level module
-include("code_generate_functions/gen_top_codes.jl")
+include_jl("$(src_path)/gen_top_codes.jl")
 
 # Codes for generating run.f file
-include("code_generate_functions/gen_run_file_codes.jl")
+include_jl("$(src_path)/gen_run_file_codes.jl")
+
 
 # Set up the output folder
-output_file_setup("generated_files"; reset_folder=reset_generated_files_folder)
+output_file_setup("$(cwd)/generated_files"; reset_folder=reset_generated_files_folder)
 
 # Run generation functions
 vip_files_gen();

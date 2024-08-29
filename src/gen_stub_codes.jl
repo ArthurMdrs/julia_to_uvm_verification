@@ -67,7 +67,8 @@ stub_gen() = (!run_stub_gen) ? "" : begin
                 gen_stub_parameters_str_file(if_vector, stub_if_names, clk_name, rst_name))
 end
 
-gen_stub_base(clk_rst_names, vec) = """
+gen_stub_base(clk_rst_names, vec) = begin 
+    return """
     module stub (input $(clk_rst_names[1]), input $(clk_rst_names[2][1]), $(gen_stub_if_signals(vec, gen_line_stub_if_signals, "    "))    );
 
         always @(posedge $(clk_rst_names[1]) or $( (clk_rst_names[2][2]) ? "negedge" : "posedge" ) $(clk_rst_names[2][1])) begin
@@ -85,4 +86,5 @@ gen_stub_base(clk_rst_names, vec) = """
 
     endmodule: stub
     """
+    end
 # ****************************************************************

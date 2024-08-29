@@ -5,11 +5,20 @@
 # It is required to have generated the STUB to create the stub_parameters.jl!!!!
 # ***********************************
 
-gen_line_import(vip_name, tabs) = """$(tabs)import $(vip_name)_pkg::*;\n"""
-gen_line_interfaces_instances(vip_name, tabs) = 
-    """$(tabs)$(vip_name)_if if_$(vip_name)(.$(clk_rst_names[1])($(clk_rst_names[1])), .$(clk_rst_names[2][1])($(clk_rst_names[2][1])));\n"""
+gen_line_import(vip_name, tabs) = begin
+    return """
+    $(tabs)import $(vip_name)_tdefs_pkg::*;
+    $(tabs)import $(vip_name)_pkg::*;
+    """
+end
+gen_line_interfaces_instances(vip_name, tabs) = begin
+    cwd = pwd()
+    include_jl("$(cwd)/VIP_parameters/$(vip_name)_parameters.jl")
+    if_name = use_short_names ? short_names_dict["interface"] : "interface"
+    return """$(tabs)$(vip_name)_$(if_name) if_$(vip_name)(.$(clk_rst_names[1])($(clk_rst_names[1])), .$(clk_rst_names[2][1])($(clk_rst_names[2][1])));\n"""
+end
 gen_line_send_if_to_vip(vip_name, tabs) = 
-    """$(tabs)$(vip_name)_vif_config::set(null, "uvm_test_top.agent_$(vip_name).*", "vif", if_$(vip_name));\n"""
+    """$(tabs)uvm_config_db#($(vip_name)_vif)::set(.cntxt(null), .inst_name("uvm_test_top.agent_$(vip_name).*"), .field_name("vif"), .value(if_$(vip_name)));\n"""
 gen_line_if_connection(signal_name, vip_name, tabs) = 
     """$(tabs).$(signal_name[3])(if_$(vip_name).$(signal_name[3])),\n"""
 gen_top_if_connection_signals(if_vector, tabs) = begin
@@ -31,7 +40,8 @@ top_gen() = (!run_top_gen) ? "" : begin
     write_file("generated_files/test_top/top.sv", gen_top_base())
 end
 
-gen_top_base() = """
+gen_top_base() = begin 
+    return """
     module top;
 
         import uvm_pkg::*;
@@ -73,4 +83,5 @@ gen_top_base() = """
 
     endmodule: top
     """
+    end
 # ****************************************************************

@@ -4,8 +4,10 @@
 # No vector is necessary!!!
 # ***********************************
 
-gen_sequence_lib_base(prefix_name, vec) = """
-    class $(prefix_name)_base_sequence extends uvm_sequence#($(prefix_name)_packet);
+gen_sequence_lib_base(prefix_name, vec) = begin 
+    tr_name = use_short_names ? short_names_dict["transaction"] : "transaction"
+    return """
+    class $(prefix_name)_base_sequence extends uvm_sequence#($(prefix_name)_$(tr_name));
 
         `uvm_object_utils($(prefix_name)_base_sequence)
 
@@ -51,4 +53,5 @@ gen_sequence_lib_base(prefix_name, vec) = """
 
     //==============================================================//
     """
+    end
 # ****************************************************************

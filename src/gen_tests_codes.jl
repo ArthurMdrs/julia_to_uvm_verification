@@ -22,7 +22,8 @@ test_gen() = (!run_test_gen) ? "" : begin
     write_file("generated_files/test_top/tests.sv", gen_test_base())
 end
 
-gen_test_base() = """
+gen_test_base() = begin 
+    return """
     class base_test extends uvm_test;
 
         `uvm_component_utils(base_test)
@@ -40,16 +41,18 @@ gen_test_base() = """
             super.build_phase(phase);
 
             // Edit to set some agent to passive
-            // uvm_config_db#(int)::set(this, "some_vip", "is_active", UVM_PASSIVE);
+            // uvm_config_db#(int)::set(this, "agent_$(stub_if_names[1])", "is_active", UVM_PASSIVE);
+            // uvm_config_db#(int)::set(.cntxt(this), .inst_name("agent_$(stub_if_names[1])"), .field_name("is_active"), .value(UVM_PASSIVE));
 
             // Edit to disable some agent's coverage
-            // uvm_config_db#(int)::set(this, "some_vip", "cov_control", COV_DISABLE);
+            // uvm_config_db#(int)::set(this, "agent_$(stub_if_names[1])", "cov_control", $(uppercase(stub_if_names[1]))_COV_DISABLE);
+            // uvm_config_db#(int)::set(.cntxt(this), .inst_name("agent_$(stub_if_names[1])"), .field_name("cov_control"), .value($(uppercase(stub_if_names[1]))_COV_DISABLE));
 
             // VIPs creation - begin
     $( gen_long_str(stub_if_names, "        ", gen_line_VIP_creation) )        // VIPs creation - end
 
             `uvm_info("BASE TEST", "Build phase running", UVM_HIGH)
-            uvm_config_db#(int)::set(this, "*", "recording_detail", 1);
+            uvm_config_db#(int)::set(.cntxt(this), .inst_name("*"), .field_name("recording_detail"), .value(1));
         endfunction
 
         function void end_of_elaboration_phase (uvm_phase phase);
@@ -81,8 +84,10 @@ gen_test_base() = """
         endfunction: new
 
         function void build_phase(uvm_phase phase);
-            // Override packet types, eg:
-            //      first_type_name::type_id::set_type_override(second_type_name::get_type());
+            // Override transaction types, eg:
+            //      original_type_name::type_id::set_type_override(override_type_name::get_type());
+            //      set_type_override_by_type (original_type::get_type(), override_type::get_type());
+            //      set_inst_override_by_type (original_type::get_type(), override_type::get_type(), "full_inst_path");
             super.build_phase(phase);
 
             // Random sequences config - begin
@@ -94,4 +99,5 @@ gen_test_base() = """
 
     //==============================================================//
     """
+    end
 # ****************************************************************

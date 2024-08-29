@@ -1,5 +1,5 @@
 # Vector that specifies the packet's attributes
-packet_vec = [
+tr_vec = [
   [true, "bit  ", " [7:0]", "data_to_send"],
   [true, "logic", "[15:0]", "random_data"]]
 
@@ -15,6 +15,10 @@ rst_is_negedge_sensitive = true
 
 # Vector that defines clock and reset names
 if_vec = ["clk", ["rst_n", rst_is_negedge_sensitive], signals_if_config]
+
+# Variable that defines if short names are used
+# Ex: monitor becomes mon, driver becomes drv
+use_short_names = true
 
 # UNCOMMENT ONLY IF NECESSARY!!!
 # This will overwrite the vectors defined in global_vectors.jl
