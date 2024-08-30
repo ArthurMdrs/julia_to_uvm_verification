@@ -2,15 +2,15 @@
 # will be cleared before a new generation
 reset_generated_files_folder = true
 
-# Vector that defines the VIPs (or UVCs) names
-vip_names = ["fft_16_4_in", "fft_16_4_out"]
+# Vector that defines the UVCs names
+uvc_names = ["fft_16_4_in", "fft_16_4_out"]
 
-# Vector that defines which VIPs will be included in the
+# Vector that defines which UVCs will be included in the
 # stub DUT, top level, test library and run.f file
-stub_if_names = vip_names
+stub_if_names = uvc_names
 
 # Flags that define which files will be generated
-run_vip_gen = true
+run_uvc_gen = true
 run_stub_gen = true
 run_test_gen = true
 run_top_gen = true

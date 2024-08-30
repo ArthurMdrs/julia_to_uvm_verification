@@ -11,7 +11,7 @@
 #   [false, "bit", "1"    , "value"],
 #   [true , "bit", "1"    , "bit_" ]]
 #
-# This vector comes from the file VIP_parameters/(VIP name)_parameters.jl
+# This vector comes from the file UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
 gen_line_convert_to_string(vec, tabs) = 
     "$(tabs)string_aux = {string_aux, \$sformatf(\"** $(vec[4]) value: %2h\\n\", $(vec[4]))};\n"

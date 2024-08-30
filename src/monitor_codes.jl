@@ -8,16 +8,21 @@
 # vec = ["clock_name", ["reset_name", true]]
 # 
 # A part of the interface's vector is used: "if_vec[1:2]"
-# This vector comes from the file VIP_parameters/(VIP name)_parameters.jl
+# This vector comes from the file UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
 
 gen_monitor_base(prefix_name, vec) = begin 
     name = use_short_names ? short_names_dict["monitor"] : "monitor"
-    tr_name = use_short_names ? short_names_dict["transaction"] : "transaction"
+    cfg_name = use_short_names ? short_names_dict["config"     ] : "config"
+    tr_name  = use_short_names ? short_names_dict["transaction"] : "transaction"
     return """
     class $(prefix_name)_$(name) extends uvm_monitor;
 
-        `uvm_component_utils($(prefix_name)_$(name))
+        $(prefix_name)_$(cfg_name) cfg;
+
+        `uvm_component_utils_begin($(prefix_name)_$(name))
+            `uvm_field_object(cfg, UVM_ALL_ON)
+        `uvm_component_utils_end
     
         $(prefix_name)_vif vif;
         $(prefix_name)_$(tr_name) tr;
@@ -33,10 +38,16 @@ gen_monitor_base(prefix_name, vec) = begin
 
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
+            
             if(uvm_config_db#($(prefix_name)_vif)::get(.cntxt(this), .inst_name(""), .field_name("vif"), .value(vif)))
                 `uvm_info("$(uppercase(prefix_name)) MONITOR", "Virtual interface was successfully set!", UVM_MEDIUM)
             else
-                `uvm_fatal("$(uppercase(prefix_name)) MONITOR", "No interface was set!")        
+                `uvm_fatal("$(uppercase(prefix_name)) MONITOR", "No interface was set!")
+                
+            if(uvm_config_db#($(prefix_name)_$(cfg_name))::get(.cntxt(this), .inst_name(""), .field_name("cfg"), .value(cfg)))
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Configuration object was successfully set!", UVM_MEDIUM)
+            else
+                `uvm_fatal("$(uppercase(prefix_name)) MONITOR", "No configuration object was set!")
         endfunction: build_phase
 
         virtual task run_phase (uvm_phase phase);

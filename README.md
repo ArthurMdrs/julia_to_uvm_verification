@@ -18,15 +18,15 @@ In the root of the repository, there is a file named [code_generate_parameters.j
 
 A `true` value in `reset_generated_files_folder` means the `generated_files` folder will be deleted before proceeding with the new generation. `false` will leave it intact, which might be useful if you made a mistake and only want to generate some specific files in the next iteration.
 
->vip_names = ["some_vip", "another_vip"]
+>uvc_names = ["some_uvc", "another_uvc"]
 
 This vector represents the names of the UVCs you want to generate. You can add as many as you want.
 
->stub_if_names = ["some_vip", "another_vip"]
+>stub_if_names = ["some_uvc", "another_uvc"]
 
-This vector represents the names of the UVCs that will be included in the tests file, stub DUT, top level and run.f file. You can copy from `vip_names`, but you don't have to. Just keep in mind that names that UVCs that weren't generated and therefore don't have a corresponding folder in the `generated_files/` will be ignored.
+This vector represents the names of the UVCs that will be included in the tests file, stub DUT, top level and run.f file. You can copy from `uvc_names`, but you don't have to. Just keep in mind that names that UVCs that weren't generated and therefore don't have a corresponding folder in the `generated_files/` will be ignored.
 
->run_vip_gen = true  
+>run_uvc_gen = true  
 >run_stub_gen = true  
 >run_test_gen = true  
 >run_top_gen = true  
@@ -40,7 +40,7 @@ These are flags that will tell the script what to generate. You can generate:
 - The top level module, which instantiates the interfaces and the DUT. It also has an initial block that performs a reset. To generate the top file, you need to also generate the stub DUT. The top level will be created in `generated_files/test_top/`.
 - A `run.f` file to make testing the generated UVCs easier. It has all the arguments necessary for the command line to execute the test. For now, this is only compatible with Cadence Design System's Xcelium. This will be created in `generated_files/test_top/`. Open a terminal in this folder and do `xrun -f run.f` in the command line to run the test.
 
-The other thing you will have to edit is the `VIP_parameters` folder. Inside this folder, you have to make one file for each UVC that you want to generate, which will contain the parameters for that UVC generation. The name of the file must be `(UVC name)_parameters.jl`. For example, a UVC named "random" would require the file `UVC_parameters/random_parameters.jl`. There are already some examples in there for you to copy and paste. Let's take a look at what these files must contain. 
+The other thing you will have to edit is the `UVC_parameters` folder. Inside this folder, you have to make one file for each UVC that you want to generate, which will contain the parameters for that UVC generation. The name of the file must be `(UVC name)_parameters.jl`. For example, a UVC named "random" would require the file `UVC_parameters/random_parameters.jl`. There are already some examples in there for you to copy and paste. Let's take a look at what these files must contain. 
 
 >packet_vec = [  
 >  [true, "bit  ", " [7:0]", "data_to_send"],  
@@ -86,23 +86,23 @@ You will find an examples folder in the root of the repository. Each contains th
 
 - Example 1:
 
->This example includes the generation of two UVCs named "some_vip" and "another_vip".  
+>This example includes the generation of two UVCs named "some_uvc" and "another_uvc".  
 >All gen functions were enabled.  
 >The global vectors were not overriden. 
 
 - Example 2:
 
->This example includes the generation of two UVCs named "some_vip" and "another_vip".  
+>This example includes the generation of two UVCs named "some_uvc" and "another_uvc".  
 >All gen functions were enabled.  
 >The global vectors were not overriden.  
->Notice that only some_vip was included in the test and stub. That's because another_vip is not in the stub_if_names vector.  
->Also, the port named "data" in the stub has type NOTYPE because its name in some_vip_parameters.jl does not end with "_i" or "_o".
+>Notice that only some_uvc was included in the test and stub. That's because another_uvc is not in the stub_if_names vector.  
+>Also, the port named "data" in the stub has type NOTYPE because its name in some_uvc_parameters.jl does not end with "_i" or "_o".
 
 - Example 3:
 
->This example includes the generation of one UVC named "some_vip".  
+>This example includes the generation of one UVC named "some_uvc".  
 >The test and run.f gen functions were not enabled, so these files are not generated.  
->The global vectors were overriden. Note that pkg_classes.monitor is set to false, so the monitor is not included in the package. Also, gen_classes.driver is set to false, so this class is not generated. These overwrites can be observed in some_vip_parameters.jl.
+>The global vectors were overriden. Note that pkg_classes.monitor is set to false, so the monitor is not included in the package. Also, gen_classes.driver is set to false, so this class is not generated. These overwrites can be observed in some_uvc_parameters.jl.
 >Notice that rst_is_negedge_sensitive is false, so the dut is assumed to have an active high reset.
 
 ## Final words

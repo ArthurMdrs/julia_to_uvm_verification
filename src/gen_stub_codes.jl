@@ -2,15 +2,15 @@
 # Stub Codes!!!!!
 # ***********************************
 # Form of the vector to generate the stub:
-#  vip1_name | vip2_name | ...
+#  uvc1_name | uvc2_name | ...
 # 
 # E.g.:
-# stub_if_names = ["vip_test"]
+# stub_if_names = ["uvc_test"]
 # 
 # This vector comes from the file code_generate_parameters.jl
 #
-# It is also used the file /generated_files/(VIP name)/parameter_folder/(VIP name)_parameters.jl
-# Which is generated in the VIP generation
+# It is also used the file /generated_files/(UVC name)/parameter_folder/(UVC name)_parameters.jl
+# Which is generated in the UVC generation
 # ***********************************
 
 # OBS.: The function gen_line_if_signal() comes from interface_codes.jl
@@ -48,7 +48,7 @@ get_interface_signals() = begin
             include(pwd()*"/generated_files/"*x*"/parameter_folder/"*x*"_parameters.jl")
             push!(if_gather,[x,update_signals_if_config(signals_if_config)])
         catch
-            println("It was not possible to open the VIP '$(x)' for stub/test generation.")
+            println("It was not possible to open the UVC '$(x)' for stub/test generation.")
             push!(item_to_delete, x) 
         end
     end

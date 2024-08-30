@@ -5,22 +5,22 @@
 # It is required to have generated the STUB to create the stub_parameters.jl!!!!
 # ***********************************
 
-gen_line_import(vip_name, tabs) = begin
+gen_line_import(uvc_name, tabs) = begin
     return """
-    $(tabs)import $(vip_name)_tdefs_pkg::*;
-    $(tabs)import $(vip_name)_pkg::*;
+    $(tabs)import $(uvc_name)_tdefs_pkg::*;
+    $(tabs)import $(uvc_name)_pkg::*;
     """
 end
-gen_line_interfaces_instances(vip_name, tabs) = begin
+gen_line_interfaces_instances(uvc_name, tabs) = begin
     cwd = pwd()
-    include_jl("$(cwd)/VIP_parameters/$(vip_name)_parameters.jl")
+    include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
     if_name = use_short_names ? short_names_dict["interface"] : "interface"
-    return """$(tabs)$(vip_name)_$(if_name) if_$(vip_name)(.$(clk_rst_names[1])($(clk_rst_names[1])), .$(clk_rst_names[2][1])($(clk_rst_names[2][1])));\n"""
+    return """$(tabs)$(uvc_name)_$(if_name) if_$(uvc_name)(.$(clk_rst_names[1])($(clk_rst_names[1])), .$(clk_rst_names[2][1])($(clk_rst_names[2][1])));\n"""
 end
-gen_line_send_if_to_vip(vip_name, tabs) = 
-    """$(tabs)uvm_config_db#($(vip_name)_vif)::set(.cntxt(null), .inst_name("uvm_test_top.agent_$(vip_name).*"), .field_name("vif"), .value(if_$(vip_name)));\n"""
-gen_line_if_connection(signal_name, vip_name, tabs) = 
-    """$(tabs).$(signal_name[3])(if_$(vip_name).$(signal_name[3])),\n"""
+gen_line_send_if_to_uvc(uvc_name, tabs) = 
+    """$(tabs)uvm_config_db#($(uvc_name)_vif)::set(.cntxt(null), .inst_name("uvm_test_top.agent_$(uvc_name).*"), .field_name("vif"), .value(if_$(uvc_name)));\n"""
+gen_line_if_connection(signal_name, uvc_name, tabs) = 
+    """$(tabs).$(signal_name[3])(if_$(uvc_name).$(signal_name[3])),\n"""
 gen_top_if_connection_signals(if_vector, tabs) = begin
     str = ""
     for x in if_vector
@@ -47,8 +47,8 @@ gen_top_base() = begin
         import uvm_pkg::*;
         `include "uvm_macros.svh"
 
-        // VIP imports - begin
-    $( gen_long_str(stub_if_names, "        ", gen_line_import) )    // VIP imports - end
+        // UVC imports - begin
+    $( gen_long_str(stub_if_names, "        ", gen_line_import) )    // UVC imports - end
 
         `include "tests.sv"
 
@@ -75,8 +75,8 @@ gen_top_base() = begin
             \$dumpfile("dump.vcd");
             \$dumpvars;
 
-            // Virtual interfaces send to VIPs - begin
-    $( gen_long_str(stub_if_names, "            ", gen_line_send_if_to_vip) )        // Virtual interfaces send to VIPs - end
+            // Virtual interfaces send to UVCs - begin
+    $( gen_long_str(stub_if_names, "            ", gen_line_send_if_to_uvc) )        // Virtual interfaces send to UVCs - end
 
             run_test("random_test");
         end

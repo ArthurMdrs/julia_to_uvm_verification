@@ -6,6 +6,7 @@
 
 gen_agent_base(prefix_name, vec) = begin 
     name = use_short_names ? short_names_dict["agent"] : "agent"
+    cfg_name = use_short_names ? short_names_dict["config"     ] : "config"
     mon_name = use_short_names ? short_names_dict["monitor"    ] : "monitor"
     drv_name = use_short_names ? short_names_dict["driver"     ] : "driver"
     sqr_name = use_short_names ? short_names_dict["sequencer"  ] : "sequencer"
@@ -14,14 +15,18 @@ gen_agent_base(prefix_name, vec) = begin
     return """
     class $(prefix_name)_$(name) extends uvm_agent;
 
+        $(prefix_name)_$(cfg_name) cfg;
+        
         uvm_active_passive_enum is_active;
         $(prefix_name)_cov_enable_enum cov_control;
 
         `uvm_component_utils_begin($(prefix_name)_$(name))
+            `uvm_field_object(cfg, UVM_ALL_ON)
             `uvm_field_enum(uvm_active_passive_enum, is_active, UVM_ALL_ON)
             `uvm_field_enum($(prefix_name)_cov_enable_enum, cov_control, UVM_ALL_ON)
         `uvm_component_utils_end
 
+        // $(prefix_name)_vif     vif;
         $(prefix_name)_$(mon_name)     monitor;
         $(prefix_name)_$(drv_name)      driver;
         $(prefix_name)_$(sqr_name)   sequencer;
@@ -38,7 +43,14 @@ gen_agent_base(prefix_name, vec) = begin
 
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
-
+            
+            if(uvm_config_db#($(prefix_name)_$(cfg_name))::get(.cntxt(this), .inst_name(""), .field_name("cfg"), .value(cfg)))
+                `uvm_info("$(uppercase(prefix_name)) AGENT", "Configuration object was successfully set!", UVM_MEDIUM)
+            else
+                `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No configuration object was set!")
+            
+            uvm_config_db#($(prefix_name)_$(cfg_name))::set(.cntxt(this), .inst_name("*"), .field_name("cfg"), .value(cfg));
+            
             monitor       = $(prefix_name)_$(mon_name)::type_id::create("monitor", this);
             if (is_active == UVM_ACTIVE) begin
                 sequencer = $(prefix_name)_$(sqr_name)::type_id::create("sequencer", this);

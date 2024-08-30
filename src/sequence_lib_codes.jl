@@ -5,15 +5,24 @@
 # ***********************************
 
 gen_sequence_lib_base(prefix_name, vec) = begin 
-    tr_name = use_short_names ? short_names_dict["transaction"] : "transaction"
+    cfg_name = use_short_names ? short_names_dict["config"     ] : "config"
+    sqr_name = use_short_names ? short_names_dict["sequencer"  ] : "sequencer"
+    tr_name  = use_short_names ? short_names_dict["transaction"] : "transaction"
     return """
     class $(prefix_name)_base_sequence extends uvm_sequence#($(prefix_name)_$(tr_name));
 
+        $(prefix_name)_$(cfg_name) cfg;
+
         `uvm_object_utils($(prefix_name)_base_sequence)
+        `uvm_declare_p_sequencer($(prefix_name)_$(sqr_name))
 
         function new(string name="$(prefix_name)_base_sequence");
             super.new(name);
         endfunction: new
+
+        task pre_start();
+            cfg = p_sequencer.cfg;
+        endtask: pre_start
 
         task pre_body();
             uvm_phase phase = get_starting_phase();

@@ -15,7 +15,7 @@
 #     ["bit"  , "1"     , "bit_" ],
 #     ["logic", "[12:0]", "oioi3"]]
 #
-# These vectors come from the file VIP_parameters/(VIP name)_parameters.jl
+# These vectors come from the file UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
 gen_line_if_signal(vec, tabs; end_of_line=";") = 
     "$(tabs)$(vec[1]) $((vec[2]=="1") ? "     " : vec[2]) $(vec[3])$(end_of_line)\n"

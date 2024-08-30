@@ -11,7 +11,7 @@
 #   [false, "bit", "1"    , "value"],
 #   [true , "bit", "1"    , "bit_" ]]
 #
-# This vector comes from the file VIP_parameters/(VIP name)_parameters.jl
+# This vector comes from the file UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
 
 gen_line_coverpoint(vec, tabs) = """
@@ -19,14 +19,18 @@ $(tabs)cp_$(vec[4]): coverpoint cov_transaction.$(vec[4]);\n"""
 
 gen_coverage_base(prefix_name, vec) = begin
     name = use_short_names ? short_names_dict["coverage"] : "cov"
-    tr_name = use_short_names ? short_names_dict["transaction"] : "transaction"
+    cfg_name = use_short_names ? short_names_dict["config"     ] : "config"
+    tr_name  = use_short_names ? short_names_dict["transaction"] : "transaction"
     return """
     class $(prefix_name)_$(name) extends uvm_subscriber #($(prefix_name)_$(tr_name));
+
+        $(prefix_name)_$(cfg_name) cfg;
 
         real coverage_value;
         $(prefix_name)_$(tr_name) cov_transaction;
 
         `uvm_component_utils_begin($(prefix_name)_$(name))
+            `uvm_field_object(cfg, UVM_ALL_ON)
             `uvm_field_real(coverage_value, UVM_ALL_ON)
         `uvm_component_utils_end
 
@@ -42,6 +46,14 @@ gen_coverage_base(prefix_name, vec) = begin
             super.new(name, parent);
             $(prefix_name)_covergroup = new();
         endfunction: new
+
+        function void build_phase (uvm_phase phase);
+            super.build_phase(phase);
+            if(uvm_config_db#($(prefix_name)_$(cfg_name))::get(.cntxt(this), .inst_name(""), .field_name("cfg"), .value(cfg)))
+                `uvm_info("$(uppercase(prefix_name)) COVERAGE", "Configuration object was successfully set!", UVM_MEDIUM)
+            else
+                `uvm_fatal("$(uppercase(prefix_name)) COVERAGE", "No configuration object was set!")
+        endfunction: build_phase
 
         function void report_phase (uvm_phase phase);
             super.report_phase(phase);

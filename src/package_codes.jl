@@ -2,16 +2,17 @@
 # Package Codes!!!!!
 # ***********************************
 # This uses a struct found in global_vectors.jl that may
-# be overwritten in VIP_parameters/(VIP name)_parameters.jl
+# be overwritten in UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
 gen_line_include(file_name, tabs) = "$(tabs)`include \"$(file_name).sv\"\n"
 
 vector_to_pattern(prefix_name) = begin
     vec_out = []
-    pkg_includes=["transaction", "sequencer", "sequence_lib", "monitor", "driver", "coverage", "agent"]
+    # pkg_includes=["transaction", "sequencer", "sequence_lib", "monitor", "driver", "coverage", "agent"]
     for class_symbol in fieldnames(typeof(pkg_classes))
         class_name = String(class_symbol)
-        if getfield(pkg_classes, class_symbol) == true && class_name in pkg_includes
+        # if getfield(pkg_classes, class_symbol) == true && class_name in pkg_includes
+        if getfield(pkg_classes, class_symbol) == true
             if use_short_names == true
                 class_name = short_names_dict[class_name]
             end
