@@ -38,16 +38,16 @@ gen_monitor_base(prefix_name, vec) = begin
 
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
-            
-            if(uvm_config_db#($(prefix_name)_vif)::get(.cntxt(this), .inst_name(""), .field_name("vif"), .value(vif)))
-                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Virtual interface was successfully set!", UVM_MEDIUM)
-            else
-                `uvm_fatal("$(uppercase(prefix_name)) MONITOR", "No interface was set!")
                 
             if(uvm_config_db#($(prefix_name)_$(cfg_name))::get(.cntxt(this), .inst_name(""), .field_name("cfg"), .value(cfg)))
                 `uvm_info("$(uppercase(prefix_name)) MONITOR", "Configuration object was successfully set!", UVM_MEDIUM)
             else
                 `uvm_fatal("$(uppercase(prefix_name)) MONITOR", "No configuration object was set!")
+            
+            if(uvm_config_db#($(prefix_name)_vif)::get(.cntxt(this), .inst_name(""), .field_name("vif"), .value(vif)))
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Virtual interface was successfully set!", UVM_MEDIUM)
+            else
+                `uvm_fatal("$(uppercase(prefix_name)) MONITOR", "No interface was set!")
         endfunction: build_phase
 
         virtual task run_phase (uvm_phase phase);
@@ -92,5 +92,5 @@ gen_monitor_base(prefix_name, vec) = begin
 
     endclass: $(prefix_name)_$(name)
     """
-    end
+end
 # ****************************************************************

@@ -86,5 +86,5 @@ gen_stub_base(clk_rst_names, vec) = begin
 
     endmodule: stub
     """
-    end
+end
 # ****************************************************************

@@ -34,7 +34,7 @@ gen_tdefs_pkg_base(prefix_name, vec_in) = begin
             
         endpackage: $(prefix_name)_tdefs_pkg
         """
-    end
+end
 
 gen_pkg_base(prefix_name, vec_in) = begin
     vec = vector_to_pattern(prefix_name)
@@ -52,5 +52,5 @@ gen_pkg_base(prefix_name, vec_in) = begin
         $(gen_long_str(vec, "    ", gen_line_include))
         endpackage: $(prefix_name)_pkg
         """
-    end
+end
 # ****************************************************************

@@ -49,5 +49,36 @@ gen_tr_base(prefix_name, vec) = begin
 
     endclass: $(prefix_name)_$(name)
     """
-    end
+end
+
+gen_clknrst_tr(prefix_name, vec) = begin 
+    name = use_short_names ? short_names_dict["transaction"] : "transaction"
+    return """
+    class $(prefix_name)_$(name) extends uvm_sequence_item;
+
+    $(gen_long_str(vec, "    ", gen_line_instanciate_obj))
+        `uvm_object_utils_begin($(prefix_name)_$(name))
+    $(gen_long_str(vec, "        ", gen_line_object_utils))    `uvm_object_utils_end
+
+        function new(string name="$(prefix_name)_$(name)");
+            super.new(name);
+        endfunction: new
+
+        // Type your constraints!
+        constraint some_constraint {}
+
+        function string convert2string();
+            string string_aux;
+
+            string_aux = {string_aux, "\\n***********************************\\n"};
+    $(gen_long_str(vec, "        ", gen_line_convert_to_string))        string_aux = {string_aux, "***********************************"};
+            return string_aux;
+        endfunction: convert2string
+
+        // function void post_randomize();
+        // endfunction: post_randomize
+
+    endclass: $(prefix_name)_$(name)
+    """
+end
 # ****************************************************************

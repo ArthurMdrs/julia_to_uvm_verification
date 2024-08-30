@@ -14,10 +14,10 @@ gen_line_uvc_instance(uvc_name, tabs) =
     """$(tabs)$(uvc_name)_agent agent_$(uvc_name);\n"""
 gen_line_uvc_creation(uvc_name, tabs) = 
     """$(tabs)agent_$(uvc_name) = $(uvc_name)_agent::type_id::create("agent_$(uvc_name)", this);\n"""
-    
+
 gen_line_sequences_config(uvc_name, tabs) = 
     """$(tabs)uvm_config_wrapper::set(this, "agent_$(uvc_name).sequencer.run_phase", "default_sequence", $(uvc_name)_random_seq::get_type());\n"""
-    
+
 gen_line_cfg_instance(uvc_name, tabs) = begin
     cwd = pwd()
     include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
@@ -40,6 +40,19 @@ gen_line_cfg_creation(uvc_name, tabs) = begin
     """
 end
 
+gen_line_vif_instance(uvc_name, tabs) = begin
+    return """$(tabs)$(uvc_name)_vif vif_$(uvc_name);\n"""
+end
+gen_vif_config_db_lines(uvc_name, tabs) = begin
+    return """
+        $(tabs)if(uvm_config_db#($(uvc_name)_vif)::get(.cntxt(this), .inst_name(""), .field_name("vif_$(uvc_name)"), .value(vif_$(uvc_name))))
+        $(tabs)    `uvm_info("BASE TEST", "Virtual interface was successfully set!", UVM_MEDIUM)
+        $(tabs)else
+        $(tabs)    `uvm_fatal("BASE TEST", "No interface was set!")
+        $(tabs)uvm_config_db#($(uvc_name)_vif)::set(.cntxt(this), .inst_name("agent_$(uvc_name)"), .field_name("vif"), .value(vif_$(uvc_name)));
+        """
+end
+
 test_gen() = (!run_test_gen) ? "" : begin
     output_file_setup("generated_files/test_top")
     write_file("generated_files/test_top/tests.sv", gen_test_base())
@@ -56,6 +69,9 @@ gen_test_base() = begin
         `uvm_component_utils_begin(base_test)
     $( gen_long_str(stub_if_names, "        ", gen_line_cfg_utils) )    `uvm_component_utils_end
 
+        // Interfaces instances - begin
+    $( gen_long_str(stub_if_names, "    ", gen_line_vif_instance) )    // Interfaces instances - end
+
         // UVCs instances - begin
     $( gen_long_str(stub_if_names, "    ", gen_line_uvc_instance) )    // UVCs instances - end
 
@@ -70,13 +86,12 @@ gen_test_base() = begin
 
     $( gen_long_str(stub_if_names, "        ", gen_line_cfg_creation) )
             // Edit to set some agent to passive
-            // uvm_config_db#(int)::set(this, "agent_$(stub_if_names[1])", "is_active", UVM_PASSIVE);
-            // uvm_config_db#(int)::set(.cntxt(this), .inst_name("agent_$(stub_if_names[1])"), .field_name("is_active"), .value(UVM_PASSIVE));
+            // cfg_$(stub_if_names[1]).is_active = UVM_PASSIVE;
 
             // Edit to disable some agent's coverage
-            // uvm_config_db#(int)::set(this, "agent_$(stub_if_names[1])", "cov_control", $(uppercase(stub_if_names[1]))_COV_DISABLE);
-            // uvm_config_db#(int)::set(.cntxt(this), .inst_name("agent_$(stub_if_names[1])"), .field_name("cov_control"), .value($(uppercase(stub_if_names[1]))_COV_DISABLE));
+            // cfg_$(stub_if_names[1]).cov_control = $(uppercase(stub_if_names[1]))_COV_DISABLE;
 
+    $( gen_long_str(stub_if_names, "        ", gen_vif_config_db_lines) )
             // UVCs creation - begin
     $( gen_long_str(stub_if_names, "        ", gen_line_uvc_creation) )        // UVCs creation - end
 
@@ -128,5 +143,5 @@ gen_test_base() = begin
 
     //==============================================================//
     """
-    end
+end
 # ****************************************************************

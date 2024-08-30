@@ -9,17 +9,21 @@ gen_config_base(prefix_name, vec) = begin
     return """
     class $(prefix_name)_$(name) extends uvm_object;
 
-        rand int some_cfg;
+        uvm_active_passive_enum is_active;
+        $(prefix_name)_cov_enable_enum cov_control;
 
         `uvm_object_utils_begin($(prefix_name)_$(name))
-            `uvm_field_int(some_cfg, UVM_ALL_ON)
+            `uvm_field_enum(uvm_active_passive_enum, is_active, UVM_ALL_ON)
+            `uvm_field_enum($(prefix_name)_cov_enable_enum, cov_control, UVM_ALL_ON)
         `uvm_object_utils_end
 
         function new (string name = "$(prefix_name)_$(name)");
             super.new(name);
+            is_active = UVM_ACTIVE;
+            cov_control = $(uppercase(prefix_name))_COV_ENABLE;
         endfunction: new
 
     endclass: $(prefix_name)_$(name)
     """
-    end
+end
 # ****************************************************************

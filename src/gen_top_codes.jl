@@ -18,7 +18,8 @@ gen_line_interfaces_instances(uvc_name, tabs) = begin
     return """$(tabs)$(uvc_name)_$(if_name) if_$(uvc_name)(.$(clk_rst_names[1])($(clk_rst_names[1])), .$(clk_rst_names[2][1])($(clk_rst_names[2][1])));\n"""
 end
 gen_line_send_if_to_uvc(uvc_name, tabs) = 
-    """$(tabs)uvm_config_db#($(uvc_name)_vif)::set(.cntxt(null), .inst_name("uvm_test_top.agent_$(uvc_name).*"), .field_name("vif"), .value(if_$(uvc_name)));\n"""
+    # """$(tabs)uvm_config_db#($(uvc_name)_vif)::set(.cntxt(null), .inst_name("uvm_test_top.agent_$(uvc_name).*"), .field_name("vif"), .value(if_$(uvc_name)));\n"""
+    """$(tabs)uvm_config_db#($(uvc_name)_vif)::set(.cntxt(null), .inst_name("uvm_test_top"), .field_name("vif_$(uvc_name)"), .value(if_$(uvc_name)));\n"""
 gen_line_if_connection(signal_name, uvc_name, tabs) = 
     """$(tabs).$(signal_name[3])(if_$(uvc_name).$(signal_name[3])),\n"""
 gen_top_if_connection_signals(if_vector, tabs) = begin
@@ -83,5 +84,5 @@ gen_top_base() = begin
 
     endmodule: top
     """
-    end
+end
 # ****************************************************************

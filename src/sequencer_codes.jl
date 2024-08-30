@@ -31,5 +31,5 @@ gen_sequencer_base(prefix_name, vec) = begin
 
     endclass: $(prefix_name)_$(name)
     """
-    end
+end
 # ****************************************************************
