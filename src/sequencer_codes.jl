@@ -16,20 +16,31 @@ gen_sequencer_base(prefix_name, vec) = begin
         `uvm_component_utils_begin($(prefix_name)_$(name))
             `uvm_field_object(cfg, UVM_ALL_ON)
         `uvm_component_utils_end
-
+        
+        $(prefix_name)_vif vif;
+        
         function new(string name, uvm_component parent);
             super.new(name, parent);
         endfunction: new
 
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
+            
             if(uvm_config_db#($(prefix_name)_$(cfg_name))::get(.cntxt(this), .inst_name(""), .field_name("cfg"), .value(cfg)))
                 `uvm_info("$(uppercase(prefix_name)) SEQUENCER", "Configuration object was successfully set!", UVM_MEDIUM)
             else
                 `uvm_fatal("$(uppercase(prefix_name)) SEQUENCER", "No configuration object was set!")
+            
+            if(uvm_config_db#($(prefix_name)_vif)::get(.cntxt(this), .inst_name(""), .field_name("vif"), .value(vif)))
+                `uvm_info("$(uppercase(prefix_name)) SEQUENCER", "Virtual interface was successfully set!", UVM_MEDIUM)
+            else
+                `uvm_fatal("$(uppercase(prefix_name)) SEQUENCER", "No interface was set!")
         endfunction: build_phase
 
     endclass: $(prefix_name)_$(name)
     """
 end
+
+gen_clknrst_sequencer() = gen_sequencer_base("clknrst", [])
+
 # ****************************************************************

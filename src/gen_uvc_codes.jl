@@ -29,36 +29,31 @@ end
 gen_clknrst_files() = begin
     cwd = pwd()
     uvc_name = "clknrst"
-    use_short_names = true
-    # function_dict[uppercase("transaction" )] = [gen_clknrst_tr          , []]
-    # function_dict[uppercase("tdefs_pkg"   )] = [gen_clknrst_tdefs_pkg   , []]
-    # function_dict[uppercase("pkg"         )] = [gen_clknrst_pkg         , []]
-    # function_dict[uppercase("sequencer"   )] = [gen_clknrst_sequencer   , []]
-    # function_dict[uppercase("sequence_lib")] = [gen_clknrst_sequence_lib, []]
-    # function_dict[uppercase("interface"   )] = [gen_clknrst_if          , []]
-    # function_dict[uppercase("driver"      )] = [gen_clknrst_driver      , []]
-    # function_dict[uppercase("monitor"     )] = [gen_clknrst_monitor     , []]
+    global use_short_names = true
+    function_dict[uppercase("transaction" )] = [gen_clknrst_tr          , []]
+    function_dict[uppercase("tdefs_pkg"   )] = [gen_clknrst_tdefs_pkg   , []]
+    function_dict[uppercase("pkg"         )] = [gen_clknrst_pkg         , []]
+    function_dict[uppercase("sequencer"   )] = [gen_clknrst_sequencer   , []]
+    function_dict[uppercase("sequence_lib")] = [gen_clknrst_sequence_lib, []]
+    function_dict[uppercase("interface"   )] = [gen_clknrst_if          , []]
+    function_dict[uppercase("driver"      )] = [gen_clknrst_driver      , []]
+    function_dict[uppercase("monitor"     )] = [gen_clknrst_monitor     , []]
     function_dict[uppercase("agent"       )] = [gen_clknrst_agent       , []]
-    # function_dict[uppercase("coverage"    )] = [gen_clknrst_coverage    , []]
-    # function_dict[uppercase("config"      )] = [gen_clknrst_config      , []]
+    function_dict[uppercase("coverage"    )] = [gen_clknrst_coverage    , []]
+    function_dict[uppercase("config"      )] = [gen_clknrst_config      , []]
 
     output_file_setup("$(cwd)/generated_files/$(uvc_name)")
     output_file_setup("$(cwd)/generated_files/$(uvc_name)/sv")
     output_file_setup("$(cwd)/generated_files/$(uvc_name)/parameter_folder")
     
-    # for class_symbol in fieldnames(typeof(gen_classes))
-    for class_symbol in ["agent"]
-        class_name = class_symbol
-        # class_name = String(class_symbol)
-        # if getfield(gen_classes, class_symbol) == true
-            vec_aux = function_dict[uppercase(class_name)]
-            push!(vec_aux, use_short_names)
-            if use_short_names == true
-                class_name = short_names_dict[class_name]
-            end
-            write_file("generated_files/$(uvc_name)/sv/$(uvc_name)_$(class_name).sv", 
-                        vec_aux[1]())
-        # end
+    for class_symbol in fieldnames(typeof(gen_classes))
+        class_name = String(class_symbol)
+        vec_aux = function_dict[uppercase(class_name)]
+        push!(vec_aux, use_short_names)
+        if use_short_names == true
+            class_name = short_names_dict[class_name]
+        end
+        write_file("generated_files/$(uvc_name)/sv/$(uvc_name)_$(class_name).sv", vec_aux[1]())
     end
 end
 
@@ -90,6 +85,8 @@ uvc_files_gen() = (!run_uvc_gen) ? "" : begin
     end
     
     # Generate clock and reset UVC
-    gen_clknrst_files()
+    if gen_clknrst
+        gen_clknrst_files()
+    end
     
 end

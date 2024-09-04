@@ -14,8 +14,13 @@
 # This vector comes from the file UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
 
-gen_line_coverpoint(vec, tabs) = """
-$(tabs)cp_$(vec[4]): coverpoint cov_transaction.$(vec[4]);\n"""
+gen_line_coverpoint(vec, tabs) = begin
+    if size(vec)[1] > 0
+        return "$(tabs)cp_$(vec[4]): coverpoint cov_transaction.$(vec[4]);\n"
+    else
+        return ""
+    end
+end
 
 gen_coverage_base(prefix_name, vec) = begin
     name = use_short_names ? short_names_dict["coverage"] : "cov"
@@ -77,4 +82,7 @@ gen_coverage_base(prefix_name, vec) = begin
     endclass : $(prefix_name)_$(name)
     """
 end
+
+gen_clknrst_coverage() = gen_coverage_base("clknrst", [])
+
 # ****************************************************************

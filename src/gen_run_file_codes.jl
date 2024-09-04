@@ -30,9 +30,9 @@ run_file_gen() = (!run_run_file_gen) ? "" : begin
 end
 
 gen_run_file_base() = begin 
-    return """
+    my_str = """
     // xrun options
-        -timescale 1ns/1ns
+        -timescale 1ns/1ps
         -access +rwc
         //-gui
         -coverage all
@@ -44,11 +44,24 @@ gen_run_file_base() = begin
         +UVM_VERBOSITY=UVM_HIGH
         +UVM_NO_RELNOTES
         //+UVM_TESTNAME=random_test
-
+        
+    """
+    if gen_clknrst
+        my_str *= """
+        // CLKNRST UVC
+            -incdir ../clknrst/sv
+            ../clknrst/sv/clknrst_tdefs_pkg.sv
+            ../clknrst/sv/clknrst_pkg.sv
+            ../clknrst/sv/clknrst_if.sv
+            
+        """
+    end
+    my_str *= """
     $( gen_long_str(stub_if_names, "    ", gen_uvc_include) )// RTL
         ../rtl/stub.sv
 
     // Top level
         top.sv
     """
+    return my_str
 end

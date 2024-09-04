@@ -12,6 +12,7 @@ gen_line_import(uvc_name, tabs) = begin
     """
 end
 gen_line_interfaces_instances(uvc_name, tabs) = begin
+    # TODO: account for different clk_rst_names and rst_is_negedge_sensitive
     cwd = pwd()
     include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
     if_name = use_short_names ? short_names_dict["interface"] : "interface"
@@ -42,21 +43,26 @@ top_gen() = (!run_top_gen) ? "" : begin
 end
 
 gen_top_base() = begin 
-    return """
+    my_str = """
     module top;
 
         import uvm_pkg::*;
         `include "uvm_macros.svh"
 
         // UVC imports - begin
+    """
+    my_str *= gen_clknrst ? gen_line_import("clknrst", "        ") : ""
+    my_str *= """
     $( gen_long_str(stub_if_names, "        ", gen_line_import) )    // UVC imports - end
 
         `include "tests.sv"
 
-        bit $(clk_rst_names[1]), $(clk_rst_names[2][1]);
-        bit run_clock;
+        logic $(clk_rst_names[1]), $(clk_rst_names[2][1]);
 
         // Interfaces instances - begin
+    """
+    my_str *= gen_clknrst ? "        clknrst_if if_clknrst();\n" : ""
+    my_str *= """
     $( gen_long_str(stub_if_names, "        ", gen_line_interfaces_instances) )    // Interfaces instances - end
 
 
@@ -64,6 +70,14 @@ gen_top_base() = begin
             .$(clk_rst_names[1])($(clk_rst_names[1])),
             .$(clk_rst_names[2][1])($(clk_rst_names[2][1])),$( gen_top_if_connection_signals(if_vector, "        ") )    );
 
+    """
+    if gen_clknrst
+        my_str *= """
+        assign $(clk_rst_names[1])   = if_clknrst.clk;
+        assign $(clk_rst_names[2][1]) = if_clknrst.rst_n;
+        """
+    else
+        my_str *= """
         initial begin
             $(clk_rst_names[1]) = 0;
             $(clk_rst_names[2][1]) = $( (clk_rst_names[2][2]) ? "1" : "0" );
@@ -71,12 +85,19 @@ gen_top_base() = begin
             #3 $(clk_rst_names[2][1]) = $( (clk_rst_names[2][2]) ? "1" : "0" );
         end
         always #2 $(clk_rst_names[1])=~$(clk_rst_names[1]);
-
+        """
+    end
+    my_str *= """
+        
         initial begin
+            \$timeformat(-9, 3, "ns", 12); // e.g.: "   900.000ns"
             \$dumpfile("dump.vcd");
             \$dumpvars;
 
             // Virtual interfaces send to UVCs - begin
+    """
+    my_str *= gen_clknrst ? gen_line_send_if_to_uvc("clknrst", "            ") : ""
+    my_str *= """
     $( gen_long_str(stub_if_names, "            ", gen_line_send_if_to_uvc) )        // Virtual interfaces send to UVCs - end
 
             run_test("random_test");
@@ -84,5 +105,7 @@ gen_top_base() = begin
 
     endmodule: top
     """
+    return my_str
 end
+
 # ****************************************************************

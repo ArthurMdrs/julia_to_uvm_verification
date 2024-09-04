@@ -51,34 +51,38 @@ gen_tr_base(prefix_name, vec) = begin
     """
 end
 
-gen_clknrst_tr(prefix_name, vec) = begin 
+gen_clknrst_tr() = begin 
+    prefix_name = "clknrst"
     name = use_short_names ? short_names_dict["transaction"] : "transaction"
     return """
     class $(prefix_name)_$(name) extends uvm_sequence_item;
-
-    $(gen_long_str(vec, "    ", gen_line_instanciate_obj))
+        
+        rand $(prefix_name)_action_enum   action;
+        rand int unsigned          rst_assert_duration;     // In ps
+        rand int unsigned          clk_period;              // In ps
+        rand $(prefix_name)_init_val_enum initial_clk_val;
+        
         `uvm_object_utils_begin($(prefix_name)_$(name))
-    $(gen_long_str(vec, "        ", gen_line_object_utils))    `uvm_object_utils_end
+            `uvm_field_enum($(prefix_name)_action_enum  , action         , UVM_ALL_ON)
+            `uvm_field_int (rst_assert_duration                   , UVM_ALL_ON)
+            `uvm_field_int (clk_period                            , UVM_ALL_ON)
+            `uvm_field_enum($(prefix_name)_init_val_enum, initial_clk_val, UVM_ALL_ON)
+        `uvm_object_utils_end
 
         function new(string name="$(prefix_name)_$(name)");
             super.new(name);
         endfunction: new
 
-        // Type your constraints!
-        constraint some_constraint {}
+        constraint max_clk_period {
+            clk_period <= 20_000; // 20ns
+        }
 
-        function string convert2string();
-            string string_aux;
-
-            string_aux = {string_aux, "\\n***********************************\\n"};
-    $(gen_long_str(vec, "        ", gen_line_convert_to_string))        string_aux = {string_aux, "***********************************"};
-            return string_aux;
-        endfunction: convert2string
-
-        // function void post_randomize();
-        // endfunction: post_randomize
+        constraint max_rst_assert_duration {
+            rst_assert_duration <= 15_000; // 15ns
+        }
 
     endclass: $(prefix_name)_$(name)
     """
 end
+
 # ****************************************************************
