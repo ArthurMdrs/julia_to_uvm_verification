@@ -8,7 +8,7 @@ mutable struct classes_t
     driver::Bool
     coverage::Bool
     agent::Bool
-    tdefs_pkg::Bool
+    tdefs::Bool
     pkg::Bool
     interface::Bool
     classes_t() = new(true,true,true,true,true,true,true,true,true,true,true)
@@ -30,7 +30,25 @@ short_names_dict = Dict(
     "coverage" => "cov",
     "config" => "cfg",
     "agent" => "agent",
-    "tdefs_pkg" => "tdefs_pkg",
+    "tdefs" => "tdefs",
     "pkg" => "pkg",
     "interface" => "if",
 )
+
+supported_simulators = ["xrun", "dsim"]
+
+# Default settings
+reset_generated_files_folder = true
+uvc_names = []
+stub_if_names = uvc_names
+gen_clknrst = true
+run_uvc_gen = true
+run_stub_gen = true
+run_env_gen = true
+run_test_gen = true
+run_top_gen = true
+run_sim_args_gen = true
+simulator = "xrun"
+clock_name = "clk"
+reset_name = "rst_n"
+rst_is_negedge_sensitive = true

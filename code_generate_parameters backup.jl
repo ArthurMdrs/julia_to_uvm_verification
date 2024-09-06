@@ -12,6 +12,10 @@ stub_if_names = uvc_names
 # Flags that define which files will be generated
 run_uvc_gen = true
 run_stub_gen = true
+run_env_gen = true
 run_test_gen = true
 run_top_gen = true
-run_run_file_gen = true
+run_sim_args_gen = true
+
+# Simulators supported: ["xrun", "dsim"]
+simulator = "xrun"

@@ -22,3 +22,14 @@ write_file(file_dir, txt_string) = begin
         write(io, txt_string)
     end;
 end
+
+restore_config() = begin
+    include_jl("./global_vectors.jl")
+    include_jl(gen_params_file)
+end
+
+gen_line_import(uvc_name, tabs) = begin
+    return """
+    $(tabs)import $(uvc_name)_pkg::*;
+    """
+end

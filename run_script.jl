@@ -23,8 +23,8 @@ println("Using parameters file $(gen_params_file)")
 include_jl("$(src_path)/common.jl")
 
 # Global parameters
-include_jl(gen_params_file)
 include_jl("./global_vectors.jl")
+include_jl(gen_params_file)
 
 # Codes for generating the UVC
 include_jl("$(src_path)/config_codes.jl")
@@ -42,14 +42,15 @@ include_jl("$(src_path)/interface_codes.jl")
 # Codes for generating stub DUT
 include_jl("$(src_path)/gen_stub_codes.jl")
 
-# Codes for generating test library example
+# Codes for generating stub env and test library
+include_jl("$(src_path)/gen_env_codes.jl")
 include_jl("$(src_path)/gen_tests_codes.jl")
 
 # Codes for generating top level module
 include_jl("$(src_path)/gen_top_codes.jl")
 
-# Codes for generating run.f file
-include_jl("$(src_path)/gen_run_file_codes.jl")
+# Codes for generating simulator arguments file
+include_jl("$(src_path)/gen_sim_args_codes.jl")
 
 
 # Set up the output folder
@@ -58,6 +59,7 @@ output_file_setup("$(cwd)/generated_files"; reset_folder=reset_generated_files_f
 # Run generation functions
 uvc_files_gen();
 stub_gen();
+env_gen();
 test_gen();
 top_gen();
-run_file_gen();
+sim_args_gen();

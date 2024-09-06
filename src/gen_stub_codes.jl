@@ -25,8 +25,8 @@ gen_stub_if_signals(if_vector, gen_line, tabs) = begin
     end
     return str
 end
-gen_stub_parameters_str_file(if_vector, stub_if_names, clk_name, rst_name) = 
-    "if_vector = $(if_vector)\nstub_if_names = $(stub_if_names)\nclk_rst_names = $([clk_name, rst_name])"
+gen_stub_parameters_str_file(if_vector, stub_if_names, clock_name, reset_name) = 
+    "if_vector = $(if_vector)\nstub_if_names = $(stub_if_names)\nclk_rst_vec = $([clock_name, reset_name, rst_is_negedge_sensitive])"
 update_signals_if_config(signals_if_config) = begin
     out_vec = []
     for x in signals_if_config
@@ -44,35 +44,32 @@ get_interface_signals() = begin
     if_gather = []
     item_to_delete = []
     for x in stub_if_names
-        try
-            include(pwd()*"/generated_files/"*x*"/parameter_folder/"*x*"_parameters.jl")
-            push!(if_gather,[x,update_signals_if_config(signals_if_config)])
-        catch
-            println("It was not possible to open the UVC '$(x)' for stub/test generation.")
-            push!(item_to_delete, x) 
-        end
+        include_jl("$(cwd)/generated_files/$(x)/parameter_folder/$(x)_parameters.jl")
+        push!(if_gather,[x,update_signals_if_config(signals_if_config)])
     end
+    # Restore settings overwritten by including $(x)_parameters.jl
+    restore_config()
     setdiff!(stub_if_names, item_to_delete)
     return if_gather
 end
 
 stub_gen() = (!run_stub_gen) ? "" : begin
     if_vector = get_interface_signals()
-    clk_name = if_vec[1]
-    rst_name = if_vec[2]
-
+    # clock_name = if_vec[1]
+    # reset_name = if_vec[2]
+    
     output_file_setup("generated_files/rtl")
-    write_file("generated_files/rtl/stub.sv", gen_stub_base([clk_name, rst_name], if_vector))
+    write_file("generated_files/rtl/stub.sv", gen_stub_base(clock_name, reset_name, rst_is_negedge_sensitive, if_vector))
     write_file("generated_files/rtl/stub_parameters.jl", 
-                gen_stub_parameters_str_file(if_vector, stub_if_names, clk_name, rst_name))
+                gen_stub_parameters_str_file(if_vector, stub_if_names, clock_name, reset_name))
 end
 
-gen_stub_base(clk_rst_names, vec) = begin 
+gen_stub_base(clock_name, reset_name, rst_is_negedge_sensitive, vec) = begin 
     return """
-    module stub (input $(clk_rst_names[1]), input $(clk_rst_names[2][1]), $(gen_stub_if_signals(vec, gen_line_stub_if_signals, "    "))    );
+    module stub (input $(clock_name), input $(reset_name), $(gen_stub_if_signals(vec, gen_line_stub_if_signals, "    "))    );
 
-        always @(posedge $(clk_rst_names[1]) or $( (clk_rst_names[2][2]) ? "negedge" : "posedge" ) $(clk_rst_names[2][1])) begin
-            if($( (clk_rst_names[2][2]) ? "~" : "" )$(clk_rst_names[2][1])) begin
+        always @(posedge $(clock_name) or $( (rst_is_negedge_sensitive) ? "negedge" : "posedge" ) $(reset_name)) begin
+            if($( (rst_is_negedge_sensitive) ? "~" : "" )$(reset_name)) begin
                 // Reset logic
             end
             else begin

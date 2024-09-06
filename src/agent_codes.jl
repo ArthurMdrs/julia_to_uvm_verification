@@ -10,7 +10,7 @@ gen_agent_base(prefix_name, vec) = begin
     mon_name = use_short_names ? short_names_dict["monitor"    ] : "monitor"
     drv_name = use_short_names ? short_names_dict["driver"     ] : "driver"
     sqr_name = use_short_names ? short_names_dict["sequencer"  ] : "sequencer"
-    cov_name = use_short_names ? short_names_dict["coverage"   ] : "cov"
+    cov_name = use_short_names ? short_names_dict["coverage"   ] : "coverage"
     tr_name  = use_short_names ? short_names_dict["transaction"] : "transaction"
     return """
     class $(prefix_name)_$(name) extends uvm_agent;

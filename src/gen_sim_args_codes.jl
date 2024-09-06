@@ -17,30 +17,26 @@ gen_uvc_include(uvc_name, tabs) = begin
     return """
     // $(uppercase(uvc_name)) UVC
     $(tabs)-incdir ../$(uvc_name)/sv
-    $(tabs)../$(uvc_name)/sv/$(uvc_name)_tdefs_pkg.sv
     $(tabs)../$(uvc_name)/sv/$(uvc_name)_pkg.sv
     $(tabs)../$(uvc_name)/sv/$(uvc_name)_$(if_name).sv
 
     """
 end
     
-run_file_gen() = (!run_run_file_gen) ? "" : begin
+sim_args_gen() = (!run_sim_args_gen) ? "" : begin
+    if !(simulator in supported_simulators)
+        error("Invalid simulator: $simulator. Expected of of: \n$supported_simulators")
+    end
     output_file_setup("generated_files/test_top"; reset_folder=false)
-    write_file("generated_files/test_top/run.f", gen_run_file_base())
+    if simulator == "xrun"
+        write_file("generated_files/test_top/xrun_args.f", gen_xrun_args_base())
+    elseif simulator == "dsim"
+        write_file("generated_files/test_top/dsim_args.f", gen_dsim_args_base())
+    end
 end
 
-gen_run_file_base() = begin 
+common_args() = begin
     my_str = """
-    // xrun options
-        -timescale 1ns/1ps
-        -access +rwc
-        //-gui
-        -coverage all
-        -covoverwrite
-        //+SVSEED=random
-
-    // UVM options
-        -uvmhome CDNS-1.2
         +UVM_VERBOSITY=UVM_HIGH
         +UVM_NO_RELNOTES
         //+UVM_TESTNAME=random_test
@@ -50,7 +46,6 @@ gen_run_file_base() = begin
         my_str *= """
         // CLKNRST UVC
             -incdir ../clknrst/sv
-            ../clknrst/sv/clknrst_tdefs_pkg.sv
             ../clknrst/sv/clknrst_pkg.sv
             ../clknrst/sv/clknrst_if.sv
             
@@ -65,3 +60,38 @@ gen_run_file_base() = begin
     """
     return my_str
 end
+
+gen_xrun_args_base() = begin 
+    my_str = """
+    // xrun options
+        -timescale 1ns/1ps
+        -access +rwc
+        //-gui
+        -coverage all
+        -covoverwrite
+        //+SVSEED=random
+
+    // UVM options
+        -uvmhome CDNS-1.2
+    """
+    my_str *= common_args()
+    return my_str
+end
+
+gen_dsim_args_base() = begin 
+    my_str = """
+    // dsim options
+        -timescale 1ns/1ps
+        +acc
+        -waves dump.mxd
+        -code-cov a
+        //-sv_seed random
+
+    // UVM options
+        -uvm 1.2
+    """
+    my_str *= common_args()
+    return my_str
+end
+
+# ****************************************************************

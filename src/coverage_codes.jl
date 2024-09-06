@@ -23,7 +23,7 @@ gen_line_coverpoint(vec, tabs) = begin
 end
 
 gen_coverage_base(prefix_name, vec) = begin
-    name = use_short_names ? short_names_dict["coverage"] : "cov"
+    name = use_short_names ? short_names_dict["coverage"] : "coverage"
     cfg_name = use_short_names ? short_names_dict["config"     ] : "config"
     tr_name  = use_short_names ? short_names_dict["transaction"] : "transaction"
     return """

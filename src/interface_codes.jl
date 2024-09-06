@@ -51,7 +51,7 @@ gen_if_base(prefix_name, vec) = begin
         // Gets a transaction and drive it into the DUT
         task send_to_dut($(prefix_name)_$(tr_name) req);
             // Logic to start recording transaction
-            @(negedge clk);
+            @(negedge $(vec[1]));
 
             // trigger for transaction recording
             drvstart = 1'b1;
@@ -60,7 +60,7 @@ gen_if_base(prefix_name, vec) = begin
             tr.copy(req);
             `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Driving transaction to DUT:%s", tr.convert2string()), UVM_HIGH)
             got_tr = 1'b1;
-            @(negedge clk);
+            @(negedge $(vec[1]));
 
             // Reset trigger
             drvstart = 1'b0;
@@ -69,7 +69,7 @@ gen_if_base(prefix_name, vec) = begin
         // Collect transactions
         task collect_tr($(prefix_name)_$(tr_name) req);
             // Logic to start recording transaction
-            @(posedge clk iff got_tr);
+            @(posedge $(vec[1]) iff got_tr);
             got_tr = 1'b0;
             
             // trigger for transaction recording
@@ -78,7 +78,7 @@ gen_if_base(prefix_name, vec) = begin
             // Collect logic 
             req.copy(tr);
             `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Collected transaction:%s", req.convert2string()), UVM_HIGH)
-            @(posedge clk);
+            @(posedge $(vec[1]));
 
             // Reset trigger
             monstart = 1'b0;

@@ -22,17 +22,13 @@ vector_to_pattern(prefix_name) = begin
     return vec_out
 end
 
-gen_tdefs_pkg_base(prefix_name, vec_in) = begin
+gen_tdefs_base(prefix_name, vec_in) = begin
     vec = vector_to_pattern(prefix_name)
     return """
-        package $(prefix_name)_tdefs_pkg;
-
-            typedef enum bit {
-                $(uppercase(prefix_name))_COV_ENABLE , 
-                $(uppercase(prefix_name))_COV_DISABLE
-            } $(prefix_name)_cov_enable_enum;
-            
-        endpackage: $(prefix_name)_tdefs_pkg
+        typedef enum bit {
+            $(uppercase(prefix_name))_COV_ENABLE , 
+            $(uppercase(prefix_name))_COV_DISABLE
+        } $(prefix_name)_cov_enable_enum;
         """
 end
 
@@ -45,7 +41,7 @@ gen_pkg_base(prefix_name, vec_in) = begin
             import uvm_pkg::*;
             `include "uvm_macros.svh"
             
-            import $(prefix_name)_tdefs_pkg::*;
+            `include "$(prefix_name)_tdefs.sv";
 
             typedef virtual interface $(prefix_name)_$(if_name) $(prefix_name)_vif;
 
@@ -54,31 +50,27 @@ gen_pkg_base(prefix_name, vec_in) = begin
         """
 end
 
-gen_clknrst_tdefs_pkg() = begin
+gen_clknrst_tdefs() = begin
     prefix_name = "clknrst";
     vec = vector_to_pattern(prefix_name)
     return """
-        package $(prefix_name)_tdefs_pkg;
-
-            typedef enum bit {
-                $(uppercase(prefix_name))_COV_ENABLE , 
-                $(uppercase(prefix_name))_COV_DISABLE
-            } $(prefix_name)_cov_enable_enum;
-             
-            typedef enum bit [1:0] {
-                $(uppercase(prefix_name))_ACTION_START_CLK   ,
-                $(uppercase(prefix_name))_ACTION_STOP_CLK    ,
-                $(uppercase(prefix_name))_ACTION_ASSERT_RESET,
-                $(uppercase(prefix_name))_ACTION_RESTART_CLK
-            } $(prefix_name)_action_enum;
-             
-            typedef enum bit [1:0] {
-                $(uppercase(prefix_name))_INITIAL_VALUE_0,
-                $(uppercase(prefix_name))_INITIAL_VALUE_1,
-                $(uppercase(prefix_name))_INITIAL_VALUE_X
-            } $(prefix_name)_init_val_enum;
+        typedef enum bit {
+            $(uppercase(prefix_name))_COV_ENABLE , 
+            $(uppercase(prefix_name))_COV_DISABLE
+        } $(prefix_name)_cov_enable_enum;
             
-        endpackage: $(prefix_name)_tdefs_pkg
+        typedef enum bit [1:0] {
+            $(uppercase(prefix_name))_ACTION_START_CLK   ,
+            $(uppercase(prefix_name))_ACTION_STOP_CLK    ,
+            $(uppercase(prefix_name))_ACTION_ASSERT_RESET,
+            $(uppercase(prefix_name))_ACTION_RESTART_CLK
+        } $(prefix_name)_action_enum;
+            
+        typedef enum bit [1:0] {
+            $(uppercase(prefix_name))_INITIAL_VALUE_0,
+            $(uppercase(prefix_name))_INITIAL_VALUE_1,
+            $(uppercase(prefix_name))_INITIAL_VALUE_X
+        } $(prefix_name)_init_val_enum;
         """
 end
 

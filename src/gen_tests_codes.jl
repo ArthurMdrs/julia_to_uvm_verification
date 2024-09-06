@@ -22,18 +22,17 @@ gen_line_cfg_instance(uvc_name, tabs) = begin
     cwd = pwd()
     include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
     cfg_name = use_short_names ? short_names_dict["config"] : "config"
+    restore_config()
     return """$(tabs)$(uvc_name)_$(cfg_name) cfg_$(uvc_name);\n"""
 end
 gen_line_cfg_utils(uvc_name, tabs) = begin
-    cwd = pwd()
-    include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
-    cfg_name = use_short_names ? short_names_dict["config"] : "config"
     return "$(tabs)`uvm_field_object(cfg_$(uvc_name), UVM_ALL_ON)\n"
 end
 gen_line_cfg_creation(uvc_name, tabs) = begin
     cwd = pwd()
     include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
     cfg_name = use_short_names ? short_names_dict["config"] : "config"
+    restore_config()
     return """
     $(tabs)cfg_$(uvc_name) = $(uvc_name)_$(cfg_name)::type_id::create("cfg_$(uvc_name)");
     $(tabs)uvm_config_db#($(uvc_name)_$(cfg_name))::set(.cntxt(this), .inst_name("agent_$(uvc_name)"), .field_name("cfg"), .value(cfg_$(uvc_name)));
@@ -54,7 +53,7 @@ gen_vif_config_db_lines(uvc_name, tabs) = begin
 end
 
 test_gen() = (!run_test_gen) ? "" : begin
-    output_file_setup("generated_files/test_top")
+    output_file_setup("generated_files/test_top"; reset_folder=false)
     write_file("generated_files/test_top/tests.sv", gen_test_base())
 end
 

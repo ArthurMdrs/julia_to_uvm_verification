@@ -31,7 +31,7 @@ gen_clknrst_files() = begin
     uvc_name = "clknrst"
     global use_short_names = true
     function_dict[uppercase("transaction" )] = [gen_clknrst_tr          , []]
-    function_dict[uppercase("tdefs_pkg"   )] = [gen_clknrst_tdefs_pkg   , []]
+    function_dict[uppercase("tdefs"       )] = [gen_clknrst_tdefs       , []]
     function_dict[uppercase("pkg"         )] = [gen_clknrst_pkg         , []]
     function_dict[uppercase("sequencer"   )] = [gen_clknrst_sequencer   , []]
     function_dict[uppercase("sequence_lib")] = [gen_clknrst_sequence_lib, []]
@@ -57,36 +57,41 @@ gen_clknrst_files() = begin
     end
 end
 
-uvc_files_gen() = (!run_uvc_gen) ? "" : begin
-    cwd = pwd()
-    for uvc_name in uvc_names
-        include_jl("$(cwd)/global_vectors.jl")
-        include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
-        
-        function_dict[uppercase("transaction" )] = [gen_tr_base          , tr_vec     ]
-        function_dict[uppercase("tdefs_pkg"   )] = [gen_tdefs_pkg_base   , []         ]
-        function_dict[uppercase("pkg"         )] = [gen_pkg_base         , []         ]
-        function_dict[uppercase("sequencer"   )] = [gen_sequencer_base   , []         ]
-        function_dict[uppercase("sequence_lib")] = [gen_sequence_lib_base, []         ]
-        function_dict[uppercase("interface"   )] = [gen_if_base          , if_vec     ]
-        function_dict[uppercase("driver"      )] = [gen_driver_base      , if_vec[1:2]]
-        function_dict[uppercase("monitor"     )] = [gen_monitor_base     , if_vec[1:2]]
-        function_dict[uppercase("agent"       )] = [gen_agent_base       , []         ]
-        function_dict[uppercase("coverage"    )] = [gen_coverage_base    , tr_vec     ]
-        function_dict[uppercase("config"      )] = [gen_config_base      , []         ]
+uvc_files_gen() = begin
+    if run_uvc_gen
+        cwd = pwd()
+        for uvc_name in uvc_names
+            include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
+            
+            if_vec = [clock_name, [reset_name, rst_is_negedge_sensitive], signals_if_config]
+            
+            function_dict[uppercase("transaction" )] = [gen_tr_base          , tr_vec     ]
+            function_dict[uppercase("tdefs"       )] = [gen_tdefs_base       , []         ]
+            function_dict[uppercase("pkg"         )] = [gen_pkg_base         , []         ]
+            function_dict[uppercase("sequencer"   )] = [gen_sequencer_base   , []         ]
+            function_dict[uppercase("sequence_lib")] = [gen_sequence_lib_base, []         ]
+            function_dict[uppercase("interface"   )] = [gen_if_base          , if_vec     ]
+            function_dict[uppercase("driver"      )] = [gen_driver_base      , if_vec[1:2]]
+            function_dict[uppercase("monitor"     )] = [gen_monitor_base     , if_vec[1:2]]
+            function_dict[uppercase("agent"       )] = [gen_agent_base       , []         ]
+            function_dict[uppercase("coverage"    )] = [gen_coverage_base    , tr_vec     ]
+            function_dict[uppercase("config"      )] = [gen_config_base      , []         ]
 
-        output_file_setup("$(cwd)/generated_files/$(uvc_name)")
-        output_file_setup("$(cwd)/generated_files/$(uvc_name)/sv")
-        output_file_setup("$(cwd)/generated_files/$(uvc_name)/parameter_folder")
+            output_file_setup("$(cwd)/generated_files/$(uvc_name)")
+            output_file_setup("$(cwd)/generated_files/$(uvc_name)/sv")
+            output_file_setup("$(cwd)/generated_files/$(uvc_name)/parameter_folder")
 
-        gen_files(uvc_name)
-        write_file("$(cwd)/generated_files/$(uvc_name)/parameter_folder/$(uvc_name)_parameters.jl", 
-                    open_file("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl"))
+            gen_files(uvc_name)
+            write_file("$(cwd)/generated_files/$(uvc_name)/parameter_folder/$(uvc_name)_parameters.jl", 
+                        open_file("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl"))
+            
+            # Restore settings overwritten by including $(uvc_name)_parameters.jl
+            restore_config()
+        end
+
+        # Generate clock and reset UVC
+        if gen_clknrst
+            gen_clknrst_files()
+        end
     end
-    
-    # Generate clock and reset UVC
-    if gen_clknrst
-        gen_clknrst_files()
-    end
-    
 end

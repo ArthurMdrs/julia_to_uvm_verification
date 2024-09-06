@@ -24,8 +24,9 @@ signals_if_config = [
 # Variable that defines if reset is active low or high
 rst_is_negedge_sensitive = true
 
-# Vector that defines clock and reset names
-if_vec = ["clk", ["rst_n", rst_is_negedge_sensitive], signals_if_config]
+# Define clock and reset names
+clock_name = "clk_"
+reset_name = "rst_n_"
 
 # Variable that defines if short names are used
 # Ex: monitor becomes mon, driver becomes drv

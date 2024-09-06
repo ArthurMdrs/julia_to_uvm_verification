@@ -5,21 +5,17 @@
 # It is required to have generated the STUB to create the stub_parameters.jl!!!!
 # ***********************************
 
-gen_line_import(uvc_name, tabs) = begin
-    return """
-    $(tabs)import $(uvc_name)_tdefs_pkg::*;
-    $(tabs)import $(uvc_name)_pkg::*;
-    """
-end
 gen_line_interfaces_instances(uvc_name, tabs) = begin
     # TODO: account for different clk_rst_names and rst_is_negedge_sensitive
     cwd = pwd()
     include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
+    uvc_clock_name = clock_name
+    uvc_reset_name = reset_name
+    restore_config()
     if_name = use_short_names ? short_names_dict["interface"] : "interface"
-    return """$(tabs)$(uvc_name)_$(if_name) if_$(uvc_name)(.$(clk_rst_names[1])($(clk_rst_names[1])), .$(clk_rst_names[2][1])($(clk_rst_names[2][1])));\n"""
+    return """$(tabs)$(uvc_name)_$(if_name) if_$(uvc_name)(.$(uvc_clock_name)($(clock_name)), .$(uvc_reset_name)($(reset_name)));\n"""
 end
 gen_line_send_if_to_uvc(uvc_name, tabs) = 
-    # """$(tabs)uvm_config_db#($(uvc_name)_vif)::set(.cntxt(null), .inst_name("uvm_test_top.agent_$(uvc_name).*"), .field_name("vif"), .value(if_$(uvc_name)));\n"""
     """$(tabs)uvm_config_db#($(uvc_name)_vif)::set(.cntxt(null), .inst_name("uvm_test_top"), .field_name("vif_$(uvc_name)"), .value(if_$(uvc_name)));\n"""
 gen_line_if_connection(signal_name, uvc_name, tabs) = 
     """$(tabs).$(signal_name[3])(if_$(uvc_name).$(signal_name[3])),\n"""
@@ -37,13 +33,15 @@ end
 
 
 top_gen() = (!run_top_gen) ? "" : begin
-    include("generated_files/rtl/stub_parameters.jl")
+    include_jl("generated_files/rtl/stub_parameters.jl")
     output_file_setup("generated_files/test_top"; reset_folder=false)
     write_file("generated_files/test_top/top.sv", gen_top_base())
 end
 
-gen_top_base() = begin 
+gen_top_base() = begin
     my_str = """
+    `default_nettype none
+    
     module top;
 
         import uvm_pkg::*;
@@ -57,7 +55,7 @@ gen_top_base() = begin
 
         `include "tests.sv"
 
-        logic $(clk_rst_names[1]), $(clk_rst_names[2][1]);
+        logic $(clock_name), $(reset_name);
 
         // Interfaces instances - begin
     """
@@ -67,24 +65,24 @@ gen_top_base() = begin
 
 
         stub dut(
-            .$(clk_rst_names[1])($(clk_rst_names[1])),
-            .$(clk_rst_names[2][1])($(clk_rst_names[2][1])),$( gen_top_if_connection_signals(if_vector, "        ") )    );
+            .$(clock_name)($(clock_name)),
+            .$(reset_name)($(reset_name)),$( gen_top_if_connection_signals(if_vector, "        ") )    );
 
     """
     if gen_clknrst
         my_str *= """
-        assign $(clk_rst_names[1])   = if_clknrst.clk;
-        assign $(clk_rst_names[2][1]) = if_clknrst.rst_n;
+            assign $(clock_name)   = if_clknrst.clk;
+            assign $(reset_name) = if_clknrst.rst_n;
         """
     else
         my_str *= """
-        initial begin
-            $(clk_rst_names[1]) = 0;
-            $(clk_rst_names[2][1]) = $( (clk_rst_names[2][2]) ? "1" : "0" );
-            #3 $(clk_rst_names[2][1]) = $( (clk_rst_names[2][2]) ? "0" : "1" );
-            #3 $(clk_rst_names[2][1]) = $( (clk_rst_names[2][2]) ? "1" : "0" );
-        end
-        always #2 $(clk_rst_names[1])=~$(clk_rst_names[1]);
+            initial begin
+                $(clock_name) = 0;
+                $(reset_name) = $( (rst_is_negedge_sensitive) ? "1" : "0" );
+                #3 $(reset_name) = $( (rst_is_negedge_sensitive) ? "0" : "1" );
+                #3 $(reset_name) = $( (rst_is_negedge_sensitive) ? "1" : "0" );
+            end
+            always #2 $(clock_name)=~$(clock_name);
         """
     end
     my_str *= """
@@ -102,8 +100,10 @@ gen_top_base() = begin
 
             run_test("random_test");
         end
-
+        
     endmodule: top
+
+    `default_nettype wire
     """
     return my_str
 end
