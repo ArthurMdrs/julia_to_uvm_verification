@@ -41,7 +41,7 @@ gen_pkg_base(prefix_name, vec_in) = begin
             import uvm_pkg::*;
             `include "uvm_macros.svh"
             
-            `include "$(prefix_name)_tdefs.sv";
+            `include "$(prefix_name)_tdefs.sv"
 
             typedef virtual interface $(prefix_name)_$(if_name) $(prefix_name)_vif;
 

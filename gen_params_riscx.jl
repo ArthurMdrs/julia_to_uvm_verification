@@ -1,5 +1,5 @@
 reset_generated_files_folder = true
-uvc_names = Any["obi", "some_uvc"]
+uvc_names = Any["rvvi"]
 stub_if_names = uvc_names
 gen_clknrst = true
 run_uvc_gen = true

@@ -18,7 +18,7 @@ gen_line_stub_if_signals(vec, tabs) = gen_line_if_signal(vec, tabs; end_of_line=
 gen_stub_if_signals(if_vector, gen_line, tabs) = begin
     str = ""
     for x in if_vector
-        str *= "\n$(tabs)// Signals from $(x[1])'s interface - begin\n"
+        str *= "$(tabs)// Signals from $(x[1])'s interface - begin\n"
         str *= gen_long_str(x[2], tabs*"    ", gen_line)
         str = (x == if_vector[end]) ? str[1:end-2]*"\n" : str
         str *= "$(tabs)// Signals from $(x[1])'s interface - end\n"
@@ -35,7 +35,8 @@ update_signals_if_config(signals_if_config) = begin
         elseif x[3][end-1:end] == "_i"
             push!(out_vec, ["input     ", x[2], x[3]])
         else
-            push!(out_vec, ["NOTYPE    ", x[2], x[3]])
+            # push!(out_vec, ["NOTYPE    ", x[2], x[3]])
+            push!(out_vec, ["input    ", x[2], x[3]])
         end
     end
     return out_vec
@@ -66,7 +67,11 @@ end
 
 gen_stub_base(clock_name, reset_name, rst_is_negedge_sensitive, vec) = begin 
     return """
-    module stub (input $(clock_name), input $(reset_name), $(gen_stub_if_signals(vec, gen_line_stub_if_signals, "    "))    );
+    module stub (
+        input $(clock_name), 
+        input $(reset_name), 
+    $(gen_stub_if_signals(vec, gen_line_stub_if_signals, "    ")[1:end-1])
+    );
 
         always @(posedge $(clock_name) or $( (rst_is_negedge_sensitive) ? "negedge" : "posedge" ) $(reset_name)) begin
             if($( (rst_is_negedge_sensitive) ? "~" : "" )$(reset_name)) begin

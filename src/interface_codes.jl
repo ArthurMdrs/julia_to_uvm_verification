@@ -24,7 +24,7 @@ gen_if_base(prefix_name, vec) = begin
     name = use_short_names ? short_names_dict["interface"] : "interface"
     tr_name = use_short_names ? short_names_dict["transaction"] : "transaction"
     return """
-    interface $(prefix_name)_$(name) (input $(vec[1]), input $(vec[2][1]));
+    interface $(prefix_name)_$(name) (input logic $(vec[1]), input logic $(vec[2][1]));
 
         import uvm_pkg::*;    
         `include "uvm_macros.svh"
