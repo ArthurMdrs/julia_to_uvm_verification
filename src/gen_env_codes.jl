@@ -42,13 +42,14 @@ end
 gen_line_vif_instance(uvc_name, tabs) = begin
 return """$(tabs)$(uvc_name)_vif vif_$(uvc_name);\n"""
 end
-gen_vif_config_db_lines(uvc_name, tabs) = begin
+gen_vif_config_db_env(uvc_name, tabs) = begin
 return """
     $(tabs)if(uvm_config_db#($(uvc_name)_vif)::get(.cntxt(this), .inst_name(""), .field_name("vif_$(uvc_name)"), .value(vif_$(uvc_name))))
-    $(tabs)    `uvm_info("BASE TEST", "$(uppercase(uvc_name)) virtual interface was successfully set!", UVM_MEDIUM)
+    $(tabs)    `uvm_info("STUB ENV", "$(uppercase(uvc_name)) virtual interface was successfully set!", UVM_MEDIUM)
     $(tabs)else
-    $(tabs)    `uvm_fatal("BASE TEST", "No interface was set!")
+    $(tabs)    `uvm_fatal("STUB ENV", "No $(uppercase(uvc_name)) interface was set!")
     $(tabs)uvm_config_db#($(uvc_name)_vif)::set(.cntxt(this), .inst_name("agent_$(uvc_name)"), .field_name("vif"), .value(vif_$(uvc_name)));
+    
     """
 end
 
@@ -59,7 +60,6 @@ env_gen() = (!run_env_gen) ? "" : begin
 end
 
 gen_env_base() = begin 
-    cfg_name = use_short_names ? short_names_dict["config"     ] : "config"
     my_str = """
     class stub_env extends uvm_env;
 
@@ -70,7 +70,7 @@ gen_env_base() = begin
     $( gen_long_str(stub_if_names, "    ", gen_line_cfg_instance)[1:end-1] )
         // Config objects - end
         
-        `uvm_component_utils_begin(base_test)
+        `uvm_component_utils_begin(stub_env)
     """
     my_str *= gen_clknrst ? "        `uvm_field_object(cfg_clknrst, UVM_ALL_ON)\n" : ""
     my_str *= """
@@ -108,11 +108,13 @@ gen_env_base() = begin
 
             // Edit to disable some agent's coverage
             // cfg_$(stub_if_names[1]).cov_control = $(uppercase(stub_if_names[1]))_COV_DISABLE;
+            
+            cfg_clknrst.cov_control       = CLKNRST_COV_DISABLE;
 
     """
-    my_str *= gen_clknrst ? gen_vif_config_db_lines("clknrst", "        ") : ""
+    my_str *= gen_clknrst ? gen_vif_config_db_env("clknrst", "        ") : ""
     my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_vif_config_db_lines) )
+    $( gen_long_str(stub_if_names, "        ", gen_vif_config_db_env) )
             // UVCs creation - begin
     """
     my_str *= gen_clknrst ? gen_line_uvc_creation("clknrst", "        ") : ""
@@ -136,13 +138,17 @@ gen_env_base() = begin
 end
 
 gen_env_pkg() = begin
-    return """
+    my_str = """
     package stub_pkg;
 
         import uvm_pkg::*;
         `include "uvm_macros.svh"
         
-        import stub_tdefs_pkg::*;
+        // `include "stub_tdefs.sv"
+        
+    """
+    my_str *= gen_clknrst ? gen_line_import("clknrst", "    ") : ""
+    my_str *= """
     $( gen_long_str(stub_if_names, "    ", gen_line_import)[1:end-1] )
 
         // `include "stub_vseqr.sv"
@@ -153,6 +159,7 @@ gen_env_pkg() = begin
                 
     endpackage: stub_pkg
     """
+    return my_str
 end
 
 # ****************************************************************

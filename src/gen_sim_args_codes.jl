@@ -52,7 +52,12 @@ common_args() = begin
         """
     end
     my_str *= """
-    $( gen_long_str(stub_if_names, "    ", gen_uvc_include) )// RTL
+    $( gen_long_str(stub_if_names, "    ", gen_uvc_include)[1:end-1] )
+    // Stub env
+        -incdir .
+        ./stub_pkg.sv
+    
+    // RTL
         ../rtl/stub.sv
 
     // Top level

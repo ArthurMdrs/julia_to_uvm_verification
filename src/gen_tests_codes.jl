@@ -16,7 +16,7 @@ gen_line_uvc_creation(uvc_name, tabs) =
     """$(tabs)agent_$(uvc_name) = $(uvc_name)_agent::type_id::create("agent_$(uvc_name)", this);\n"""
 
 gen_line_sequences_config(uvc_name, tabs) = 
-    """$(tabs)uvm_config_wrapper::set(this, "agent_$(uvc_name).sequencer.run_phase", "default_sequence", $(uvc_name)_random_seq::get_type());\n"""
+    """$(tabs)uvm_config_wrapper::set(this, "env.agent_$(uvc_name).sequencer.run_phase", "default_sequence", $(uvc_name)_random_seq::get_type());\n"""
 
 gen_line_cfg_instance(uvc_name, tabs) = begin
     cwd = pwd()
@@ -42,13 +42,14 @@ end
 gen_line_vif_instance(uvc_name, tabs) = begin
     return """$(tabs)$(uvc_name)_vif vif_$(uvc_name);\n"""
 end
-gen_vif_config_db_lines(uvc_name, tabs) = begin
+gen_vif_config_db_tests(uvc_name, tabs) = begin
     return """
         $(tabs)if(uvm_config_db#($(uvc_name)_vif)::get(.cntxt(this), .inst_name(""), .field_name("vif_$(uvc_name)"), .value(vif_$(uvc_name))))
         $(tabs)    `uvm_info("BASE TEST", "$(uppercase(uvc_name)) virtual interface was successfully set!", UVM_MEDIUM)
         $(tabs)else
-        $(tabs)    `uvm_fatal("BASE TEST", "No interface was set!")
-        $(tabs)uvm_config_db#($(uvc_name)_vif)::set(.cntxt(this), .inst_name("agent_$(uvc_name)"), .field_name("vif"), .value(vif_$(uvc_name)));
+        $(tabs)    `uvm_fatal("BASE TEST", "No $(uppercase(uvc_name)) interface was set!")
+        $(tabs)uvm_config_db#($(uvc_name)_vif)::set(.cntxt(this), .inst_name("env"), .field_name("vif_$(uvc_name)"), .value(vif_$(uvc_name)));
+        
         """
 end
 
@@ -59,23 +60,10 @@ end
 
 gen_test_base() = begin 
     # TODO: Make drain time depend on clk period? Or maybe a config?
-    cfg_name = use_short_names ? short_names_dict["config"     ] : "config"
     my_str = """
     class base_test extends uvm_test;
-
-        // Config objects - begin
-    """
-    my_str *= gen_clknrst ? "    clknrst_cfg cfg_clknrst;\n" : ""
-    my_str *= """
-    $( gen_long_str(stub_if_names, "    ", gen_line_cfg_instance)[1:end-1] )
-        // Config objects - end
         
-        `uvm_component_utils_begin(base_test)
-    """
-    my_str *= gen_clknrst ? "        `uvm_field_object(cfg_clknrst, UVM_ALL_ON)\n" : ""
-    my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_line_cfg_utils)[1:end-1] )
-        `uvm_component_utils_end
+        `uvm_component_utils(base_test)
 
         // Interfaces instances - begin
     """
@@ -84,12 +72,7 @@ gen_test_base() = begin
     $( gen_long_str(stub_if_names, "    ", gen_line_vif_instance)[1:end-1] )
         // Interfaces instances - end
 
-        // UVCs instances - begin
-    """
-    my_str *= gen_clknrst ? "    clknrst_agent agent_clknrst;\n" : ""
-    my_str *= """
-    $( gen_long_str(stub_if_names, "    ", gen_line_uvc_instance)[1:end-1] )
-        // UVCs instances - end
+        stub_env env;
 
         uvm_objection obj;
 
@@ -101,25 +84,10 @@ gen_test_base() = begin
             super.build_phase(phase);
 
     """
-    my_str *= gen_clknrst ? "        cfg_clknrst = clknrst_cfg::type_id::create(\"cfg_clknrst\");\n" : ""
-    my_str *= gen_clknrst ? "        uvm_config_db#(clknrst_cfg)::set(.cntxt(this), .inst_name(\"agent_clknrst\"), .field_name(\"cfg\"), .value(cfg_clknrst));\n" : ""
+    my_str *= gen_clknrst ? gen_vif_config_db_tests("clknrst", "        ") : ""
     my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_line_cfg_creation) )
-            // Edit to set some agent to passive
-            // cfg_$(stub_if_names[1]).is_active = UVM_PASSIVE;
-
-            // Edit to disable some agent's coverage
-            // cfg_$(stub_if_names[1]).cov_control = $(uppercase(stub_if_names[1]))_COV_DISABLE;
-
-    """
-    my_str *= gen_clknrst ? gen_vif_config_db_lines("clknrst", "        ") : ""
-    my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_vif_config_db_lines) )
-            // UVCs creation - begin
-    """
-    my_str *= gen_clknrst ? gen_line_uvc_creation("clknrst", "        ") : ""
-    my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_line_uvc_creation) )        // UVCs creation - end
+    $( gen_long_str(stub_if_names, "        ", gen_vif_config_db_tests) )
+            env = stub_env::type_id::create("env", this);
 
             `uvm_info("BASE TEST", "Build phase running", UVM_HIGH)
             uvm_config_db#(int)::set(.cntxt(this), .inst_name("*"), .field_name("recording_detail"), .value(1));
@@ -162,7 +130,7 @@ gen_test_base() = begin
 
             // Random sequences config - begin
     """
-    my_str *= gen_clknrst ? "        uvm_config_wrapper::set(this, \"agent_clknrst.sequencer.run_phase\", \"default_sequence\", clknrst_reset_and_start_clk_seq::get_type());\n" : ""
+    my_str *= gen_clknrst ? "        uvm_config_wrapper::set(this, \"env.agent_clknrst.sequencer.run_phase\", \"default_sequence\", clknrst_reset_and_start_clk_seq::get_type());\n" : ""
     my_str *= """
     $( gen_long_str(stub_if_names, "        ", gen_line_sequences_config) )        // Random sequences config - end
             

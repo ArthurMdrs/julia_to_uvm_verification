@@ -11,12 +11,18 @@ gen_line_interfaces_instances(uvc_name, tabs) = begin
     include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
     uvc_clock_name = clock_name
     uvc_reset_name = reset_name
-    restore_config()
     if_name = use_short_names ? short_names_dict["interface"] : "interface"
+    restore_config()
     return """$(tabs)$(uvc_name)_$(if_name) if_$(uvc_name)(.$(uvc_clock_name)($(clock_name)), .$(uvc_reset_name)($(reset_name)));\n"""
 end
-gen_line_send_if_to_uvc(uvc_name, tabs) = 
-    """$(tabs)uvm_config_db#($(uvc_name)_vif)::set(.cntxt(null), .inst_name("uvm_test_top"), .field_name("vif_$(uvc_name)"), .value(if_$(uvc_name)));\n"""
+gen_line_send_if_to_uvc(uvc_name, tabs) = begin
+    cwd = pwd()
+    include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
+    if_name = use_short_names ? short_names_dict["interface"] : "interface"
+    restore_config()
+    # return """$(tabs)uvm_config_db#($(uvc_name)_vif)::set(.cntxt(null), .inst_name("uvm_test_top"), .field_name("vif_$(uvc_name)"), .value(if_$(uvc_name)));\n"""
+    return """$(tabs)uvm_config_db#(virtual interface $(uvc_name)_$(if_name))::set(.cntxt(null), .inst_name("uvm_test_top"), .field_name("vif_$(uvc_name)"), .value(if_$(uvc_name)));\n"""
+end
 gen_line_if_connection(signal_name, uvc_name, tabs) = 
     """$(tabs).$(signal_name[3])(if_$(uvc_name).$(signal_name[3])),\n"""
 gen_top_if_connection_signals(if_vector, tabs) = begin
@@ -46,14 +52,8 @@ gen_top_base() = begin
 
         import uvm_pkg::*;
         `include "uvm_macros.svh"
-
-        // UVC imports - begin
-    """
-    my_str *= gen_clknrst ? gen_line_import("clknrst", "        ") : ""
-    my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_line_import) )    // UVC imports - end
-
-        `include "tests.sv"
+        
+        import stub_pkg::*;
 
         logic $(clock_name), $(reset_name);
 
@@ -94,7 +94,7 @@ gen_top_base() = begin
 
             // Virtual interfaces send to UVCs - begin
     """
-    my_str *= gen_clknrst ? gen_line_send_if_to_uvc("clknrst", "            ") : ""
+    my_str *= gen_clknrst ? """            uvm_config_db#(virtual interface clknrst_if)::set(.cntxt(null), .inst_name("uvm_test_top"), .field_name("vif_clknrst"), .value(if_clknrst));\n""" : ""
     my_str *= """
     $( gen_long_str(stub_if_names, "            ", gen_line_send_if_to_uvc) )        // Virtual interfaces send to UVCs - end
 
