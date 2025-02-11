@@ -1,6 +1,8 @@
 # ***********************************
-# Transaction Codes!!!!!
+# Transaction Codes
 # ***********************************
+# Creates an transaction class (a.k.a. sequence item)
+# The gen_tr_base function needs a vector as an argument
 # Form of the vector to generate the transaction:
 #  is_rand? | type | length | name
 # 
@@ -21,12 +23,24 @@ gen_line_instanciate_obj(vec, tabs) =
     "$(tabs)$((vec[1]) ? "rand" : "    ") $(vec[2]) $((vec[3]=="1" || vec[3]=="") ? "      " : vec[3]) $(vec[4]);\n"
 
 gen_tr_base(prefix_name, vec) = begin 
-    name = use_short_names ? short_names_dict["transaction"] : "transaction"
-    return """
-    class $(prefix_name)_$(name) extends uvm_sequence_item;
+    name = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
+    my_str = """
+    class $(prefix_name)_$(name) $(get_param_declaration(params_vec, dut_name, ""))extends uvm_sequence_item;
 
     $(gen_long_str(vec, "    ", gen_line_instanciate_obj))
-        `uvm_object_utils_begin($(prefix_name)_$(name))
+    """
+    
+    if has_paramaters
+        my_str *= """
+            `uvm_object_param_utils_begin($(prefix_name)_$(name) $(get_param_conn("    ")[1:end-1]))
+        """
+    else
+        my_str *= """
+            `uvm_object_utils_begin($(prefix_name)_$(name))
+        """
+    end
+    
+    my_str *= """
     $(gen_long_str(vec, "        ", gen_line_object_utils))    `uvm_object_utils_end
 
         function new(string name="$(prefix_name)_$(name)");
@@ -49,20 +63,33 @@ gen_tr_base(prefix_name, vec) = begin
 
     endclass: $(prefix_name)_$(name)
     """
+    return my_str
 end
 
 gen_clknrst_tr() = begin 
     prefix_name = "clknrst"
-    name = use_short_names ? short_names_dict["transaction"] : "transaction"
-    return """
-    class $(prefix_name)_$(name) extends uvm_sequence_item;
+    name = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
+    my_str = """
+    class $(prefix_name)_$(name) $(get_param_declaration(params_vec, dut_name, ""))extends uvm_sequence_item;
         
         rand $(prefix_name)_action_enum   action;
         rand int unsigned          rst_assert_duration;     // In ps
         rand int unsigned          clk_period;              // In ps
         rand $(prefix_name)_init_val_enum initial_clk_val;
         
-        `uvm_object_utils_begin($(prefix_name)_$(name))
+    """
+    
+    if has_paramaters
+        my_str *= """
+            `uvm_object_param_utils_begin($(prefix_name)_$(name) $(get_param_conn("    ")[1:end-1]))
+        """
+    else
+        my_str *= """
+            `uvm_object_utils_begin($(prefix_name)_$(name))
+        """
+    end
+    
+    my_str *= """
             `uvm_field_enum($(prefix_name)_action_enum  , action         , UVM_ALL_ON)
             `uvm_field_int (rst_assert_duration                   , UVM_ALL_ON)
             `uvm_field_int (clk_period                            , UVM_ALL_ON)
@@ -83,6 +110,7 @@ gen_clknrst_tr() = begin
 
     endclass: $(prefix_name)_$(name)
     """
+    return my_str
 end
 
 # ****************************************************************

@@ -3,3 +3,4 @@ test*
 /generated_files/
 
 /ignore/
+*ignore*

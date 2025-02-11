@@ -1,8 +1,10 @@
 # ***********************************
-# UVC Gen Codes!!!!!
+# UVC Gen Codes
 # ***********************************
+# Creates all UVC files:
+# tr, pkgs, sequencer, seq_lib, if, driver, monitor, agent, config
 # This uses the vectors found in global_vectors.jl
-# And/or in UVC_parameters/(UVC name)_parameters.jl
+# And in UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
 
 function_dict = Dict()
@@ -17,21 +19,20 @@ gen_files(uvc_name) = begin
             # vec_aux["class_name"] = [gen_function, vector]
             vec_aux = function_dict[uppercase(class_name)]
             push!(vec_aux, use_short_names)
-            if use_short_names == true
-                class_name = short_names_dict[class_name]
-            end
+            include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
+            class_name = use_short_names ? short_names_dict[class_name] : long_names_dict[class_name]
             write_file("generated_files/$(uvc_name)/sv/$(uvc_name)_$(class_name).sv", 
                         vec_aux[1](uvc_name, vec_aux[2]))
+            restore_config()
         end
     end
 end
 
 gen_clknrst_files() = begin
-    cwd = pwd()
     uvc_name = "clknrst"
-    global use_short_names = true
+    # global use_short_names = true
     function_dict[uppercase("transaction" )] = [gen_clknrst_tr          , []]
-    function_dict[uppercase("tdefs"       )] = [gen_clknrst_tdefs       , []]
+    function_dict[uppercase("tdefs_pkg"   )] = [gen_clknrst_tdefs       , []]
     function_dict[uppercase("pkg"         )] = [gen_clknrst_pkg         , []]
     function_dict[uppercase("sequencer"   )] = [gen_clknrst_sequencer   , []]
     function_dict[uppercase("sequence_lib")] = [gen_clknrst_sequence_lib, []]
@@ -50,23 +51,20 @@ gen_clknrst_files() = begin
         class_name = String(class_symbol)
         vec_aux = function_dict[uppercase(class_name)]
         push!(vec_aux, use_short_names)
-        if use_short_names == true
-            class_name = short_names_dict[class_name]
-        end
+        class_name = use_short_names ? short_names_dict[class_name] : long_names_dict[class_name]
         write_file("generated_files/$(uvc_name)/sv/$(uvc_name)_$(class_name).sv", vec_aux[1]())
     end
 end
 
 uvc_files_gen() = begin
     if run_uvc_gen
-        cwd = pwd()
         for uvc_name in uvc_names
             include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
             
             if_vec = [clock_name, [reset_name, rst_is_negedge_sensitive], signals_if_config]
             
             function_dict[uppercase("transaction" )] = [gen_tr_base          , tr_vec     ]
-            function_dict[uppercase("tdefs"       )] = [gen_tdefs_base       , []         ]
+            function_dict[uppercase("tdefs_pkg"   )] = [gen_tdefs_base       , []         ]
             function_dict[uppercase("pkg"         )] = [gen_pkg_base         , []         ]
             function_dict[uppercase("sequencer"   )] = [gen_sequencer_base   , []         ]
             function_dict[uppercase("sequence_lib")] = [gen_sequence_lib_base, []         ]

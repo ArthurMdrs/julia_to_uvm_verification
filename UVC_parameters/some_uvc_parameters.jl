@@ -1,14 +1,16 @@
 # Vector that specifies the packet's attributes
 tr_vec = [
-  [true, "bit", "[7:0]", "data_to_send"],
-  [false, "bit", "[7:0]", "data_received"]]
+    [true, "bit", "[7:0]", "data_to_send"],
+    [false, "bit", "[7:0]", "data_received"] ]
+#   [is_rand, type, bits_range, name]
 
 # Vector that specifies the interface's signals
 signals_if_config = [
-  ["logic", "1", "ready_o"],
-  ["logic", "1", "valid_i"],
-  ["logic", "[7:0]", "data_i"],
-  ["logic", "[7:0]", "data_o"] ]
+    ["logic", "1", "ready_o", true],
+    ["logic", "1", "valid_i", false],
+    ["logic", "[7:0]", "data_i", false],
+    ["logic", "[7:0]", "data_o", true] ]
+#   [type, bits_range, name, is_output]
 
 # Variable that defines if reset is active low or high
 rst_is_negedge_sensitive = true

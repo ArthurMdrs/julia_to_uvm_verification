@@ -1,6 +1,7 @@
 # ***********************************
-# Package Codes!!!!!
+# Package Codes
 # ***********************************
+# Creates the UVC package
 # This uses a struct found in global_vectors.jl that may
 # be overwritten in UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
@@ -13,47 +14,64 @@ vector_to_pattern(prefix_name) = begin
         class_name = String(class_symbol)
         # if getfield(pkg_classes, class_symbol) == true && class_name in pkg_includes
         if getfield(pkg_classes, class_symbol) == true
-            if use_short_names == true
-                class_name = short_names_dict[class_name]
-            end
+            class_name = use_short_names ? short_names_dict[class_name] : long_names_dict[class_name]
             push!(vec_out, prefix_name*"_"*class_name)
         end
     end
     return vec_out
 end
 
-gen_tdefs_base(prefix_name, vec_in) = begin
-    vec = vector_to_pattern(prefix_name)
-    return """
-        typedef enum bit {
-            $(uppercase(prefix_name))_COV_ENABLE , 
-            $(uppercase(prefix_name))_COV_DISABLE
-        } $(prefix_name)_cov_enable_enum;
+gen_tdefs_base(prefix_name, vec) = begin
+    vec = params_vec
+    my_str = "package $(prefix_name)_tdefs_pkg;\n"
+    my_str *= """
+        
+            typedef enum bit {
+                $(uppercase(prefix_name))_COV_ENABLE , 
+                $(uppercase(prefix_name))_COV_DISABLE
+            } $(prefix_name)_cov_enable_enum;
+        
+        endpackage: $(prefix_name)_tdefs_pkg
         """
+    return my_str
 end
 
-gen_pkg_base(prefix_name, vec_in) = begin
+gen_pkg_base(prefix_name, vec) = begin
     vec = vector_to_pattern(prefix_name)
-    if_name = use_short_names ? short_names_dict["interface"] : "interface"
-    return """
+    if_name = use_short_names ? short_names_dict["interface"] : long_names_dict["interface"]
+    my_str = """
         package $(prefix_name)_pkg;
-
+            
             import uvm_pkg::*;
             `include "uvm_macros.svh"
+        """
+        
+        if has_paramaters
+            my_str *= """
+                
+                import $(dut_name)_params_pkg::*;
+            """
+        end
+        
+        my_str *= """
             
-            `include "$(prefix_name)_tdefs.sv"
-
-            typedef virtual interface $(prefix_name)_$(if_name) $(prefix_name)_vif;
-
+            //`include "$(prefix_name)_tdefs.sv"
+            import $(prefix_name)_tdefs_pkg::*;
+            
+        $(gen_line_vif_typedef(prefix_name, "    ")[1:end-1])
+            
         $(gen_long_str(vec, "    ", gen_line_include))
         endpackage: $(prefix_name)_pkg
         """
+    return my_str
 end
 
 gen_clknrst_tdefs() = begin
     prefix_name = "clknrst";
     vec = vector_to_pattern(prefix_name)
     return """
+    package $(prefix_name)_tdefs_pkg;
+    
         typedef enum bit {
             $(uppercase(prefix_name))_COV_ENABLE , 
             $(uppercase(prefix_name))_COV_DISABLE
@@ -71,7 +89,9 @@ gen_clknrst_tdefs() = begin
             $(uppercase(prefix_name))_INITIAL_VALUE_1,
             $(uppercase(prefix_name))_INITIAL_VALUE_X
         } $(prefix_name)_init_val_enum;
-        """
+         
+    endpackage : $(prefix_name)_tdefs_pkg
+    """
 end
 
 gen_clknrst_pkg() = gen_pkg_base("clknrst", [])

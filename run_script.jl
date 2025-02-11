@@ -57,9 +57,17 @@ include_jl("$(src_path)/gen_sim_args_codes.jl")
 output_file_setup("$(cwd)/generated_files"; reset_folder=reset_generated_files_folder)
 
 # Run generation functions
-uvc_files_gen();
-stub_gen();
-env_gen();
-test_gen();
-top_gen();
-sim_args_gen();
+elapsed_time_array = Dict()
+elapsed_time_array["uvc" ] = @elapsed uvc_files_gen()
+elapsed_time_array["stub"] = @elapsed stub_gen();
+elapsed_time_array["env" ] = @elapsed env_gen();
+elapsed_time_array["test"] = @elapsed test_gen();
+elapsed_time_array["top" ] = @elapsed top_gen();
+elapsed_time_array["args"] = @elapsed sim_args_gen();
+
+if debug_function_time
+    println("Elapsed times:")
+    for (key, value) in elapsed_time_array
+        println("$(key) => $(value)")
+    end
+end

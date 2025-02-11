@@ -1,16 +1,7 @@
 # ***********************************
-# Stub Codes!!!!!
+# Stub Codes
 # ***********************************
-# Form of the vector to generate the stub:
-#  uvc1_name | uvc2_name | ...
-# 
-# E.g.:
-# stub_if_names = ["uvc_test"]
-# 
-# This vector comes from the file code_generate_parameters.jl
-#
-# It is also used the file /generated_files/(UVC name)/parameter_folder/(UVC name)_parameters.jl
-# Which is generated in the UVC generation
+# Creates a stub DUT module
 # ***********************************
 
 # OBS.: The function gen_line_if_signal() comes from interface_codes.jl
@@ -60,14 +51,14 @@ stub_gen() = (!run_stub_gen) ? "" : begin
     # reset_name = if_vec[2]
     
     output_file_setup("generated_files/rtl")
-    write_file("generated_files/rtl/stub.sv", gen_stub_base(clock_name, reset_name, rst_is_negedge_sensitive, if_vector))
-    write_file("generated_files/rtl/stub_parameters.jl", 
+    write_file("generated_files/rtl/$(dut_name).sv", gen_stub_base(clock_name, reset_name, rst_is_negedge_sensitive, if_vector))
+    write_file("generated_files/rtl/$(dut_name)_parameters.jl", 
                 gen_stub_parameters_str_file(if_vector, stub_if_names, clock_name, reset_name))
 end
 
 gen_stub_base(clock_name, reset_name, rst_is_negedge_sensitive, vec) = begin 
     return """
-    module stub (
+    module $(dut_name) (
         input $(clock_name), 
         input $(reset_name), 
     $(gen_stub_if_signals(vec, gen_line_stub_if_signals, "    ")[1:end-1])
@@ -86,7 +77,7 @@ gen_stub_base(clock_name, reset_name, rst_is_negedge_sensitive, vec) = begin
             // Combinational logic
         end
 
-    endmodule: stub
+    endmodule: $(dut_name)
     """
 end
 # ****************************************************************

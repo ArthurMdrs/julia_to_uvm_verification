@@ -11,14 +11,14 @@ tr_vec = [
 
 # Vector that specifies the interface's signals
 signals_if_config = [
-    ["logic", "", "req_o"],
-    ["logic", "", "gnt_i"],
-    ["logic", "[31:0]", "addr_o"],
-    ["logic", "", "we_o"],
-    ["logic", "[ 3:0]", "be_o"],
-    ["logic", "[31:0]", "wdata_o"],
-    ["logic", "", "rvalid_i"],
-    ["logic", "[31:0]", "rdata_i"],
+    ["logic", "", "req_o", true],
+    ["logic", "", "gnt_i", false],
+    ["logic", "[31:0]", "addr_o", true],
+    ["logic", "", "we_o", true],
+    ["logic", "[ 3:0]", "be_o", true],
+    ["logic", "[31:0]", "wdata_o", true],
+    ["logic", "", "rvalid_i", false],
+    ["logic", "[31:0]", "rdata_i", false],
 ]
 
 # Variable that defines if reset is active low or high
