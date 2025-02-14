@@ -14,7 +14,17 @@ open_file(dir) = open(str_aux->read(str_aux, String), dir)
 gen_files(uvc_name) = begin
     for class_symbol in fieldnames(typeof(gen_classes))
         class_name = String(class_symbol)
-        if getfield(gen_classes, class_symbol) == true
+        if class_name == "coverage"
+            if agent_has_coverage == true
+                vec_aux = function_dict[uppercase(class_name)]
+                push!(vec_aux, use_short_names)
+                include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
+                class_name = use_short_names ? short_names_dict[class_name] : long_names_dict[class_name]
+                write_file("generated_files/$(uvc_name)/sv/$(uvc_name)_$(class_name).sv", 
+                            vec_aux[1](uvc_name, vec_aux[2]))
+                restore_config()
+            end
+        elseif getfield(gen_classes, class_symbol) == true
             # The vector below works like this
             # vec_aux["class_name"] = [gen_function, vector]
             vec_aux = function_dict[uppercase(class_name)]

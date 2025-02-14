@@ -55,13 +55,22 @@ gen_agent_base(prefix_name, vec) = begin
         """
     end
     
+    # my_str *= """
+        
+    #     $(prefix_name)_vif_t vif;
+    #     $(prefix_name)_$(mon_name)_t m_$(prefix_name)_$(mon_name);
+    #     $(prefix_name)_$(drv_name)_t m_$(prefix_name)_$(drv_name);
+    #     $(prefix_name)_$(sqr_name)_t m_$(prefix_name)_$(sqr_name);
+    # """
+    
     my_str *= """
         
         $(prefix_name)_vif_t vif;
-        $(prefix_name)_$(mon_name)_t m_$(prefix_name)_$(mon_name);
-        $(prefix_name)_$(drv_name)_t m_$(prefix_name)_$(drv_name);
-        $(prefix_name)_$(sqr_name)_t m_$(prefix_name)_$(sqr_name);
+        $(prefix_name)_$(mon_name)_t m_monitor;
+        $(prefix_name)_$(drv_name)_t m_driver;
+        $(prefix_name)_$(sqr_name)_t m_sequencer;
     """
+    
     my_str *= agent_has_coverage ? """
         $(prefix_name)_$(cov_name)_t m_$(prefix_name)_$(cov_name);
     """ : ""
@@ -89,10 +98,10 @@ gen_agent_base(prefix_name, vec) = begin
                 `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No interface was set!")
             uvm_config_db#($(prefix_name)_vif_t)::set(.cntxt(this), .inst_name("*"), .field_name("vif"), .value(vif));
             
-            m_$(prefix_name)_$(mon_name) = $(prefix_name)_$(mon_name)_t::type_id::create("m_$(prefix_name)_$(mon_name)", this);
+            m_monitor = $(prefix_name)_$(mon_name)_t::type_id::create("m_monitor", this);
             if ($(config_inst_convention).is_active == UVM_ACTIVE) begin
-                m_$(prefix_name)_$(sqr_name) = $(prefix_name)_$(sqr_name)_t::type_id::create("m_$(prefix_name)_$(sqr_name)", this);
-                m_$(prefix_name)_$(drv_name) = $(prefix_name)_$(drv_name)_t::type_id::create("m_$(prefix_name)_$(drv_name)", this);
+                m_sequencer = $(prefix_name)_$(sqr_name)_t::type_id::create("m_sequencer", this);
+                m_driver = $(prefix_name)_$(drv_name)_t::type_id::create("m_driver", this);
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Agent is active." , UVM_MEDIUM)
             end else begin
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Agent is not active." , UVM_MEDIUM)
@@ -113,16 +122,16 @@ gen_agent_base(prefix_name, vec) = begin
         function void connect_phase (uvm_phase phase);
             super.connect_phase(phase);
             
-            m_$(prefix_name)_$(mon_name).item_collected_port.connect(item_from_monitor_port);
+            m_monitor.item_collected_port.connect(item_from_monitor_port);
             
             if ($(config_inst_convention).is_active == UVM_ACTIVE) begin
-                m_$(prefix_name)_$(drv_name).seq_item_port.connect(m_$(prefix_name)_$(sqr_name).seq_item_export);
+                m_driver.seq_item_port.connect(m_sequencer.seq_item_export);
             end
             
     """
     my_str *= agent_has_coverage ? """
             if ($(config_inst_convention).cov_control == $(uppercase(prefix_name))_COV_ENABLE) begin
-                m_$(prefix_name)_$(mon_name).item_collected_port.connect(m_$(prefix_name)_$(cov_name).analysis_export);
+                m_monitor.item_collected_port.connect(m_$(prefix_name)_$(cov_name).analysis_export);
             end
     """ : ""
     my_str *= """

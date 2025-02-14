@@ -27,7 +27,7 @@ gen_line_connect_sequencers(uvc_name, tabs) = begin
     sqr_name = use_short_names ? short_names_dict["sequencer"] : long_names_dict["sequencer"]
     agent_name = use_short_names ? short_names_dict["agent"] : long_names_dict["agent"]
     restore_config()
-    my_str = "$(tabs)m_$(dut_name)_$(vsqr_name).m_$(uvc_name)_$(sqr_name) = m_$(uvc_name)_$(agent_name).m_$(uvc_name)_$(sqr_name);\n"
+    my_str = "$(tabs)m_$(dut_name)_$(vsqr_name).m_$(uvc_name)_$(sqr_name) = m_$(uvc_name)_$(agent_name).m_sequencer;\n"
     return my_str
 end
 gen_vif_config_db_env(uvc_name, tabs) = begin
@@ -54,13 +54,49 @@ gen_cfg_config_db_env(uvc_name, tabs) = begin
     $(tabs)
     """
 end
-
-
+get_sb_param_conn(tabs) = begin
+    if has_paramaters
+        @assert size(uvc_names, 1) >= 1
+        include_jl("$(cwd)/UVC_parameters/$(uvc_names[1])_parameters.jl")
+        tr_name = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
+        restore_config()
+        my_str = """
+        #(
+        $(tabs)    .seq_item_t($(uvc_names[1])_$(tr_name)_t),
+        $(tabs)    .$(dut_name)_params($(dut_name)_params)
+        $(tabs)) """
+    else
+        my_str = ""
+    end
+    return my_str
+end
 gen_vsqr_tdef(tabs) = begin
     vsqr_name  = use_short_names ? short_names_dict["vsequencer"  ] : long_names_dict["vsequencer"  ]
     my_str = """
     $(tabs)typedef $(dut_name)_$(vsqr_name) $(gen_vsqr_param_conn(tabs))$(dut_name)_$(vsqr_name)_t;
     """
+    return my_str
+end
+get_sb_ports_conn() = begin
+    sb_name = use_short_names ? short_names_dict["scoreboard"] : long_names_dict["scoreboard"]
+    @assert size(uvc_names, 1) >= 1
+    include_jl("$(cwd)/UVC_parameters/$(uvc_names[1])_parameters.jl")
+    agent_name = use_short_names ? short_names_dict["agent"] : long_names_dict["agent"]
+    restore_config()
+    my_str = "m_$(uvc_names[1])_$(agent_name).item_from_monitor_port.connect(m_$(dut_name)_$(sb_name).item_from_monitor_fifo.analysis_export);"
+    return my_str
+end
+get_rm_ports_conn(tabs) = begin
+    sb_name = use_short_names ? short_names_dict["scoreboard"] : long_names_dict["scoreboard"]
+    rm_name = use_short_names ? short_names_dict["ref_model" ] : long_names_dict["ref_model" ]
+    @assert size(uvc_names, 1) >= 1
+    include_jl("$(cwd)/UVC_parameters/$(uvc_names[1])_parameters.jl")
+    agent_name = use_short_names ? short_names_dict["agent"] : long_names_dict["agent"]
+    restore_config()
+    my_str = "$(tabs)m_$(uvc_names[1])_$(agent_name).item_from_monitor_port.connect(m_$(dut_name)_$(rm_name).analysis_export);\n"
+    if gen_scoreboard
+        my_str *= "$(tabs)m_$(dut_name)_$(rm_name).$(rm_name)_port.connect(m_$(dut_name)_$(sb_name).item_from_refmod_fifo.analysis_export);\n"
+    end
     return my_str
 end
 
@@ -79,10 +115,18 @@ env_gen() = (!run_env_gen) ? "" : begin
     write_file("generated_files/test_top/$(dut_name)_$(vsqr_name).sv", gen_vsequencer())
     slib_name = use_short_names ? short_names_dict["sequence_lib"] : long_names_dict["sequence_lib"]
     write_file("generated_files/test_top/$(dut_name)_v$(slib_name).sv", gen_vseq_lib())
+    sb_name = use_short_names ? short_names_dict["scoreboard"] : long_names_dict["scoreboard"]
+    if gen_scoreboard 
+        write_file("generated_files/test_top/$(dut_name)_$(sb_name).sv", gen_scoreboard_base())
+    end
+    rm_name = use_short_names ? short_names_dict["ref_model"] : long_names_dict["ref_model"]
+    if gen_refmod
+        write_file("generated_files/test_top/$(dut_name)_$(rm_name).sv", gen_refmod_base())
+    end
 end
 
 # ****************************************************************
-# TODO: ADD REFMOD AND SCOREBOARD TO ENV???
+
 gen_env_base() = begin
     vsqr_name  = use_short_names ? short_names_dict["vsequencer"  ] : long_names_dict["vsequencer"  ]
     slib_name  = use_short_names ? short_names_dict["sequence_lib"] : long_names_dict["sequence_lib"]
@@ -90,6 +134,8 @@ gen_env_base() = begin
     agent_name = use_short_names ? short_names_dict["agent"       ] : long_names_dict["agent"       ]
     cfg_name   = use_short_names ? short_names_dict["config"      ] : long_names_dict["config"      ]
     tr_name    = use_short_names ? short_names_dict["transaction" ] : long_names_dict["transaction" ]
+    sb_name    = use_short_names ? short_names_dict["scoreboard"  ] : long_names_dict["scoreboard"  ]
+    rm_name    = use_short_names ? short_names_dict["ref_model"   ] : long_names_dict["ref_model"   ]
     my_str = """
     class $(dut_name)_env $(get_param_declaration(params_vec, dut_name, ""))extends uvm_env;
         
@@ -122,6 +168,10 @@ gen_env_base() = begin
         // Typedefs - begin
     $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param)[1:end-1] )
     $( gen_vsqr_tdef("    ")[1:end-1] )
+    """
+    my_str *= gen_refmod ? "        typedef $(dut_name)_$(rm_name) $(get_sb_param_conn("    "))$(dut_name)_$(rm_name)_t;\n" : ""
+    my_str *= gen_scoreboard ? "        typedef $(dut_name)_$(sb_name) $(get_sb_param_conn("    "))$(dut_name)_$(sb_name)_t;\n" : ""
+    my_str *= """
         // Typedefs - end
         
         // Env config
@@ -172,7 +222,19 @@ gen_env_base() = begin
         
         // Virtual Sequencer
         $(dut_name)_$(vsqr_name)_t m_$(dut_name)_$(vsqr_name);
-
+        
+    """
+    my_str *= gen_refmod ? """
+        // Reference model
+        $(dut_name)_$(rm_name)_t m_$(dut_name)_$(rm_name);
+        
+    """ : ""
+    my_str *= gen_scoreboard ? """
+        // Scoreboard
+        $(dut_name)_$(sb_name)_t m_$(dut_name)_$(sb_name);
+        
+    """ : ""
+    my_str *= """
         function new(string name, uvm_component parent);
             super.new(name, parent);
         endfunction
@@ -210,19 +272,45 @@ gen_env_base() = begin
     my_str *= """
     $( gen_long_str(stub_if_names, "        ", gen_line_uvc_creation) )        // UVCs creation - end
             
-            // Create Virtual Sequencer
+            // Set config to virtual sequencer
+            uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(dut_name)_$(vsqr_name)"), .field_name("$(config_inst_convention)"), .value($(env_cfg_name)));
+            
+            // Create virtual sequencer
             m_$(dut_name)_$(vsqr_name) = $(dut_name)_$(vsqr_name)_t::type_id::create("m_$(dut_name)_$(vsqr_name)", this);
             
+    """
+    my_str *= gen_refmod ? """
+            // Create reference model
+            m_$(dut_name)_$(rm_name) = $(dut_name)_$(rm_name)_t::type_id::create("m_$(dut_name)_$(rm_name)", this);
+            
+    """ : ""
+    my_str *= gen_scoreboard ? """
+            // Create scoreboard
+            m_$(dut_name)_$(sb_name) = $(dut_name)_$(sb_name)_t::type_id::create("m_$(dut_name)_$(sb_name)", this);
+            
+    """ : ""
+    my_str *= """
             `uvm_info("$(uppercase(dut_name)) ENV", "Reached the end of build phase", UVM_HIGH)
         endfunction
 
         function void connect_phase (uvm_phase phase);
             super.connect_phase(phase);
             
-            // Sequencers connect - begin$(gen_clknrst ? "\n        m_$(dut_name)_$(vsqr_name).m_clknrst_$(sqr_name) = m_clknrst_$(agent_name).m_clknrst_$(sqr_name);" : "")
+            // Sequencers connect - begin$(gen_clknrst ? "\n        m_$(dut_name)_$(vsqr_name).m_clknrst_$(sqr_name) = m_clknrst_$(agent_name).m_sequencer;" : "")
     $( gen_long_str(stub_if_names, "        ", gen_line_connect_sequencers) )        // Sequencers connect - end
             
-            // m_some_agent.some_analysis_port.connect(m_scoreboard.some_analysis_export);
+    """
+    my_str *= gen_refmod ? """
+            // Make reference model connections
+    $(get_rm_ports_conn("        "))
+            
+    """ : ""
+    my_str *= gen_scoreboard ? """
+            // Connect agents to scoreboard
+            $(get_sb_ports_conn())
+            
+    """ : ""
+    my_str *= """
         endfunction: connect_phase
 
     endclass: $(dut_name)_env
@@ -236,6 +324,8 @@ gen_env_pkg() = begin
     cfg_name  = use_short_names ? short_names_dict["config"      ] : long_names_dict["config"      ]
     vsqr_name = use_short_names ? short_names_dict["vsequencer"  ] : long_names_dict["vsequencer"  ]
     slib_name = use_short_names ? short_names_dict["sequence_lib"] : long_names_dict["sequence_lib"]
+    sb_name   = use_short_names ? short_names_dict["scoreboard"  ] : long_names_dict["scoreboard"  ]
+    rm_name   = use_short_names ? short_names_dict["ref_model"   ] : long_names_dict["ref_model"   ]
     my_str = """
     package $(dut_name)_env_pkg;
 
@@ -255,6 +345,14 @@ gen_env_pkg() = begin
         `include "$(dut_name)_env_$(cfg_name).sv"
         `include "$(dut_name)_$(vsqr_name).sv"
         `include "$(dut_name)_v$(slib_name).sv"
+    """
+    if gen_refmod
+        my_str *= "    `include \"$(dut_name)_$(rm_name).sv\"\n"
+    end
+    if gen_scoreboard
+        my_str *= "    `include \"$(dut_name)_$(sb_name).sv\"\n"
+    end
+    my_str *= """
         `include "$(dut_name)_env.sv"
         
         `include "$(dut_name)_test_lib.sv"
@@ -394,6 +492,7 @@ end
 gen_vsequencer() = begin
     vsqr_name = use_short_names ? short_names_dict["vsequencer"] : long_names_dict["vsequencer"]
     sqr_name  = use_short_names ? short_names_dict["sequencer" ] : long_names_dict["sequencer" ]
+    cfg_name  = use_short_names ? short_names_dict["config"    ] : long_names_dict["config"    ]
     my_str = """
     class $(dut_name)_$(vsqr_name) $(get_vsqr_param_declaration("    "))extends uvm_sequencer;
         
@@ -412,6 +511,7 @@ gen_vsequencer() = begin
     my_str *= """
         
         // Typedefs - begin
+    $(gen_lines_tdefs_w_param("$(dut_name)_env_$(cfg_name)", "    ")[1:end-1])
     """
     
     sequencer_list = gen_clknrst ? ["clknrst_$(sqr_name)"] : []
@@ -430,9 +530,21 @@ gen_vsequencer() = begin
         // Sequencers - begin
     $( gen_long_str(sequencer_list, "    ", gen_line_sqr_instance) )    // Sequencers - end
         
+        // Env config
+        $(dut_name)_env_$(cfg_name)_t $(config_inst_convention);
+        
         function new(string name="$(dut_name)_$(vsqr_name)", uvm_component parent = null);
             super.new(name, parent);
         endfunction: new
+        
+        function void build_phase (uvm_phase phase);
+            super.build_phase(phase);
+            
+            if(uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(config_inst_convention)"), .value($(config_inst_convention))))
+                `uvm_info("$(uppercase(dut_name)) VSEQUENCER", "Configuration object was successfully set!", UVM_MEDIUM)
+            else
+                `uvm_fatal("$(uppercase(dut_name)) VSEQUENCER", "No configuration object was set!")
+        endfunction: build_phase
 
         task pre_reset_phase(uvm_phase phase);
     $( gen_long_str(sequencer_list, "        ", gen_line_stop_seq)[1:end-1] )
@@ -569,11 +681,11 @@ gen_vseq_lib() = begin
     end
     
     my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_line_rnd_seq_creation) )
+    $( gen_long_str(stub_if_names, "        ", gen_line_rnd_seq_creation)[1:end-1] )
     """
     
     if gen_clknrst
-        my_str *= "        m_clknrst_reset_and_start_clk_seq.start(.sequencer(p_sequencer.m_clknrst_$(sqr_name)), .call_pre_post(0));\n"
+        my_str *= "\n        m_clknrst_reset_and_start_clk_seq.start(.sequencer(p_sequencer.m_clknrst_$(sqr_name)), .call_pre_post(0));\n"
     else
         my_str *= ""
     end

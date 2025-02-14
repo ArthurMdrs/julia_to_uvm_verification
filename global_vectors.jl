@@ -37,6 +37,8 @@ short_names_dict = Dict(
     "interface" => "if",
     "vsequencer" => "vsqr",
     "sequence" => "seq",
+    "scoreboard" => "sb",
+    "ref_model" => "refmod",
 )
 long_names_dict = Dict(
     "transaction" => "transaction",
@@ -52,6 +54,8 @@ long_names_dict = Dict(
     "interface" => "interface",
     "vsequencer" => "vsequencer",
     "sequence" => "sequence",
+    "scoreboard" => "scoreboard",
+    "ref_model" => "ref_model",
 )
 
 # Default settings - Do NOT edit
@@ -60,6 +64,8 @@ uvc_names = []
 stub_if_names = uvc_names
 dut_name = ""
 gen_clknrst = true
+gen_scoreboard = false
+gen_refmod = false
 run_uvc_gen = true
 run_stub_gen = true
 run_env_gen = true

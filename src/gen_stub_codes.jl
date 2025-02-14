@@ -21,12 +21,9 @@ gen_stub_parameters_str_file(if_vector, stub_if_names, clock_name, reset_name) =
 update_signals_if_config(signals_if_config) = begin
     out_vec = []
     for x in signals_if_config
-        if x[3][end-1:end] == "_o"
+        if x[4] == true
             push!(out_vec, ["output reg", x[2], x[3]])
-        elseif x[3][end-1:end] == "_i"
-            push!(out_vec, ["input     ", x[2], x[3]])
         else
-            # push!(out_vec, ["NOTYPE    ", x[2], x[3]])
             push!(out_vec, ["input    ", x[2], x[3]])
         end
     end
@@ -57,8 +54,9 @@ stub_gen() = (!run_stub_gen) ? "" : begin
 end
 
 gen_stub_base(clock_name, reset_name, rst_is_negedge_sensitive, vec) = begin 
+    param_str = has_paramaters ? "import $(dut_name)_params_pkg::*; " : ""
     return """
-    module $(dut_name) (
+    module $(dut_name) $(param_str)(
         input $(clock_name), 
         input $(reset_name), 
     $(gen_stub_if_signals(vec, gen_line_stub_if_signals, "    ")[1:end-1])

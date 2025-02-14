@@ -42,7 +42,9 @@ include_jl("$(src_path)/interface_codes.jl")
 # Codes for generating stub DUT
 include_jl("$(src_path)/gen_stub_codes.jl")
 
-# Codes for generating stub env and test library
+# Codes for generating stub env, its components and the test library
+include_jl("$(src_path)/refmod_codes.jl")
+include_jl("$(src_path)/scoreboard_codes.jl")
 include_jl("$(src_path)/gen_env_codes.jl")
 include_jl("$(src_path)/gen_tests_codes.jl")
 

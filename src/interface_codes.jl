@@ -29,7 +29,7 @@ end
 gen_lines_drv_cb(vec, tabs) = begin
     my_str = """
     $(tabs)clocking drv_cb @(posedge $(vec[1]));
-    $(tabs)    default input #1ns output #5ns;
+    $(tabs)    default input #1ns output #1ns;
     $(gen_long_str(vec[3], tabs*"    ", gen_line_drv_cb_sig)[1:end-1])
     $(tabs)endclocking
     """
@@ -57,15 +57,16 @@ gen_if_base(prefix_name, vec) = begin
         input logic $(vec[2][1])
     );
         
-        import uvm_pkg::*;    
+        import uvm_pkg::*;
         `include "uvm_macros.svh"
+        
         import $(prefix_name)_pkg::*;
         
         // Interface Signals - Begin
     $(gen_long_str(vec[3], "    ", gen_line_if_signal))    // Interface Signals - End
         
     $(gen_lines_drv_cb(vec, "    ")[1:end-1])
-    
+        
     $(gen_lines_mon_cb(vec, "    ")[1:end-1])
         
         // Signals for transaction recording
@@ -73,9 +74,12 @@ gen_if_base(prefix_name, vec) = begin
         
         // Signal to control monitor activity
         bit got_tr;
+        
         // Test transaction
         //$(prefix_name)_$(tr_name) tr = new("TR");
+        
         typedef $(prefix_name)_$(tr_name) $(get_param_conn("    "))$(prefix_name)_$(tr_name)_t;
+        
         $(prefix_name)_$(tr_name)_t tr = new("TR");
         
         task $(prefix_name)_reset();
@@ -146,7 +150,7 @@ gen_clknrst_if() = begin
         initial begin
             wait (clk_active);
             forever begin
-                #(clk_period);
+                #(clk_period/2);
                 if (clk_active) begin
                     case (clk)
                     1'b0: clk = 1'b1;

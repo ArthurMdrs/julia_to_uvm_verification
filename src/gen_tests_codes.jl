@@ -151,7 +151,7 @@ gen_test_base() = begin
             
             // Set config objects to the database
     """
-    my_str *= gen_clknrst ? "        uvm_config_db#(clknrst_$(cfg_name)_t)::set(.cntxt(this), .inst_name(\"m_counter_env\"), .field_name(\"m_clknrst_$(cfg_name)\"), .value(m_clknrst_$(cfg_name)));\n" : ""
+    my_str *= gen_clknrst ? "        uvm_config_db#(clknrst_$(cfg_name)_t)::set(.cntxt(this), .inst_name(\"m_$(dut_name)_env\"), .field_name(\"m_clknrst_$(cfg_name)\"), .value(m_clknrst_$(cfg_name)));\n" : ""
     my_str *= """
     $( gen_long_str(stub_if_names, "        ", gen_line_cfg_set) )
             // Create ENV config
