@@ -99,6 +99,19 @@ get_rm_ports_conn(tabs) = begin
     end
     return my_str
 end
+get_cov_ports_conn(tabs) = begin
+    cov_name = use_short_names ? short_names_dict["coverage"] : long_names_dict["coverage"]
+    @assert size(uvc_names, 1) >= 1
+    include_jl("$(cwd)/UVC_parameters/$(uvc_names[1])_parameters.jl")
+    agent_name = use_short_names ? short_names_dict["agent"] : long_names_dict["agent"]
+    restore_config()
+    my_str = """
+    $(tabs)if ($(config_inst_convention).has_coverage) begin
+    $(tabs)    m_$(uvc_names[1])_$(agent_name).item_from_monitor_port.connect(m_$(dut_name)_$(cov_name).analysis_export);
+    $(tabs)end
+    """
+    return my_str
+end
 
 # ****************************************************************
 
@@ -123,6 +136,10 @@ env_gen() = (!run_env_gen) ? "" : begin
     if gen_refmod
         write_file("generated_files/test_top/$(dut_name)_$(rm_name).sv", gen_refmod_base())
     end
+    cov_name = use_short_names ? short_names_dict["coverage"] : long_names_dict["coverage"]
+    if env_has_coverage
+        write_file("generated_files/test_top/$(dut_name)_$(cov_name).sv", gen_env_coverage_base())
+    end
 end
 
 # ****************************************************************
@@ -136,6 +153,7 @@ gen_env_base() = begin
     tr_name    = use_short_names ? short_names_dict["transaction" ] : long_names_dict["transaction" ]
     sb_name    = use_short_names ? short_names_dict["scoreboard"  ] : long_names_dict["scoreboard"  ]
     rm_name    = use_short_names ? short_names_dict["ref_model"   ] : long_names_dict["ref_model"   ]
+    cov_name   = use_short_names ? short_names_dict["coverage"    ] : long_names_dict["coverage"    ]
     my_str = """
     class $(dut_name)_env $(get_param_declaration(params_vec, dut_name, ""))extends uvm_env;
         
@@ -169,8 +187,9 @@ gen_env_base() = begin
     $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param)[1:end-1] )
     $( gen_vsqr_tdef("    ")[1:end-1] )
     """
-    my_str *= gen_refmod ? "        typedef $(dut_name)_$(rm_name) $(get_sb_param_conn("    "))$(dut_name)_$(rm_name)_t;\n" : ""
-    my_str *= gen_scoreboard ? "        typedef $(dut_name)_$(sb_name) $(get_sb_param_conn("    "))$(dut_name)_$(sb_name)_t;\n" : ""
+    my_str *= gen_refmod ? "    typedef $(dut_name)_$(rm_name) $(get_sb_param_conn("    "))$(dut_name)_$(rm_name)_t;\n" : ""
+    my_str *= gen_scoreboard ? "    typedef $(dut_name)_$(sb_name) $(get_sb_param_conn("    "))$(dut_name)_$(sb_name)_t;\n" : ""
+    my_str *= env_has_coverage ? "    typedef $(dut_name)_$(cov_name) $(get_sb_param_conn("    "))$(dut_name)_$(cov_name)_t;\n" : ""
     my_str *= """
         // Typedefs - end
         
@@ -234,6 +253,11 @@ gen_env_base() = begin
         $(dut_name)_$(sb_name)_t m_$(dut_name)_$(sb_name);
         
     """ : ""
+    my_str *= env_has_coverage ? """
+        // Coverage collector
+        $(dut_name)_$(cov_name)_t m_$(dut_name)_$(cov_name);
+        
+    """ : ""
     my_str *= """
         function new(string name, uvm_component parent);
             super.new(name, parent);
@@ -289,6 +313,16 @@ gen_env_base() = begin
             m_$(dut_name)_$(sb_name) = $(dut_name)_$(sb_name)_t::type_id::create("m_$(dut_name)_$(sb_name)", this);
             
     """ : ""
+    my_str *= env_has_coverage ? """
+            // Create coverage collector
+            if ($(env_cfg_name).has_coverage) begin
+                m_$(dut_name)_$(cov_name) = $(dut_name)_$(cov_name)_t::type_id::create("m_$(dut_name)_$(cov_name)", this);
+                `uvm_info("$(uppercase(dut_name)) ENV", "Coverage is enabled." , UVM_MEDIUM)
+            end else begin
+                `uvm_info("$(uppercase(dut_name)) ENV", "Coverage is disabled." , UVM_MEDIUM)
+            end
+            
+    """ : ""
     my_str *= """
             `uvm_info("$(uppercase(dut_name)) ENV", "Reached the end of build phase", UVM_HIGH)
         endfunction
@@ -302,12 +336,17 @@ gen_env_base() = begin
     """
     my_str *= gen_refmod ? """
             // Make reference model connections
-    $(get_rm_ports_conn("        "))
+    $(get_rm_ports_conn("        ")[1:end-1])
             
     """ : ""
     my_str *= gen_scoreboard ? """
             // Connect agents to scoreboard
             $(get_sb_ports_conn())
+            
+    """ : ""
+    my_str *= env_has_coverage ? """
+            // Connect monitor to coverage collector
+    $(get_cov_ports_conn("        ")[1:end-1])
             
     """ : ""
     my_str *= """
@@ -326,6 +365,7 @@ gen_env_pkg() = begin
     slib_name = use_short_names ? short_names_dict["sequence_lib"] : long_names_dict["sequence_lib"]
     sb_name   = use_short_names ? short_names_dict["scoreboard"  ] : long_names_dict["scoreboard"  ]
     rm_name   = use_short_names ? short_names_dict["ref_model"   ] : long_names_dict["ref_model"   ]
+    cov_name  = use_short_names ? short_names_dict["coverage"    ] : long_names_dict["coverage"    ]
     my_str = """
     package $(dut_name)_env_pkg;
 
@@ -351,6 +391,9 @@ gen_env_pkg() = begin
     end
     if gen_scoreboard
         my_str *= "    `include \"$(dut_name)_$(sb_name).sv\"\n"
+    end
+    if env_has_coverage
+        my_str *= "    `include \"$(dut_name)_$(cov_name).sv\"\n"
     end
     my_str *= """
         `include "$(dut_name)_env.sv"
@@ -409,25 +452,29 @@ gen_env_cfg() = begin
     cfg_name = use_short_names ? short_names_dict["config"] : long_names_dict["config"]
     my_str = """
     class $(dut_name)_env_$(cfg_name) $(get_param_declaration(params_vec, dut_name, ""))extends uvm_object;
-
+        
         int some_config;
-
+        
     """
+    if env_has_coverage
+        # my_str *= "    $(prefix_name)_cov_enable_enum_t cov_control;\n"
+        my_str *= "    bit has_coverage;\n"
+    end 
     
     if has_paramaters
         my_str *= """
-        `uvm_object_param_utils_begin($(dut_name)_env_$(cfg_name) $(get_param_conn("    ")))
-            `uvm_field_int(some_config, UVM_ALL_ON)
-        `uvm_object_utils_end
-        
-    """
+            `uvm_object_param_utils_begin($(dut_name)_env_$(cfg_name) $(get_param_conn("    ")))
+                `uvm_field_int(some_config, UVM_ALL_ON)
+            `uvm_object_utils_end
+            
+        """
     else
         my_str *= """
-        `uvm_object_utils_begin($(dut_name)_env_$(cfg_name))
-            `uvm_field_int(some_config, UVM_ALL_ON)
-        `uvm_object_utils_end
-        
-    """
+            `uvm_object_utils_begin($(dut_name)_env_$(cfg_name))
+                `uvm_field_int(some_config, UVM_ALL_ON)
+            `uvm_object_utils_end
+            
+        """
     end
     my_str *="""
 

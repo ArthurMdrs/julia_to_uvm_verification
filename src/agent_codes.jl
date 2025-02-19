@@ -86,11 +86,11 @@ gen_agent_base(prefix_name, vec) = begin
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             
-            if(uvm_config_db#($(prefix_name)_$(cfg_name))::get(.cntxt(this), .inst_name(""), .field_name("$(config_inst_convention)"), .value($(config_inst_convention))))
+            if(uvm_config_db#($(prefix_name)_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(config_inst_convention)"), .value($(config_inst_convention))))
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Configuration object was successfully set!", UVM_MEDIUM)
             else
                 `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No configuration object was set!")
-            uvm_config_db#($(prefix_name)_$(cfg_name))::set(.cntxt(this), .inst_name("*"), .field_name("$(config_inst_convention)"), .value($(config_inst_convention)));
+            uvm_config_db#($(prefix_name)_$(cfg_name)_t)::set(.cntxt(this), .inst_name("*"), .field_name("$(config_inst_convention)"), .value($(config_inst_convention)));
             
             if(uvm_config_db#($(prefix_name)_vif_t)::get(.cntxt(this), .inst_name(""), .field_name("vif"), .value(vif)))
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Virtual interface was successfully set!", UVM_MEDIUM)
@@ -98,7 +98,9 @@ gen_agent_base(prefix_name, vec) = begin
                 `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No interface was set!")
             uvm_config_db#($(prefix_name)_vif_t)::set(.cntxt(this), .inst_name("*"), .field_name("vif"), .value(vif));
             
-            m_monitor = $(prefix_name)_$(mon_name)_t::type_id::create("m_monitor", this);
+            if ($(config_inst_convention).has_monitor == 1'b1) begin
+                m_monitor = $(prefix_name)_$(mon_name)_t::type_id::create("m_monitor", this);
+            end
             if ($(config_inst_convention).is_active == UVM_ACTIVE) begin
                 m_sequencer = $(prefix_name)_$(sqr_name)_t::type_id::create("m_sequencer", this);
                 m_driver = $(prefix_name)_$(drv_name)_t::type_id::create("m_driver", this);
@@ -122,7 +124,9 @@ gen_agent_base(prefix_name, vec) = begin
         function void connect_phase (uvm_phase phase);
             super.connect_phase(phase);
             
-            m_monitor.item_collected_port.connect(item_from_monitor_port);
+            if ($(config_inst_convention).has_monitor == 1'b1) begin
+                m_monitor.item_collected_port.connect(item_from_monitor_port);
+            end
             
             if ($(config_inst_convention).is_active == UVM_ACTIVE) begin
                 m_driver.seq_item_port.connect(m_sequencer.seq_item_export);
@@ -130,7 +134,7 @@ gen_agent_base(prefix_name, vec) = begin
             
     """
     my_str *= agent_has_coverage ? """
-            if ($(config_inst_convention).cov_control == $(uppercase(prefix_name))_COV_ENABLE) begin
+            if ($(config_inst_convention).cov_control == $(uppercase(prefix_name))_COV_ENABLE && $(config_inst_convention).has_monitor == 1'b1) begin
                 m_monitor.item_collected_port.connect(m_$(prefix_name)_$(cov_name).analysis_export);
             end
     """ : ""

@@ -15,6 +15,7 @@ gen_config_base(prefix_name, vec) = begin
         my_str *= "    $(prefix_name)_cov_enable_enum_t cov_control;\n"
     end 
     my_str *= """
+        bit has_monitor;
         
     """
     cov_uvm_field_str = agent_has_coverage ? "\n        `uvm_field_enum($(prefix_name)_cov_enable_enum_t, cov_control, UVM_ALL_ON)" : ""
@@ -43,6 +44,7 @@ gen_config_base(prefix_name, vec) = begin
         my_str *= "        cov_control = $(uppercase(prefix_name))_COV_DISABLE;\n"
     end 
     my_str *= """
+            has_monitor = 1'b1;
         endfunction: new
 
     endclass: $(prefix_name)_$(name)
@@ -62,6 +64,7 @@ gen_clknrst_config() = begin
         my_str *= "    $(prefix_name)_cov_enable_enum_t cov_control;\n"
     end 
     my_str *= """
+        bit has_monitor;
         
         rand $(prefix_name)_init_val_enum_t initial_rst_val;
         
@@ -95,6 +98,7 @@ gen_clknrst_config() = begin
         my_str *= "        cov_control = $(uppercase(prefix_name))_COV_DISABLE;\n"
     end 
     my_str *= """
+            has_monitor = 1'b0;
             initial_rst_val = $(uppercase(prefix_name))_INITIAL_VALUE_1;
         endfunction: new
 

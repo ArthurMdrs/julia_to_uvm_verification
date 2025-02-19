@@ -103,7 +103,7 @@ gen_monitor_base(prefix_name, vec) = begin
         endfunction: start_of_simulation_phase
         
         function void report_phase(uvm_phase phase);
-            `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Report: $(uppercase(prefix_name)) MONITOR collected %0d transactions", num_tr_col), UVM_LOW)
+            `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Report: $(uppercase(prefix_name)) MONITOR collected %0d transactions", num_tr_col), UVM_NONE)
         endfunction : report_phase
         
     endclass: $(prefix_name)_$(mon_name)
@@ -187,7 +187,7 @@ gen_clknrst_monitor() = begin
         endfunction: start_of_simulation_phase
         
         // function void report_phase(uvm_phase phase);
-        //     `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Report: $(uppercase(prefix_name)) MONITOR collected %0d transactions", num_tr_col), UVM_LOW)
+        //     `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Report: $(uppercase(prefix_name)) MONITOR collected %0d transactions", num_tr_col), UVM_NONE)
         // endfunction : report_phase
         
     endclass: $(prefix_name)_$(mon_name)

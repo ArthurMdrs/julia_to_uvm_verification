@@ -79,8 +79,10 @@ rst_is_negedge_sensitive = true
 use_short_names = true
 has_paramaters = false
 agent_has_coverage = false
+env_has_coverage = false
 cfg_name = use_short_names ? short_names_dict["config"] : long_names_dict["config"]
-config_inst_convention = "m_$(cfg_name)"
+# config_inst_convention = "m_$(cfg_name)"
+config_inst_convention = "m_config"
 
 debug_function_time = false
 

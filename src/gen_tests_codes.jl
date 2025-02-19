@@ -139,12 +139,14 @@ gen_test_base() = begin
     """
     my_str *= gen_clknrst ? gen_vif_config_db_tests("clknrst", "        ")[1:end-1] : ""
     my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_vif_config_db_tests)[1:end-1] )
+    $( gen_long_str(stub_if_names, "        ", gen_vif_config_db_tests)[1:end-2] )
+            
             // Create config objects
     """
     my_str *= gen_clknrst ? "        m_clknrst_$(cfg_name) = clknrst_$(cfg_name)_t::type_id::create(\"m_clknrst_$(cfg_name)\");\n" : ""
     my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_line_cfg_create) )
+    $( gen_long_str(stub_if_names, "        ", gen_line_cfg_create)[1:end-1] )
+            
             // Set agents configuration
             // m_$(stub_if_names[1])_cfg.cov_control = $(uppercase(stub_if_names[1]))_COV_DISABLE;
             // m_$(stub_if_names[1])_cfg.is_active = UVM_PASSIVE;
@@ -153,12 +155,18 @@ gen_test_base() = begin
     """
     my_str *= gen_clknrst ? "        uvm_config_db#(clknrst_$(cfg_name)_t)::set(.cntxt(this), .inst_name(\"m_$(dut_name)_env\"), .field_name(\"m_clknrst_$(cfg_name)\"), .value(m_clknrst_$(cfg_name)));\n" : ""
     my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_line_cfg_set) )
+    $( gen_long_str(stub_if_names, "        ", gen_line_cfg_set)[1:end-1] )
+            
             // Create ENV config
             m_$(dut_name)_env_$(cfg_name) = $(dut_name)_env_$(cfg_name)_t::type_id::create(\"m_$(dut_name)_env_$(cfg_name)\");
             
             // Set ENV configuration
             m_$(dut_name)_env_$(cfg_name).some_config = 10;
+    """
+    if env_has_coverage
+        my_str *= "        m_$(dut_name)_env_$(cfg_name).has_coverage = 1'b1;\n"
+    end 
+    my_str *= """
             
             uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(dut_name)_env"), .field_name("$(env_cfg_name)"), .value(m_$(dut_name)_env_$(cfg_name)));
             

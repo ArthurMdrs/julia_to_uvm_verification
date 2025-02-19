@@ -39,7 +39,7 @@ gen_scoreboard_base() = begin
     end
     my_str *= """
         
-        int unsigned n_compared;
+        int unsigned n_compared, n_matches, n_mismatches;
         
         function new(string name="$(dut_name)_$(sb_name)", uvm_component parent = null);
             super.new(name, parent);
