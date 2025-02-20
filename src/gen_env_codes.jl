@@ -335,9 +335,10 @@ gen_env_base() = begin
     my_str *= gen_clknrst ? """
             if (m_clknrst_$(cfg_name).is_active == UVM_ACTIVE)
                 m_$(dut_name)_$(vsqr_name).m_clknrst_$(sqr_name) = m_clknrst_$(agent_name).m_sequencer;
+            
     """ : ""
     my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_line_connect_sequencers)[1:end-1] )
+    $( gen_long_str(stub_if_names, "        ", gen_line_connect_sequencers)[1:end-2] )
             // Sequencers connect - end
             
     """
@@ -438,7 +439,7 @@ gen_params_pkg() = begin
     package $(dut_name)_params_pkg;
         
         typedef struct packed {
-    $(gen_long_str(params_vec, "        ", gen_line_param))[1:end-1]
+    $( gen_long_str(params_vec, "        ", gen_line_param)[1:end-1] )
         } $(dut_name)_params_t;
         
     """
