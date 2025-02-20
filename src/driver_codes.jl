@@ -22,24 +22,23 @@ gen_driver_base(prefix_name, vec) = begin
     my_str = """
     class $(prefix_name)_$(drv_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_driver #($(tr_type));
         
-    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param) )
-        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
-        
     """
     
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils_begin($(prefix_name)_$(drv_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(drv_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
         """
     else
         my_str *= """
-            `uvm_component_utils_begin($(prefix_name)_$(drv_name))
+            `uvm_component_utils($(prefix_name)_$(drv_name))
         """
     end
     
     my_str *= """
-            `uvm_field_object($(config_inst_convention), UVM_ALL_ON)
-        `uvm_component_utils_end
+        
+    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param)[1:end-1] )
+        
+        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
         
         $(prefix_name)_vif_t vif;
         
@@ -64,7 +63,7 @@ gen_driver_base(prefix_name, vec) = begin
                 `uvm_fatal("$(uppercase(prefix_name)) DRIVER", "No interface was set!")
         endfunction: build_phase
         
-        virtual task run_phase (uvm_phase phase);
+        task run_phase (uvm_phase phase);
             super.run_phase(phase);
             fork
                 get_and_drive();
@@ -81,7 +80,7 @@ gen_driver_base(prefix_name, vec) = begin
             forever begin
                 // Get new item from the sequencer
                 seq_item_port.get_next_item(req);
-                `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Sending transaction:%s", req.convert2string()), UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Sending transaction:%s", req.convert2string()), UVM_HIGH)
                 
                 // concurrent blocks for transaction driving and transaction recording
                 fork
@@ -134,29 +133,28 @@ gen_clknrst_driver() = begin
     my_str = """
     class $(prefix_name)_$(drv_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_driver #($(tr_type));
         
-    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param) )
-        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
-        
     """
     
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils_begin($(prefix_name)_$(drv_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(drv_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
         """
     else
         my_str *= """
-            `uvm_component_utils_begin($(prefix_name)_$(drv_name))
+            `uvm_component_utils($(prefix_name)_$(drv_name))
         """
     end
     
     my_str *= """
-            `uvm_field_object($(config_inst_convention), UVM_ALL_ON)
-        `uvm_component_utils_end
+        
+    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param)[1:end-1] )
+        
+        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
         
         $(prefix_name)_vif_t vif;
         int num_sent;
         
-        function new(string name, uvm_component parent);
+        function new (string name, uvm_component parent);
             super.new(name, parent);
             num_sent = 0;
         endfunction: new
@@ -175,7 +173,7 @@ gen_clknrst_driver() = begin
                 `uvm_fatal("$(uppercase(prefix_name)) DRIVER", "No interface was set!")
         endfunction: build_phase
         
-        virtual task run_phase (uvm_phase phase);
+        task run_phase (uvm_phase phase);
             super.run_phase(phase);
             
             case ($(config_inst_convention).initial_rst_val)
@@ -188,7 +186,7 @@ gen_clknrst_driver() = begin
             forever begin
                 seq_item_port.get_next_item(req);
                 void'(begin_tr(req, "$(uppercase(prefix_name))_DRIVER_TR"));
-                drive_req (req);
+                drive_req(req);
                 end_tr(req);
                 num_sent++;
                 seq_item_port.item_done();
@@ -197,14 +195,16 @@ gen_clknrst_driver() = begin
         
         
         
-        task drive_req($(tr_type) req);
+        task drive_req ($(tr_type) req);
             case (req.action)
                 $(uppercase(prefix_name))_ACTION_START_CLK: begin
                     if (vif.clk_active) begin
                         `uvm_warning("$(uppercase(prefix_name)) DRIVER", \$sformatf("Attempting to start clock generation while it is already active. Ignoring req:\\n%s", req.sprint()))
                     end
                     else begin
-                        if (req.clk_period != 0) begin
+                        if ($(config_inst_convention).set_clk_period_from_config) begin
+                            vif.set_period($(config_inst_convention).clk_period * 1ps);
+                        end else if (req.clk_period != 0) begin
                             vif.set_period(req.clk_period * 1ps);
                         end
                         case (req.initial_clk_val)
@@ -249,7 +249,7 @@ gen_clknrst_driver() = begin
         endfunction: start_of_simulation_phase
         
         function void report_phase(uvm_phase phase);
-            `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Report: $(uppercase(prefix_name)) DRIVER sent %0d transactions", num_sent), UVM_LOW)
+            `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Report: $(uppercase(prefix_name)) DRIVER sent %0d transactions", num_sent), UVM_NONE)
         endfunction : report_phase
         
     endclass: $(prefix_name)_$(drv_name)

@@ -53,11 +53,16 @@ end
 
 get_param_declaration(params_vec, prefix_name, tabs) = begin
     my_str = ""
+    # if has_paramaters
+    #     my_str *="#(parameter $(prefix_name)_params_t $(prefix_name)_params = '{\n"
+    #     gen_line(param_vec, tabs) = "$(tabs)$(param_vec[2]): $(param_vec[3]),\n"
+    #     my_str *= gen_long_str(params_vec, tabs*"    ", gen_line)[1:end-2]
+    #     my_str *= " }\n) "
+    # end
     if has_paramaters
-        my_str *="#(parameter $(prefix_name)_params_t $(prefix_name)_params = '{\n"
-        gen_line(param_vec, tabs) = "$(tabs)$(param_vec[2]): $(param_vec[3]),\n"
-        my_str *= gen_long_str(params_vec, tabs*"    ", gen_line)[1:end-2]
-        my_str *= " }\n) "
+        my_str *= "#(\n"
+        my_str *= "$(tabs)parameter $(prefix_name)_params_t $(prefix_name)_params = '0\n"
+        my_str *= ") "
     end
     return my_str
 end
@@ -66,12 +71,17 @@ get_param_declaration_w_seq_item(params_vec, prefix_name, tabs) = begin
     my_str = ""
     if has_paramaters
         gen_line(param_vec, tabs) = "$(tabs)$(param_vec[2]): $(param_vec[3]),\n"
+        # my_str *= """
+        # #(
+        # $(tabs)parameter type seq_item_t = uvm_sequence_item,
+        # $(tabs)parameter $(prefix_name)_params_t $(prefix_name)_params = '{
+        # $(gen_long_str(params_vec, tabs*"    ", gen_line)[1:end-2])
+        # $(tabs)}
+        # ) """
         my_str *= """
         #(
         $(tabs)parameter type seq_item_t = uvm_sequence_item,
-        $(tabs)parameter $(prefix_name)_params_t $(prefix_name)_params = '{
-        $(gen_long_str(params_vec, tabs*"    ", gen_line)[1:end-2])
-        $(tabs)}
+        $(tabs)parameter $(prefix_name)_params_t $(prefix_name)_params = '0
         ) """
     end
     return my_str

@@ -7,17 +7,27 @@
 # ***********************************
 
 gen_agent_base(prefix_name, vec) = begin 
-    name = use_short_names ? short_names_dict["agent"] : "agent"
-    cfg_name = use_short_names ? short_names_dict["config"     ] : long_names_dict["config"     ]
-    mon_name = use_short_names ? short_names_dict["monitor"    ] : long_names_dict["monitor"    ]
-    drv_name = use_short_names ? short_names_dict["driver"     ] : long_names_dict["driver"     ]
-    sqr_name = use_short_names ? short_names_dict["sequencer"  ] : long_names_dict["sequencer"  ]
-    cov_name = use_short_names ? short_names_dict["coverage"   ] : long_names_dict["coverage"   ]
-    tr_name  = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
+    agent_name = use_short_names ? short_names_dict["agent"      ] : long_names_dict["agent"      ]
+    cfg_name   = use_short_names ? short_names_dict["config"     ] : long_names_dict["config"     ]
+    mon_name   = use_short_names ? short_names_dict["monitor"    ] : long_names_dict["monitor"    ]
+    drv_name   = use_short_names ? short_names_dict["driver"     ] : long_names_dict["driver"     ]
+    sqr_name   = use_short_names ? short_names_dict["sequencer"  ] : long_names_dict["sequencer"  ]
+    cov_name   = use_short_names ? short_names_dict["coverage"   ] : long_names_dict["coverage"   ]
+    tr_name    = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
     my_str = """
-    class $(prefix_name)_$(name) $(get_param_declaration(params_vec, dut_name, ""))extends uvm_agent;
+    class $(prefix_name)_$(agent_name) $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_agent;
         
     """
+    
+    if has_paramaters
+        my_str *= """
+            `uvm_component_param_utils($(prefix_name)_$(agent_name) $(get_param_conn("    ")[1:end-1]))
+        """
+    else
+        my_str *= """
+            `uvm_component_utils($(prefix_name)_$(agent_name))
+        """
+    end
     
     tdefs_list = ["$(prefix_name)_$(cfg_name)", "$(prefix_name)_$(tr_name)"]
     tdefs_list_w_seq_item = ["$(prefix_name)_$(drv_name)", "$(prefix_name)_$(sqr_name)", "$(prefix_name)_$(mon_name)"]
@@ -32,7 +42,8 @@ gen_agent_base(prefix_name, vec) = begin
     
     gen_lines(name, tabs) = gen_lines_tdefs_w_param_w_seq_item(name, "$(prefix_name)", tabs)
     my_str *= """
-    $( gen_long_str(tdefs_list_w_seq_item, "    ", gen_lines) )    // Typedefs - end
+    $( gen_long_str(tdefs_list_w_seq_item, "    ", gen_lines)[1:end-1] )
+        // Typedefs - end
     """
     
     my_str *= """
@@ -40,20 +51,6 @@ gen_agent_base(prefix_name, vec) = begin
         $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
         
     """
-    
-    if has_paramaters
-        my_str *= """
-            `uvm_component_param_utils_begin($(prefix_name)_$(name) $(get_param_conn("    ")[1:end-1]))
-                `uvm_field_object($(config_inst_convention), UVM_ALL_ON)
-            `uvm_component_utils_end
-        """
-    else
-        my_str *= """
-            `uvm_component_utils_begin($(prefix_name)_$(name))
-                `uvm_field_object($(config_inst_convention), UVM_ALL_ON)
-            `uvm_component_utils_end
-        """
-    end
     
     # my_str *= """
         
@@ -111,7 +108,7 @@ gen_agent_base(prefix_name, vec) = begin
             
     """
     my_str *= agent_has_coverage ? """
-            if ($(config_inst_convention).cov_control == $(uppercase(prefix_name))_COV_ENABLE) begin
+            if ($(config_inst_convention).has_coverage == 1'b1) begin
                 m_$(prefix_name)_$(cov_name) = $(prefix_name)_$(cov_name)_t::type_id::create("m_$(prefix_name)_$(cov_name)", this);
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Coverage is enabled." , UVM_MEDIUM)
             end else begin
@@ -134,7 +131,7 @@ gen_agent_base(prefix_name, vec) = begin
             
     """
     my_str *= agent_has_coverage ? """
-            if ($(config_inst_convention).cov_control == $(uppercase(prefix_name))_COV_ENABLE && $(config_inst_convention).has_monitor == 1'b1) begin
+            if ($(config_inst_convention).has_coverage == 1'b1 && $(config_inst_convention).has_monitor == 1'b1) begin
                 m_monitor.item_collected_port.connect(m_$(prefix_name)_$(cov_name).analysis_export);
             end
     """ : ""
@@ -146,7 +143,7 @@ gen_agent_base(prefix_name, vec) = begin
             `uvm_info("$(uppercase(prefix_name)) AGENT", "Simulation initialized", UVM_HIGH)
         endfunction: start_of_simulation_phase
         
-    endclass: $(prefix_name)_$(name)
+    endclass: $(prefix_name)_$(agent_name)
     """
     return my_str
 end

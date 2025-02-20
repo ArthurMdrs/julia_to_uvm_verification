@@ -21,7 +21,7 @@ gen_line_coverpoint(vec, tabs) = begin
         return """
         $(tabs)$(vec[4])_cp: coverpoint cov_transaction.$(vec[4]) {
         $(tabs)    option.at_least = 2;
-        $(tabs)    bins $(vec[4])_bin [] = {[0:$]};
+        $(tabs)    bins $(vec[4])_bin [] = {[0:\$]};
         $(tabs)}
         """
     else
@@ -46,28 +46,26 @@ gen_coverage_base(prefix_name, vec) = begin
     my_str = """
     class $(prefix_name)_$(cov_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_subscriber #($(tr_type));
         
-    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param) )
-        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
-        
-        real coverage_value;
-        $(tr_type) cov_transaction;
-        
     """
 
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils_begin($(prefix_name)_$(cov_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(cov_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
         """
     else
         my_str *= """
-            `uvm_component_utils_begin($(prefix_name)_$(cov_name))
+            `uvm_component_utils($(prefix_name)_$(cov_name))
         """
     end
     
     my_str *= """
-            `uvm_field_object($(config_inst_convention), UVM_ALL_ON)
-            `uvm_field_real(coverage_value, UVM_ALL_ON)
-        `uvm_component_utils_end
+        
+    $( gen_lines_tdefs_w_param("$(prefix_name)_$(cfg_name)", "    ")[1:end-1] )
+        
+        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
+        
+        real coverage_value;
+        $(tr_type) cov_transaction;
         
         covergroup $(prefix_name)_covergroup;
             option.per_instance = 1;
@@ -75,7 +73,8 @@ gen_coverage_base(prefix_name, vec) = begin
             // option.at_least = 3;
             // option.auto_bin_max = 256;
             // option.cross_auto_bin_max = 256;
-    $(gen_long_str(vec, "        ", gen_line_coverpoint))    endgroup : $(prefix_name)_covergroup
+    $( gen_long_str(vec, "        ", gen_line_coverpoint)[1:end-1] )
+        endgroup : $(prefix_name)_covergroup
         
         function new (string name, uvm_component parent);
             super.new(name, parent);
@@ -143,30 +142,26 @@ gen_env_coverage_base() = begin
     class $(dut_name)_$(cov_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_subscriber #($(tr_type));
         
     """
+
+    if has_paramaters
+        my_str *= """
+            `uvm_component_param_utils($(dut_name)_$(cov_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+        """
+    else
+        my_str *= """
+            `uvm_component_utils($(dut_name)_$(cov_name))
+        """
+    end
+    
     # my_str *= """
     # $( gen_long_str(["$(dut_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param) )
     #     $(dut_name)_$(cfg_name)_t $(config_inst_convention);
     # """
+    
     my_str *= """
+        
         real coverage_value;
         $(tr_type) cov_transaction;
-        
-    """
-
-    if has_paramaters
-        my_str *= """
-            `uvm_component_param_utils_begin($(dut_name)_$(cov_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
-        """
-    else
-        my_str *= """
-            `uvm_component_utils_begin($(dut_name)_$(cov_name))
-        """
-    end
-    
-            # `uvm_field_object($(config_inst_convention), UVM_ALL_ON)
-    my_str *= """
-            `uvm_field_real(coverage_value, UVM_ALL_ON)
-        `uvm_component_utils_end
         
         // Use this to connect to more analysis ports
         // `uvm_analysis_imp_decl(_other)
@@ -179,7 +174,8 @@ gen_env_coverage_base() = begin
             // option.at_least = 3;
             // option.auto_bin_max = 256;
             // option.cross_auto_bin_max = 256;
-    $(gen_long_str(tr_vec, "        ", gen_line_coverpoint))    endgroup : $(dut_name)_covergroup
+    $( gen_long_str(tr_vec, "        ", gen_line_coverpoint)[1:end-1] )
+        endgroup : $(dut_name)_covergroup
         
         function new (string name, uvm_component parent);
             super.new(name, parent);

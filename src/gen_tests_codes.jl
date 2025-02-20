@@ -59,7 +59,7 @@ gen_test_base() = begin
     tr_name   = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
     vseq_inst_name = "m_vseq"
     my_str = """
-    class $(dut_name)_test_base $(get_param_declaration(params_vec, dut_name, ""))extends uvm_test;
+    class $(dut_name)_test_base $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_test;
         
     """
     
@@ -108,7 +108,8 @@ gen_test_base() = begin
     """
     my_str *= gen_clknrst ? "    clknrst_$(cfg_name)_t m_clknrst_$(cfg_name);\n" : ""
     my_str *= """
-    $( gen_long_str(stub_if_names, "    ", gen_line_cfg_instance) )    // Config objects - end
+    $( gen_long_str(stub_if_names, "    ", gen_line_cfg_instance)[1:end-1] )
+        // Config objects - end
     """
     my_str *= """
         
@@ -148,7 +149,7 @@ gen_test_base() = begin
     $( gen_long_str(stub_if_names, "        ", gen_line_cfg_create)[1:end-1] )
             
             // Set agents configuration
-            // m_$(stub_if_names[1])_cfg.cov_control = $(uppercase(stub_if_names[1]))_COV_DISABLE;
+            // m_$(stub_if_names[1])_cfg.has_coverage = 1'b0;
             // m_$(stub_if_names[1])_cfg.is_active = UVM_PASSIVE;
             
             // Set config objects to the database
@@ -192,7 +193,7 @@ gen_test_base() = begin
         
     """
     # my_str *= """
-    #     virtual task run_phase(uvm_phase phase);
+    #     task run_phase(uvm_phase phase);
     #         super.run_phase(phase);
     #         obj = phase.get_objection();
     #         obj.set_drain_time(this, 200ns);
@@ -213,13 +214,14 @@ gen_test_base() = begin
         task main_phase(uvm_phase phase);
             obj = phase.get_objection();
             obj.set_drain_time(this, 200ns);
-            phase.raise_objection(this, get_type_name());
-            `uvm_info("$(uppercase(dut_name)) BASE TEST", "phase.raise_objection", UVM_HIGH)
+            //phase.raise_objection(this, get_type_name());
+            //`uvm_info("$(uppercase(dut_name)) BASE TEST", "phase.raise_objection", UVM_HIGH)
             
-            $(vseq_inst_name).start(m_$(dut_name)_env.m_$(dut_name)_$(vsqr_name));
+            $(vseq_inst_name).set_starting_phase(phase);
+            $(vseq_inst_name).start(.sequencer(m_$(dut_name)_env.m_$(dut_name)_$(vsqr_name)));
             
-            phase.drop_objection(this, get_type_name());
-            `uvm_info("$(uppercase(dut_name)) BASE TEST", "phase.drop_objection", UVM_HIGH)
+            //phase.drop_objection(this, get_type_name());
+            //`uvm_info("$(uppercase(dut_name)) BASE TEST", "phase.drop_objection", UVM_HIGH)
         endtask : main_phase
         
     """
@@ -228,7 +230,7 @@ gen_test_base() = begin
     
     //==============================================================//
     
-    class $(dut_name)_test_random $(get_param_declaration(params_vec, dut_name, ""))extends $(dut_name)_test_base $(get_param_conn(""));
+    class $(dut_name)_test_random $(get_param_declaration(params_vec, dut_name, "    "))extends $(dut_name)_test_base $(get_param_conn(""));
     
     """
     if has_paramaters
@@ -260,22 +262,26 @@ gen_test_base() = begin
             super.build_phase(phase);
             
         endfunction: build_phase
-        /*
-        function void build_phase(uvm_phase phase);
-            // Override transaction types, eg:
-            //      original_type_name::type_id::set_type_override(override_type_name::get_type());
-            //      set_type_override_by_type (original_type::get_type(), override_type::get_type());
-            //      set_inst_override_by_type (original_type::get_type(), override_type::get_type(), "full_inst_path");
-            super.build_phase(phase);
-            
-            // Random sequences config - begin
     """
-    my_str *= gen_clknrst ? "        uvm_config_wrapper::set(this, \"m_$(dut_name)_env.agent_clknrst.sequencer.run_phase\", \"default_sequence\", clknrst_reset_and_start_clk_seq::get_type());\n" : ""
-    my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_line_sequences_config) )        // Random sequences config - end
+    # my_str *= """
+    #     /*
+    #     function void build_phase(uvm_phase phase);
+    #         // Override transaction types, eg:
+    #         //      original_type_name::type_id::set_type_override(override_type_name::get_type());
+    #         //      set_type_override_by_type (original_type::get_type(), override_type::get_type());
+    #         //      set_inst_override_by_type (original_type::get_type(), override_type::get_type(), "full_inst_path");
+    #         super.build_phase(phase);
             
-        endfunction: build_phase
-        */
+    #         // Random sequences config - begin
+    # """
+    # my_str *= gen_clknrst ? "        uvm_config_wrapper::set(this, \"m_$(dut_name)_env.agent_clknrst.sequencer.run_phase\", \"default_sequence\", clknrst_reset_and_start_clk_seq::get_type());\n" : ""
+    # my_str *= """
+    # $( gen_long_str(stub_if_names, "        ", gen_line_sequences_config) )        // Random sequences config - end
+            
+    #     endfunction: build_phase
+    #     */
+    # """
+    my_str *= """
         
     endclass: $(dut_name)_test_random
     

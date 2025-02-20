@@ -85,7 +85,8 @@ gen_top_base() = begin
     """
     my_str *= gen_clknrst ? gen_line_vif_typedef("clknrst", "        ") : ""
     my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_line_vif_typedef) )    // Virtual interface typedefs - end
+    $( gen_long_str(stub_if_names, "        ", gen_line_vif_typedef)[1:end-1] )
+        // Virtual interface typedefs - end
     
     """
     my_str *= """
@@ -94,10 +95,11 @@ gen_top_base() = begin
     """
     my_str *= gen_clknrst ? "        clknrst_$(if_name) $(get_param_conn("        ")) clknrst_$(if_name)();\n" : ""
     my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_line_interfaces_instances) )    // Interfaces instances - end
+    $( gen_long_str(stub_if_names, "        ", gen_line_interfaces_instances)[1:end-1] )
+        // Interfaces instances - end
 
 
-        $(dut_name) dut(
+        $(dut_name) $(get_param_conn("    "))dut (
             .$(clock_name)($(clock_name)),
             .$(reset_name)($(reset_name)),$( gen_top_if_connection_signals(if_vector, "        ") )    );
 
@@ -129,7 +131,8 @@ gen_top_base() = begin
     """
     my_str *= gen_clknrst ? """            uvm_config_db#(clknrst_vif_t)::set(.cntxt(null), .inst_name("uvm_test_top"), .field_name("clknrst_vif"), .value(clknrst_$(if_name)));\n""" : ""
     my_str *= """
-    $( gen_long_str(stub_if_names, "            ", gen_line_send_if_to_uvc) )        // Virtual interfaces send to UVCs - end
+    $( gen_long_str(stub_if_names, "            ", gen_line_send_if_to_uvc)[1:end-1] )
+            // Virtual interfaces send to UVCs - end
 
             run_test("$(dut_name)_test_random");
         end

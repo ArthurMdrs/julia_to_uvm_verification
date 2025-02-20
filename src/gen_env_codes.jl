@@ -26,8 +26,12 @@ gen_line_connect_sequencers(uvc_name, tabs) = begin
     include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
     sqr_name = use_short_names ? short_names_dict["sequencer"] : long_names_dict["sequencer"]
     agent_name = use_short_names ? short_names_dict["agent"] : long_names_dict["agent"]
+    cfg_name = use_short_names ? short_names_dict["config"] : long_names_dict["config"]
     restore_config()
-    my_str = "$(tabs)m_$(dut_name)_$(vsqr_name).m_$(uvc_name)_$(sqr_name) = m_$(uvc_name)_$(agent_name).m_sequencer;\n"
+    my_str = """
+    $(tabs)if (m_$(uvc_name)_$(cfg_name).is_active == UVM_ACTIVE)
+    $(tabs)    m_$(dut_name)_$(vsqr_name).m_$(uvc_name)_$(sqr_name) = m_$(uvc_name)_$(agent_name).m_sequencer;\n
+    """
     return my_str
 end
 gen_vif_config_db_env(uvc_name, tabs) = begin
@@ -159,6 +163,16 @@ gen_env_base() = begin
         
     """
     
+    if has_paramaters
+        my_str *= """
+            `uvm_component_param_utils($(dut_name)_env $(get_param_conn("    ")[1:end-1]))
+        """
+    else
+        my_str *= """
+            `uvm_component_utils($(dut_name)_env)
+        """
+    end
+    
     # env_cfg_name = "m_$(dut_name)_env_$(cfg_name)"
     env_cfg_name = config_inst_convention
     tdefs_list = ["$(dut_name)_env_$(cfg_name)"]
@@ -198,23 +212,6 @@ gen_env_base() = begin
     my_str *= """
         $(dut_name)_env_$(cfg_name)_t $(env_cfg_name);
         
-    """
-    
-    if has_paramaters
-        my_str *= """
-            `uvm_component_param_utils_begin($(dut_name)_env $(get_param_conn("    ")[1:end-1]))
-                `uvm_field_object($(env_cfg_name), UVM_ALL_ON)
-            `uvm_component_utils_end
-        """
-    else
-        my_str *= """
-            `uvm_component_utils_begin($(dut_name)_env)
-                `uvm_field_object($(env_cfg_name), UVM_ALL_ON)
-            `uvm_component_utils_end
-        """
-    end
-    
-    my_str *= """
     
         // Config objects - begin
     """
@@ -271,7 +268,8 @@ gen_env_base() = begin
     
     my_str *= gen_clknrst ? gen_vif_config_db_env("clknrst", "        ") : ""
     my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_vif_config_db_env) )
+    $( gen_long_str(stub_if_names, "        ", gen_vif_config_db_env)[1:end-1] )
+            
             // Get config objects from database and set them for the agents
     """
     my_str *= gen_clknrst ? """
@@ -283,7 +281,8 @@ gen_env_base() = begin
             
     """ : ""
     my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_cfg_config_db_env) )
+    $( gen_long_str(stub_if_names, "        ", gen_cfg_config_db_env)[1:end-1] )
+            
             // Get Env config
             if(uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(env_cfg_name)"), .value($(env_cfg_name))))
                 `uvm_info("$(uppercase(dut_name)) ENV", "$(uppercase(dut_name)) ENV config object was successfully set!", UVM_MEDIUM)
@@ -294,7 +293,8 @@ gen_env_base() = begin
     """
     my_str *= gen_clknrst ? gen_line_uvc_creation("clknrst", "        ") : ""
     my_str *= """
-    $( gen_long_str(stub_if_names, "        ", gen_line_uvc_creation) )        // UVCs creation - end
+    $( gen_long_str(stub_if_names, "        ", gen_line_uvc_creation)[1:end-1] )
+            // UVCs creation - end
             
             // Set config to virtual sequencer
             uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(dut_name)_$(vsqr_name)"), .field_name("$(config_inst_convention)"), .value($(env_cfg_name)));
@@ -330,8 +330,15 @@ gen_env_base() = begin
         function void connect_phase (uvm_phase phase);
             super.connect_phase(phase);
             
-            // Sequencers connect - begin$(gen_clknrst ? "\n        m_$(dut_name)_$(vsqr_name).m_clknrst_$(sqr_name) = m_clknrst_$(agent_name).m_sequencer;" : "")
-    $( gen_long_str(stub_if_names, "        ", gen_line_connect_sequencers) )        // Sequencers connect - end
+            // Sequencers connect - begin
+    """
+    my_str *= gen_clknrst ? """
+            if (m_clknrst_$(cfg_name).is_active == UVM_ACTIVE)
+                m_$(dut_name)_$(vsqr_name).m_clknrst_$(sqr_name) = m_clknrst_$(agent_name).m_sequencer;
+    """ : ""
+    my_str *= """
+    $( gen_long_str(stub_if_names, "        ", gen_line_connect_sequencers)[1:end-1] )
+            // Sequencers connect - end
             
     """
     my_str *= gen_refmod ? """
@@ -431,7 +438,8 @@ gen_params_pkg() = begin
     package $(dut_name)_params_pkg;
         
         typedef struct packed {
-    $(gen_long_str(params_vec, "        ", gen_line_param))    } $(dut_name)_params_t;
+    $(gen_long_str(params_vec, "        ", gen_line_param))[1:end-1]
+        } $(dut_name)_params_t;
         
     """
     
@@ -453,31 +461,26 @@ gen_env_cfg() = begin
     my_str = """
     class $(dut_name)_env_$(cfg_name) $(get_param_declaration(params_vec, dut_name, ""))extends uvm_object;
         
-        int some_config;
-        
     """
-    if env_has_coverage
-        # my_str *= "    $(prefix_name)_cov_enable_enum_t cov_control;\n"
-        my_str *= "    bit has_coverage;\n"
-    end 
     
     if has_paramaters
         my_str *= """
-            `uvm_object_param_utils_begin($(dut_name)_env_$(cfg_name) $(get_param_conn("    ")))
-                `uvm_field_int(some_config, UVM_ALL_ON)
-            `uvm_object_utils_end
+            `uvm_object_param_utils($(dut_name)_env_$(cfg_name) $(get_param_conn("    ")))
             
         """
     else
         my_str *= """
-            `uvm_object_utils_begin($(dut_name)_env_$(cfg_name))
-                `uvm_field_int(some_config, UVM_ALL_ON)
-            `uvm_object_utils_end
+            `uvm_object_utils($(dut_name)_env_$(cfg_name))
             
         """
     end
+    
+    if env_has_coverage
+        my_str *= "    bit has_coverage;\n"
+    end 
     my_str *="""
-
+        int some_config;
+        
         function new (string name = "$(dut_name)_env_$(cfg_name)");
             super.new(name);
             some_config = 0;
@@ -505,9 +508,9 @@ get_vsqr_param_declaration(tabs) = begin
         clknrst_line = gen_clknrst ? "\n$(tabs)parameter type clknrst_$(tr_name)_t = uvm_sequence_item," : ""
         my_str *= """
         #($(clknrst_line)
-        $(gen_long_str(stub_if_names, tabs, gen_line_seq_item_t_decl)[1:end-1])
+        $( gen_long_str(stub_if_names, tabs, gen_line_seq_item_t_decl)[1:end-1] )
         $(tabs)parameter $(dut_name)_params_t $(dut_name)_params = '{
-        $(gen_long_str(params_vec, tabs*"    ", gen_line)[1:end-2])
+        $( gen_long_str(params_vec, tabs*"    ", gen_line)[1:end-2] )
         $(tabs)}
         ) """
     end
@@ -519,7 +522,7 @@ get_vsqr_param_conn(tabs) = begin
         clknrst_line = gen_clknrst ? "\n$(tabs)    .clknrst_$(tr_name)_t(clknrst_$(tr_name)_t)," : ""
         my_str = """
         #($(clknrst_line)
-        $(gen_long_str(stub_if_names, tabs*"    ", gen_line_seq_item_t_conn)[1:end-1])
+        $( gen_long_str(stub_if_names, tabs*"    ", gen_line_seq_item_t_conn)[1:end-1] )
         $(tabs)    .$(dut_name)_params($(dut_name)_params)
         $(tabs)) """
     else
@@ -575,7 +578,8 @@ gen_vsequencer() = begin
         // Typedefs - end    
         
         // Sequencers - begin
-    $( gen_long_str(sequencer_list, "    ", gen_line_sqr_instance) )    // Sequencers - end
+    $( gen_long_str(sequencer_list, "    ", gen_line_sqr_instance)[1:end-1] )
+        // Sequencers - end
         
         // Env config
         $(dut_name)_env_$(cfg_name)_t $(config_inst_convention);
@@ -616,6 +620,10 @@ gen_line_rnd_seq_creation(uvc_name, tabs) = begin
     my_str = "$(tabs)m_$(uvc_name)_random_seq = $(uvc_name)_random_seq_t::type_id::create(\"m_$(uvc_name)_random_seq\");\n"
     return my_str
 end
+gen_line_rnd_seq_set_phase(uvc_name, tabs) = begin
+    my_str = "$(tabs)m_$(uvc_name)_random_seq.set_starting_phase(get_starting_phase());\n"
+    return my_str
+end
 gen_line_rnd_seq_start(uvc_name, tabs) = begin
     include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
     sqr_name  = use_short_names ? short_names_dict["sequencer" ] : long_names_dict["sequencer" ]
@@ -623,7 +631,7 @@ gen_line_rnd_seq_start(uvc_name, tabs) = begin
     my_str = "$(tabs)m_$(uvc_name)_random_seq.start(.sequencer(p_sequencer.m_$(uvc_name)_$(sqr_name)), .call_pre_post(0));\n"
     return my_str
 end
-    
+
 gen_vseq_lib() = begin
     vsqr_name = use_short_names ? short_names_dict["vsequencer"] : long_names_dict["vsequencer"]
     sqr_name  = use_short_names ? short_names_dict["sequencer" ] : long_names_dict["sequencer" ]
@@ -672,11 +680,39 @@ gen_vseq_lib() = begin
         `uvm_declare_p_sequencer($(dut_name)_$(vsqr_name)_t)
         
         // Sequence instances - begin
-    $( gen_long_str(seq_list, "    ", gen_line_seq_instance) )    // Sequence instances - end
+    $( gen_long_str(seq_list, "    ", gen_line_seq_instance)[1:end-1] )
+        // Sequence instances - end
         
         function new(string name="$(dut_name)_base_vsequence");
             super.new(name);
         endfunction: new
+        
+    """
+    
+    my_str *= """
+        task pre_start();
+            uvm_phase phase = get_starting_phase();
+            if (phase != null) begin
+                phase.raise_objection(this, get_type_name());
+                `uvm_info("$(uppercase(dut_name)) vSEQ", "Raising objection.", UVM_HIGH)
+            end
+            else begin
+                `uvm_info("$(uppercase(dut_name)) vSEQ", "Phase is null, so could not raise objection.", UVM_LOW)
+            end
+        
+            //$(config_inst_convention) = p_sequencer.$(config_inst_convention);
+        endtask: pre_start
+        
+        task post_start();
+            uvm_phase phase = get_starting_phase();
+            if (phase != null) begin
+                phase.drop_objection(this, get_type_name());
+                `uvm_info("$(uppercase(dut_name)) vSEQ", "Dropping objection.", UVM_HIGH)
+            end
+            else begin
+                `uvm_info("$(uppercase(dut_name)) vSEQ", "Phase is null, so could not drop objection.", UVM_LOW)
+            end
+        endtask: post_start
         
     """
     # my_str *= """ 
@@ -693,6 +729,7 @@ gen_vseq_lib() = begin
     #     endtask: post_body
         
     # """
+    
     my_str *= """ 
     endclass: $(dut_name)_base_vsequence
     
@@ -718,7 +755,7 @@ gen_vseq_lib() = begin
             super.new(name);
         endfunction: new
         
-        virtual task body();
+        task body();
     """
     
     if gen_clknrst
@@ -729,10 +766,22 @@ gen_vseq_lib() = begin
     
     my_str *= """
     $( gen_long_str(stub_if_names, "        ", gen_line_rnd_seq_creation)[1:end-1] )
+            
     """
     
     if gen_clknrst
-        my_str *= "\n        m_clknrst_reset_and_start_clk_seq.start(.sequencer(p_sequencer.m_clknrst_$(sqr_name)), .call_pre_post(0));\n"
+        my_str *= "        m_clknrst_reset_and_start_clk_seq.set_starting_phase(get_starting_phase());\n"
+    else
+        my_str *= ""
+    end
+    
+    my_str *= """
+    $( gen_long_str(stub_if_names, "        ", gen_line_rnd_seq_set_phase)[1:end-1] )
+            
+    """
+    
+    if gen_clknrst
+        my_str *= "        m_clknrst_reset_and_start_clk_seq.start(.sequencer(p_sequencer.m_clknrst_$(sqr_name)), .call_pre_post(0));\n"
     else
         my_str *= ""
     end

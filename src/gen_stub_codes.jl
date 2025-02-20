@@ -56,7 +56,7 @@ end
 gen_stub_base(clock_name, reset_name, rst_is_negedge_sensitive, vec) = begin 
     param_str = has_paramaters ? "import $(dut_name)_params_pkg::*; " : ""
     return """
-    module $(dut_name) $(param_str)(
+    module $(dut_name) $(param_str)$(get_param_declaration(params_vec, dut_name, "    "))(
         input $(clock_name), 
         input $(reset_name), 
     $(gen_stub_if_signals(vec, gen_line_stub_if_signals, "    ")[1:end-1])

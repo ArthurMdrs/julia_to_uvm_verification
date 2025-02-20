@@ -21,24 +21,23 @@ gen_monitor_base(prefix_name, vec) = begin
     my_str = """
     class $(prefix_name)_$(mon_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_monitor;
         
-    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param) )
-        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
-        
     """
     
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils_begin($(prefix_name)_$(mon_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(mon_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
         """
     else
         my_str *= """
-            `uvm_component_utils_begin($(prefix_name)_$(mon_name))
+            `uvm_component_utils($(prefix_name)_$(mon_name))
         """
     end
     
     my_str *= """
-            `uvm_field_object($(config_inst_convention), UVM_ALL_ON)
-        `uvm_component_utils_end
+        
+    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param)[1:end-1] )
+        
+        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
         
         $(prefix_name)_vif_t vif;
         $(tr_type) tr;
@@ -66,7 +65,7 @@ gen_monitor_base(prefix_name, vec) = begin
                 `uvm_fatal("$(uppercase(prefix_name)) MONITOR", "No interface was set!")
         endfunction: build_phase
         
-        virtual task run_phase (uvm_phase phase);
+        task run_phase (uvm_phase phase);
             super.run_phase(phase);
             @($((vec[2][2]) ? "negedge" : "posedge") vif.$(vec[2][1]));
             @($((vec[2][2]) ? "posedge" : "negedge") vif.$(vec[2][1]));
@@ -91,7 +90,7 @@ gen_monitor_base(prefix_name, vec) = begin
                 join
                 
                 end_tr(tr);
-                `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Transaction Collected:\\n%s", tr.convert2string()), UVM_LOW)
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Transaction Collected:\\n%s", tr.convert2string()), UVM_MEDIUM)
                 item_collected_port.write(tr);
                 num_tr_col++;
             end
@@ -120,24 +119,23 @@ gen_clknrst_monitor() = begin
     my_str = """
     class $(prefix_name)_$(mon_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_monitor;
         
-    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param) )
-        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
-        
     """
     
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils_begin($(prefix_name)_$(mon_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(mon_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
         """
     else
         my_str *= """
-            `uvm_component_utils_begin($(prefix_name)_$(mon_name))
+            `uvm_component_utils($(prefix_name)_$(mon_name))
         """
     end
     
     my_str *= """
-            `uvm_field_object($(config_inst_convention), UVM_ALL_ON)
-        `uvm_component_utils_end
+        
+    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param)[1:end-1] )
+        
+        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
         
         $(prefix_name)_vif_t vif;
         $(tr_type) tr;
@@ -165,7 +163,7 @@ gen_clknrst_monitor() = begin
                 `uvm_fatal("$(uppercase(prefix_name)) MONITOR", "No interface was set!")
         endfunction: build_phase
         
-        virtual task run_phase (uvm_phase phase);
+        task run_phase (uvm_phase phase);
             super.run_phase(phase);
             
             // What should we do here?

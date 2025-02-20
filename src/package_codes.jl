@@ -30,23 +30,23 @@ gen_tdefs_base(prefix_name, vec) = begin
     package $(prefix_name)_tdefs_pkg;
         
     """
-    if agent_has_coverage
+    # my_str *= """
+    #     // typedef enum bit {
+    #     //     $(uppercase(prefix_name))_SOME_VAL, 
+    #     //     $(uppercase(prefix_name))_OTHER_VAL
+    #     // } $(prefix_name)_some_tdef_t;
+        
+    # """
+    if has_paramaters
         my_str *= """
-            typedef enum bit {
-                $(uppercase(prefix_name))_COV_ENABLE , 
-                $(uppercase(prefix_name))_COV_DISABLE
-            } $(prefix_name)_cov_enable_enum_t;
+            import $(dut_name)_params_pkg::*;
             
         """
-    else
-        my_str *= """
-            typedef enum bit {
-                $(uppercase(prefix_name))_SOME_VAL, 
-                $(uppercase(prefix_name))_OTHER_VAL
-            } $(prefix_name)_some_tdef_t;
-            
-        """
-    end 
+    end
+    my_str *= """
+        $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
+        
+    """
     my_str *= """
     endpackage: $(prefix_name)_tdefs_pkg
     """
@@ -75,9 +75,8 @@ gen_pkg_base(prefix_name, vec) = begin
             //`include "$(prefix_name)_tdefs.sv"
             import $(prefix_name)_tdefs_pkg::*;
             
-        $(gen_line_vif_typedef(prefix_name, "    ")[1:end-1])
             
-        $(gen_long_str(vec, "    ", gen_line_include))
+        $( gen_long_str(vec, "    ", gen_line_include)[1:end-1] )
         endpackage: $(prefix_name)_pkg
         """
     return my_str
@@ -90,15 +89,16 @@ gen_clknrst_tdefs() = begin
     package $(prefix_name)_tdefs_pkg;
         
     """
-    if agent_has_coverage
+    if has_paramaters
         my_str *= """
-            typedef enum bit {
-                $(uppercase(prefix_name))_COV_ENABLE , 
-                $(uppercase(prefix_name))_COV_DISABLE
-            } $(prefix_name)_cov_enable_enum_t;
+            import $(dut_name)_params_pkg::*;
             
         """
     end
+    my_str *= """
+        $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
+        
+    """
     my_str *= """
         typedef enum bit [1:0] {
             $(uppercase(prefix_name))_ACTION_START_CLK   ,

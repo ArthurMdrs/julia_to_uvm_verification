@@ -30,7 +30,7 @@ gen_lines_drv_cb(vec, tabs) = begin
     my_str = """
     $(tabs)clocking drv_cb @(posedge $(vec[1]));
     $(tabs)    default input #1ns output #1ns;
-    $(gen_long_str(vec[3], tabs*"    ", gen_line_drv_cb_sig)[1:end-1])
+    $( gen_long_str(vec[3], tabs*"    ", gen_line_drv_cb_sig)[1:end-1] )
     $(tabs)endclocking
     """
 end
@@ -41,18 +41,18 @@ gen_lines_mon_cb(vec, tabs) = begin
     my_str = """
     $(tabs)clocking mon_cb @(posedge $(vec[1]));
     $(tabs)    default input #1ns output #5ns;
-    $(gen_long_str(vec[3], tabs*"    ", gen_line_mon_cb_sig)[1:end-1])
+    $( gen_long_str(vec[3], tabs*"    ", gen_line_mon_cb_sig)[1:end-1] )
     $(tabs)endclocking
     """
 end
 
     # TODO: USE CLOCKING BLOCKS!!
 gen_if_base(prefix_name, vec) = begin 
-    name = use_short_names ? short_names_dict["interface"] : long_names_dict["interface"]
+    if_name = use_short_names ? short_names_dict["interface"] : long_names_dict["interface"]
     tr_name = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
     param_str = has_paramaters ? "import $(dut_name)_params_pkg::$(dut_name)_params_t;\n$(get_param_declaration(params_vec, dut_name, "")) " : ""
     return """
-    interface $(prefix_name)_$(name) $(param_str)(
+    interface $(prefix_name)_$(if_name) $(param_str)(
         input logic $(vec[1]), 
         input logic $(vec[2][1])
     );
@@ -63,7 +63,8 @@ gen_if_base(prefix_name, vec) = begin
         import $(prefix_name)_pkg::*;
         
         // Interface Signals - Begin
-    $(gen_long_str(vec[3], "    ", gen_line_if_signal))    // Interface Signals - End
+    $( gen_long_str(vec[3], "    ", gen_line_if_signal)[1:end-1] )
+        // Interface Signals - End
         
     $(gen_lines_drv_cb(vec, "    ")[1:end-1])
         
@@ -125,16 +126,16 @@ gen_if_base(prefix_name, vec) = begin
             monstart = 1'b0;
         endtask : collect_tr
         
-    endinterface : $(prefix_name)_$(name)
+    endinterface : $(prefix_name)_$(if_name)
     """
 end
 
 gen_clknrst_if() = begin
     prefix_name = "clknrst"
-    name = use_short_names ? short_names_dict["interface"] : long_names_dict["interface"]
+    if_name = use_short_names ? short_names_dict["interface"] : long_names_dict["interface"]
     param_str = has_paramaters ? "import $(dut_name)_params_pkg::$(dut_name)_params_t;\n$(get_param_declaration(params_vec, dut_name, "")) " : ""
     return """
-    interface $(prefix_name)_$(name) $(param_str)();
+    interface $(prefix_name)_$(if_name) $(param_str)();
         
         import uvm_pkg::*;    
         `include "uvm_macros.svh"
@@ -204,7 +205,7 @@ gen_clknrst_if() = begin
             @(negedge clk);
         endtask : wait_clk_negedge
 
-    endinterface : $(prefix_name)_$(name)
+    endinterface : $(prefix_name)_$(if_name)
     """
 end
     

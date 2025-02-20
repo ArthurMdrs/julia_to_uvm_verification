@@ -12,24 +12,23 @@ gen_sequencer_base(prefix_name, vec) = begin
     my_str = """
     class $(prefix_name)_$(sqr_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_sequencer#($(tr_type));
         
-    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param) )
-        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
-        
     """
     
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils_begin($(prefix_name)_$(sqr_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(sqr_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
         """
     else
         my_str *= """
-            `uvm_component_utils_begin($(prefix_name)_$(sqr_name))
+            `uvm_component_utils($(prefix_name)_$(sqr_name))
         """
     end
     
     my_str *= """
-            `uvm_field_object($(config_inst_convention), UVM_ALL_ON)
-        `uvm_component_utils_end
+        
+    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param)[1:end-1] )
+        
+        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
         
         $(prefix_name)_vif_t vif;
         

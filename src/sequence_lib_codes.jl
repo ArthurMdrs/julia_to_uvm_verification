@@ -15,7 +15,8 @@ gen_base_seq(prefix_name) = begin
     """
     
     my_str *= """
-    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param) )
+    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param)[1:end-1] )
+        
         $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
         
     """
@@ -42,24 +43,47 @@ gen_base_seq(prefix_name) = begin
     
     my_str *= """
         task pre_start();
+            uvm_phase phase = get_starting_phase();
+            if (phase != null) begin
+                phase.raise_objection(this, get_type_name());
+                `uvm_info("$(uppercase(prefix_name)) SEQ", "Raising objection.", UVM_HIGH)
+            end
+            else begin
+                `uvm_info("$(uppercase(prefix_name)) SEQ", "Phase is null, so could not raise objection.", UVM_LOW)
+            end
+        
             $(config_inst_convention) = p_sequencer.$(config_inst_convention);
         endtask: pre_start
         
+        task post_start();
+            uvm_phase phase = get_starting_phase();
+            if (phase != null) begin
+                phase.drop_objection(this, get_type_name());
+                `uvm_info("$(uppercase(prefix_name)) SEQ", "Dropping objection.", UVM_HIGH)
+            end
+            else begin
+                `uvm_info("$(uppercase(prefix_name)) SEQ", "Phase is null, so could not drop objection.", UVM_LOW)
+            end
+        endtask: post_start
+        
     """
     
+    # my_str *= """
+    #     task pre_body();
+    #         uvm_phase phase = get_starting_phase();
+    #         phase.raise_objection(this, get_type_name());
+    #         `uvm_info("$(prefix_name) Sequence", "phase.raise_objection", UVM_HIGH)
+    #     endtask: pre_body
+        
+    #     task post_body();
+    #         uvm_phase phase = get_starting_phase();
+    #         phase.drop_objection(this, get_type_name());
+    #         `uvm_info("$(prefix_name) Sequence", "phase.drop_objection", UVM_HIGH)
+    #     endtask: post_body
+        
+    # """
+    
         my_str *= """
-        task pre_body();
-            uvm_phase phase = get_starting_phase();
-            phase.raise_objection(this, get_type_name());
-            `uvm_info("$(prefix_name) Sequence", "phase.raise_objection", UVM_HIGH)
-        endtask: pre_body
-        
-        task post_body();
-            uvm_phase phase = get_starting_phase();
-            phase.drop_objection(this, get_type_name());
-            `uvm_info("$(prefix_name) Sequence", "phase.drop_objection", UVM_HIGH)
-        endtask: post_body
-        
     endclass: $(prefix_name)_base_sequence
     """
     return my_str
@@ -81,8 +105,8 @@ gen_sequence_lib_base(prefix_name, vec) = begin
             super.new(name);
         endfunction: new
         
-        virtual task body();
-            `uvm_info("$(prefix_name) Sequence", "Executing random sequence.", UVM_LOW)
+        task body();
+            `uvm_info("$(uppercase(prefix_name)) SEQ", "Executing random sequence.", UVM_LOW)
             req = $(tr_type)::type_id::create("req");
             repeat(3) begin
                 start_item(req);
@@ -115,8 +139,8 @@ gen_clknrst_seq_lines(clknrst_action, prefix_name) = begin
             super.new(name);
         endfunction: new
         
-        virtual task body();
-            `uvm_info("$(prefix_name) Sequence", "Executing $(clknrst_action) sequence.", UVM_LOW)
+        task body();
+            `uvm_info("$(uppercase(prefix_name)) SEQ", "Executing $(clknrst_action) sequence.", UVM_LOW)
             req = $(tr_type)::type_id::create("req");
             start_item(req);
             if (!req.randomize())
@@ -146,10 +170,11 @@ gen_clknrst_sequence_lib() = begin
     
     tdefs_list_w_seq_item = ["$(prefix_name)_start_clk_seq", "$(prefix_name)_assert_reset_seq"]
     my_str *= """
-    $( gen_long_str(tdefs_list_w_seq_item, "    ", gen_lines_tdefs_w_param_w_seq_item2) )    // Typedefs - end
+    $( gen_long_str(tdefs_list_w_seq_item, "    ", gen_lines_tdefs_w_param_w_seq_item2)[1:end-1] )
+        // Typedefs - end
         
-        $(prefix_name)_start_clk_seq_t    start_clk_seq;
-        $(prefix_name)_assert_reset_seq_t assert_reset_seq;
+        $(prefix_name)_start_clk_seq_t    m_start_clk_seq;
+        $(prefix_name)_assert_reset_seq_t m_assert_reset_seq;
         
         `uvm_object_param_utils($(prefix_name)_reset_and_start_clk_seq$(get_param_conn_w_seq_item2("    ")[1:end-1]))
 
@@ -157,17 +182,15 @@ gen_clknrst_sequence_lib() = begin
             super.new(name);
         endfunction: new
         
-        virtual task body();
-            `uvm_info("$(prefix_name) Sequence", "Executing reset_and_start_clk sequence.", UVM_LOW)
-            //`uvm_do(start_clk_seq)
-            start_clk_seq = $(prefix_name)_start_clk_seq_t::type_id::create("start_clk_seq");
-            start_clk_seq.start(.sequencer(p_sequencer), .call_pre_post(0));
-            //start_clk_seq.start(.sequencer(p_sequencer), .parent_sequence(this));
-            // p_sequencer.vif.wait_clk_posedge();
-            p_sequencer.vif.wait_clk_negedge();
-            //`uvm_do(assert_reset_seq)
-            assert_reset_seq = $(prefix_name)_assert_reset_seq_t::type_id::create("assert_reset_seq");
-            assert_reset_seq.start(.sequencer(p_sequencer), .call_pre_post(0));
+        task body();
+            `uvm_info("$(uppercase(prefix_name)) SEQ", "Executing reset_and_start_clk sequence.", UVM_LOW)
+            m_start_clk_seq = $(prefix_name)_start_clk_seq_t::type_id::create("m_start_clk_seq");
+            m_start_clk_seq.set_starting_phase(get_starting_phase());
+            m_start_clk_seq.start(.sequencer(p_sequencer));
+            
+            m_assert_reset_seq = $(prefix_name)_assert_reset_seq_t::type_id::create("m_assert_reset_seq");
+            m_assert_reset_seq.set_starting_phase(get_starting_phase());
+            m_assert_reset_seq.start(.sequencer(p_sequencer), .call_pre_post(0));
         endtask: body
 
     endclass: $(prefix_name)_reset_and_start_clk_seq
