@@ -4,10 +4,10 @@
 # Creates the sequencer class
 # ***********************************
 
-gen_sequencer_base(prefix_name, vec) = begin 
-    sqr_name = use_short_names ? short_names_dict["sequencer"  ] : long_names_dict["sequencer"]
-    cfg_name = use_short_names ? short_names_dict["config"     ] : long_names_dict["config"]
-    tr_name  = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
+gen_sequencer_base(prefix_name) = begin 
+    sqr_name = get_uvc_cfg_fld(prefix_name, :class_names)["sequencer"]
+    cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = has_paramaters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     my_str = """
     class $(prefix_name)_$(sqr_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_sequencer#($(tr_type));
@@ -16,7 +16,7 @@ gen_sequencer_base(prefix_name, vec) = begin
     
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils($(prefix_name)_$(sqr_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(sqr_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -34,7 +34,7 @@ gen_sequencer_base(prefix_name, vec) = begin
         
         function new(string name, uvm_component parent);
             super.new(name, parent);
-        endfunction: new
+        endfunction : new
         
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
@@ -48,13 +48,13 @@ gen_sequencer_base(prefix_name, vec) = begin
                 `uvm_info("$(uppercase(prefix_name)) SEQUENCER", "Virtual interface was successfully set!", UVM_MEDIUM)
             else
                 `uvm_fatal("$(uppercase(prefix_name)) SEQUENCER", "No interface was set!")
-        endfunction: build_phase
+        endfunction : build_phase
         
-    endclass: $(prefix_name)_$(sqr_name)
+    endclass : $(prefix_name)_$(sqr_name)
     """
     return my_str
 end
 
-gen_clknrst_sequencer() = gen_sequencer_base("clknrst", [])
+gen_clknrst_sequencer(prefix_name) = gen_sequencer_base(prefix_name)
 
 # ****************************************************************

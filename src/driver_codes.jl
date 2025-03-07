@@ -13,12 +13,14 @@
 # This vector comes from the file UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
 
-gen_driver_base(prefix_name, vec) = begin
-    drv_name = use_short_names ? short_names_dict["driver"     ] : long_names_dict["driver"     ]
-    cfg_name = use_short_names ? short_names_dict["config"     ] : long_names_dict["config"     ]
-    tr_name  = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
-    if_name  = use_short_names ? short_names_dict["interface"  ] : long_names_dict["interface"  ]
+gen_driver_base(prefix_name) = begin
+    drv_name = get_uvc_cfg_fld(prefix_name, :class_names)["driver"     ]
+    cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
+    tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
+    if_name  = get_uvc_cfg_fld(prefix_name, :class_names)["interface"  ]
     tr_type = has_paramaters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    reset_name = get_uvc_cfg_fld(prefix_name, :reset_name)
+    rst_is_negedge_sensitive = get_uvc_cfg_fld(prefix_name, :rst_is_negedge_sensitive)
     my_str = """
     class $(prefix_name)_$(drv_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_driver #($(tr_type));
         
@@ -26,7 +28,7 @@ gen_driver_base(prefix_name, vec) = begin
     
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils($(prefix_name)_$(drv_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(drv_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -47,7 +49,7 @@ gen_driver_base(prefix_name, vec) = begin
         function new(string name, uvm_component parent);
             super.new(name, parent);
             num_sent = 0;
-        endfunction: new
+        endfunction : new
         
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
@@ -61,7 +63,7 @@ gen_driver_base(prefix_name, vec) = begin
                 `uvm_info("$(uppercase(prefix_name)) DRIVER", "Virtual interface was successfully set!", UVM_MEDIUM)
             else
                 `uvm_fatal("$(uppercase(prefix_name)) DRIVER", "No interface was set!")
-        endfunction: build_phase
+        endfunction : build_phase
         
         task run_phase (uvm_phase phase);
             super.run_phase(phase);
@@ -69,11 +71,11 @@ gen_driver_base(prefix_name, vec) = begin
                 get_and_drive();
                 reset_signals();
             join
-        endtask: run_phase
+        endtask : run_phase
         
         task get_and_drive();
-            @($((vec[2][2]) ? "negedge" : "posedge") vif.$(vec[2][1]));
-            @($((vec[2][2]) ? "posedge" : "negedge") vif.$(vec[2][1]));
+            @($((rst_is_negedge_sensitive) ? "negedge" : "posedge") vif.$(reset_name));
+            @($((rst_is_negedge_sensitive) ? "posedge" : "negedge") vif.$(reset_name));
             
             `uvm_info("$(uppercase(prefix_name)) DRIVER", "Reset dropped", UVM_MEDIUM)
             
@@ -112,23 +114,22 @@ gen_driver_base(prefix_name, vec) = begin
         function void start_of_simulation_phase (uvm_phase phase);
             super.start_of_simulation_phase(phase);
             `uvm_info("$(uppercase(prefix_name)) DRIVER", "Simulation initialized", UVM_HIGH)
-        endfunction: start_of_simulation_phase
+        endfunction : start_of_simulation_phase
         
         function void report_phase(uvm_phase phase);
             `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Report: $(uppercase(prefix_name)) DRIVER sent %0d transactions", num_sent), UVM_NONE)
         endfunction : report_phase
         
-    endclass: $(prefix_name)_$(drv_name)
+    endclass : $(prefix_name)_$(drv_name)
     """
     return my_str
 end
 
-gen_clknrst_driver() = begin
-    prefix_name = "clknrst"
-    drv_name = use_short_names ? short_names_dict["driver"     ] : long_names_dict["driver"     ]
-    cfg_name = use_short_names ? short_names_dict["config"     ] : long_names_dict["config"     ]
-    tr_name  = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
-    if_name  = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
+gen_clknrst_driver(prefix_name) = begin
+    drv_name = get_uvc_cfg_fld(prefix_name, :class_names)["driver"     ]
+    cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
+    tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
+    if_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = has_paramaters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     my_str = """
     class $(prefix_name)_$(drv_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_driver #($(tr_type));
@@ -137,7 +138,7 @@ gen_clknrst_driver() = begin
     
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils($(prefix_name)_$(drv_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(drv_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -157,7 +158,7 @@ gen_clknrst_driver() = begin
         function new (string name, uvm_component parent);
             super.new(name, parent);
             num_sent = 0;
-        endfunction: new
+        endfunction : new
         
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
@@ -171,7 +172,7 @@ gen_clknrst_driver() = begin
                 `uvm_info("$(uppercase(prefix_name)) DRIVER", "Virtual interface was successfully set!", UVM_MEDIUM)
             else
                 `uvm_fatal("$(uppercase(prefix_name)) DRIVER", "No interface was set!")
-        endfunction: build_phase
+        endfunction : build_phase
         
         task run_phase (uvm_phase phase);
             super.run_phase(phase);
@@ -191,7 +192,7 @@ gen_clknrst_driver() = begin
                 num_sent++;
                 seq_item_port.item_done();
             end
-        endtask: run_phase
+        endtask : run_phase
         
         
         
@@ -246,13 +247,13 @@ gen_clknrst_driver() = begin
         function void start_of_simulation_phase (uvm_phase phase);
             super.start_of_simulation_phase(phase);
             `uvm_info("$(uppercase(prefix_name)) DRIVER", "Simulation initialized", UVM_HIGH)
-        endfunction: start_of_simulation_phase
+        endfunction : start_of_simulation_phase
         
         function void report_phase(uvm_phase phase);
             `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Report: $(uppercase(prefix_name)) DRIVER sent %0d transactions", num_sent), UVM_NONE)
         endfunction : report_phase
         
-    endclass: $(prefix_name)_$(drv_name)
+    endclass : $(prefix_name)_$(drv_name)
     """
     return my_str
 end

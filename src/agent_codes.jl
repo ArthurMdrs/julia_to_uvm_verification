@@ -6,14 +6,15 @@
 # Can instantiate a coverage class with the agent_has_coverage option
 # ***********************************
 
-gen_agent_base(prefix_name, vec) = begin 
-    agent_name = use_short_names ? short_names_dict["agent"      ] : long_names_dict["agent"      ]
-    cfg_name   = use_short_names ? short_names_dict["config"     ] : long_names_dict["config"     ]
-    mon_name   = use_short_names ? short_names_dict["monitor"    ] : long_names_dict["monitor"    ]
-    drv_name   = use_short_names ? short_names_dict["driver"     ] : long_names_dict["driver"     ]
-    sqr_name   = use_short_names ? short_names_dict["sequencer"  ] : long_names_dict["sequencer"  ]
-    cov_name   = use_short_names ? short_names_dict["coverage"   ] : long_names_dict["coverage"   ]
-    tr_name    = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
+gen_agent_base(prefix_name) = begin 
+    agent_name = get_uvc_cfg_fld(prefix_name, :class_names)["agent"      ]
+    cfg_name   = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
+    mon_name   = get_uvc_cfg_fld(prefix_name, :class_names)["monitor"    ]
+    drv_name   = get_uvc_cfg_fld(prefix_name, :class_names)["driver"     ]
+    sqr_name   = get_uvc_cfg_fld(prefix_name, :class_names)["sequencer"  ]
+    cov_name   = get_uvc_cfg_fld(prefix_name, :class_names)["coverage"   ]
+    tr_name    = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
+    agent_has_coverage = get_uvc_cfg_fld(prefix_name, :agent_has_coverage)
     my_str = """
     class $(prefix_name)_$(agent_name) $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_agent;
         
@@ -21,7 +22,7 @@ gen_agent_base(prefix_name, vec) = begin
     
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils($(prefix_name)_$(agent_name) $(get_param_conn("    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(agent_name) $(get_param_conn(dut_name, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -40,7 +41,7 @@ gen_agent_base(prefix_name, vec) = begin
     $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param)[1:end-1] )
     """
     
-    gen_lines(name, tabs) = gen_lines_tdefs_w_param_w_seq_item(name, "$(prefix_name)", tabs)
+    gen_lines(name, tabs) = gen_lines_tdefs_w_param_w_seq_item(name, prefix_name, tabs)
     my_str *= """
     $( gen_long_str(tdefs_list_w_seq_item, "    ", gen_lines)[1:end-1] )
         // Typedefs - end
@@ -78,7 +79,7 @@ gen_agent_base(prefix_name, vec) = begin
         function new (string name, uvm_component parent);
             super.new(name, parent);
             item_from_monitor_port = new("item_from_monitor_port", this);
-        endfunction: new
+        endfunction : new
         
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
@@ -116,7 +117,7 @@ gen_agent_base(prefix_name, vec) = begin
             end
     """ : ""
     my_str *= """
-        endfunction: build_phase
+        endfunction : build_phase
         
         function void connect_phase (uvm_phase phase);
             super.connect_phase(phase);
@@ -136,18 +137,18 @@ gen_agent_base(prefix_name, vec) = begin
             end
     """ : ""
     my_str *= """
-        endfunction: connect_phase
+        endfunction : connect_phase
         
         function void start_of_simulation_phase (uvm_phase phase);
             super.start_of_simulation_phase(phase);
             `uvm_info("$(uppercase(prefix_name)) AGENT", "Simulation initialized", UVM_HIGH)
-        endfunction: start_of_simulation_phase
+        endfunction : start_of_simulation_phase
         
-    endclass: $(prefix_name)_$(agent_name)
+    endclass : $(prefix_name)_$(agent_name)
     """
     return my_str
 end
 
-gen_clknrst_agent() = gen_agent_base("clknrst", [])
+gen_clknrst_agent(prefix_name) = gen_agent_base(prefix_name)
     
 # ****************************************************************

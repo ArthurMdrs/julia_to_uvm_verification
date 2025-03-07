@@ -4,16 +4,17 @@
 # Creates the config class
 # ***********************************
 
-gen_config_base(prefix_name, vec) = begin 
-    cfg_name = use_short_names ? short_names_dict["config"] : long_names_dict["config"]
+gen_config_base(prefix_name) = begin 
+    cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    agent_has_coverage = get_uvc_cfg_fld(prefix_name, :agent_has_coverage)
     my_str = """
-    class $(prefix_name)_$(cfg_name) $(get_param_declaration(params_vec, dut_name, "")) extends uvm_object;
+    class $(prefix_name)_$(cfg_name) $(get_param_declaration(params_vec, dut_name, "    ")) extends uvm_object;
         
     """
     
     if has_paramaters
         my_str *= """
-            `uvm_object_param_utils($(prefix_name)_$(cfg_name) $(get_param_conn("    ")))
+            `uvm_object_param_utils($(prefix_name)_$(cfg_name) $(get_param_conn(dut_name, "    ")))
             
         """
     else
@@ -40,24 +41,24 @@ gen_config_base(prefix_name, vec) = begin
     end 
     my_str *= """
             has_monitor = 1'b1;
-        endfunction: new
+        endfunction : new
 
-    endclass: $(prefix_name)_$(cfg_name)
+    endclass : $(prefix_name)_$(cfg_name)
     """
     return my_str
 end
 
-gen_clknrst_config() = begin
-    prefix_name = "clknrst"
-    cfg_name = use_short_names ? short_names_dict["config"] : long_names_dict["config"]
+gen_clknrst_config(prefix_name) = begin
+    cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    agent_has_coverage = get_uvc_cfg_fld(prefix_name, :agent_has_coverage)
     my_str = """
-    class $(prefix_name)_$(cfg_name) $(get_param_declaration(params_vec, dut_name, "")) extends uvm_object;
+    class $(prefix_name)_$(cfg_name) $(get_param_declaration(params_vec, dut_name, "    ")) extends uvm_object;
         
     """
         
     if has_paramaters
         my_str *= """
-            `uvm_object_param_utils($(prefix_name)_$(cfg_name) $(get_param_conn("    ")))
+            `uvm_object_param_utils($(prefix_name)_$(cfg_name) $(get_param_conn(dut_name, "    ")))
             
         """
     else
@@ -93,9 +94,9 @@ gen_clknrst_config() = begin
             
             set_clk_period_from_config = 1'b0;
             clk_period = 10_000; // 10ns
-        endfunction: new
+        endfunction : new
 
-    endclass: $(prefix_name)_$(cfg_name)
+    endclass : $(prefix_name)_$(cfg_name)
     """
     return my_str
 end

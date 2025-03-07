@@ -13,11 +13,13 @@
 # This vector comes from the file UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
 
-gen_monitor_base(prefix_name, vec) = begin 
-    mon_name = use_short_names ? short_names_dict["monitor"    ] : long_names_dict["monitor"    ]
-    cfg_name = use_short_names ? short_names_dict["config"     ] : long_names_dict["config"     ]
-    tr_name  = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
+gen_monitor_base(prefix_name) = begin 
+    mon_name = get_uvc_cfg_fld(prefix_name, :class_names)["monitor"    ]
+    cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
+    tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = has_paramaters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    reset_name = get_uvc_cfg_fld(prefix_name, :reset_name)
+    rst_is_negedge_sensitive = get_uvc_cfg_fld(prefix_name, :rst_is_negedge_sensitive)
     my_str = """
     class $(prefix_name)_$(mon_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_monitor;
         
@@ -25,7 +27,7 @@ gen_monitor_base(prefix_name, vec) = begin
     
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils($(prefix_name)_$(mon_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(mon_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -49,7 +51,7 @@ gen_monitor_base(prefix_name, vec) = begin
             super.new(name, parent);
             num_tr_col = 0;
             item_collected_port = new("item_collected_port", this);
-        endfunction: new
+        endfunction : new
         
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
@@ -63,12 +65,12 @@ gen_monitor_base(prefix_name, vec) = begin
                 `uvm_info("$(uppercase(prefix_name)) MONITOR", "Virtual interface was successfully set!", UVM_MEDIUM)
             else
                 `uvm_fatal("$(uppercase(prefix_name)) MONITOR", "No interface was set!")
-        endfunction: build_phase
+        endfunction : build_phase
         
         task run_phase (uvm_phase phase);
             super.run_phase(phase);
-            @($((vec[2][2]) ? "negedge" : "posedge") vif.$(vec[2][1]));
-            @($((vec[2][2]) ? "posedge" : "negedge") vif.$(vec[2][1]));
+            @($((rst_is_negedge_sensitive) ? "negedge" : "posedge") vif.$(reset_name));
+            @($((rst_is_negedge_sensitive) ? "posedge" : "negedge") vif.$(reset_name));
             
             `uvm_info("$(uppercase(prefix_name)) MONITOR", "Reset dropped", UVM_MEDIUM)
             
@@ -99,22 +101,21 @@ gen_monitor_base(prefix_name, vec) = begin
         function void start_of_simulation_phase (uvm_phase phase);
             super.start_of_simulation_phase(phase);
             `uvm_info("$(uppercase(prefix_name)) MONITOR", "Simulation initialized", UVM_HIGH)
-        endfunction: start_of_simulation_phase
+        endfunction : start_of_simulation_phase
         
         function void report_phase(uvm_phase phase);
             `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Report: $(uppercase(prefix_name)) MONITOR collected %0d transactions", num_tr_col), UVM_NONE)
         endfunction : report_phase
         
-    endclass: $(prefix_name)_$(mon_name)
+    endclass : $(prefix_name)_$(mon_name)
     """
     return my_str
 end
 
-gen_clknrst_monitor() = begin 
-    prefix_name = "clknrst"
-    mon_name = use_short_names ? short_names_dict["monitor"    ] : long_names_dict["monitor"    ]
-    cfg_name = use_short_names ? short_names_dict["config"     ] : long_names_dict["config"     ]
-    tr_name  = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
+gen_clknrst_monitor(prefix_name) = begin 
+    mon_name = get_uvc_cfg_fld(prefix_name, :class_names)["monitor"    ]
+    cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
+    tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = has_paramaters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     my_str = """
     class $(prefix_name)_$(mon_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_monitor;
@@ -123,7 +124,7 @@ gen_clknrst_monitor() = begin
     
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils($(prefix_name)_$(mon_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(mon_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -147,7 +148,7 @@ gen_clknrst_monitor() = begin
             super.new(name, parent);
             num_tr_col = 0;
             item_collected_port = new("item_collected_port", this);
-        endfunction: new
+        endfunction : new
         
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
@@ -161,7 +162,7 @@ gen_clknrst_monitor() = begin
                 `uvm_info("$(uppercase(prefix_name)) MONITOR", "Virtual interface was successfully set!", UVM_MEDIUM)
             else
                 `uvm_fatal("$(uppercase(prefix_name)) MONITOR", "No interface was set!")
-        endfunction: build_phase
+        endfunction : build_phase
         
         task run_phase (uvm_phase phase);
             super.run_phase(phase);
@@ -182,13 +183,13 @@ gen_clknrst_monitor() = begin
         function void start_of_simulation_phase (uvm_phase phase);
             super.start_of_simulation_phase(phase);
             `uvm_info("$(uppercase(prefix_name)) MONITOR", "Simulation initialized", UVM_HIGH)
-        endfunction: start_of_simulation_phase
+        endfunction : start_of_simulation_phase
         
         // function void report_phase(uvm_phase phase);
         //     `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Report: $(uppercase(prefix_name)) MONITOR collected %0d transactions", num_tr_col), UVM_NONE)
         // endfunction : report_phase
         
-    endclass: $(prefix_name)_$(mon_name)
+    endclass : $(prefix_name)_$(mon_name)
     """
     return my_str
 end

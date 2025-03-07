@@ -6,8 +6,8 @@
 
 
 gen_scoreboard_base() = begin
-    sb_name = use_short_names ? short_names_dict["scoreboard"] : long_names_dict["scoreboard"]
-    rm_name = use_short_names ? short_names_dict["ref_model" ] : long_names_dict["ref_model" ]
+    sb_name = class_names["scoreboard"]
+    rm_name = class_names["ref_model" ]
     my_str = """
     class $(dut_name)_$(sb_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_scoreboard;
         
@@ -15,7 +15,7 @@ gen_scoreboard_base() = begin
     
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils($(dut_name)_$(sb_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+            `uvm_component_param_utils($(dut_name)_$(sb_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -49,7 +49,7 @@ gen_scoreboard_base() = begin
         my_str *= "        item_from_refmod_fifo = new(\"item_from_refmod_fifo\", this);\n"
     end
     my_str *= """
-        endfunction: new
+        endfunction : new
         
         task post_reset_phase(uvm_phase phase);
             item_from_monitor_fifo.flush();
@@ -103,7 +103,7 @@ gen_scoreboard_base() = begin
             `uvm_info("$(uppercase(dut_name)) SCOREBOARD", \$sformatf("Compared %0d items.", n_compared), UVM_NONE)
         endfunction : report_phase
         
-    endclass: $(dut_name)_$(sb_name)
+    endclass : $(dut_name)_$(sb_name)
     """
     return my_str
 end

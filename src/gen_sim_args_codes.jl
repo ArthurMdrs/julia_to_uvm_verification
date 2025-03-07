@@ -5,27 +5,29 @@
 # ***********************************
 
 gen_uvc_include(uvc_name, tabs) = begin
-    include_jl("$(cwd)/UVC_parameters/$(uvc_name)_parameters.jl")
-    if_name = use_short_names ? short_names_dict["interface"] : long_names_dict["interface"]
+    if_name = get_uvc_cfg_fld(uvc_name, :class_names)["interface"]
     return """
     // $(uppercase(uvc_name)) UVC
-    $(tabs)-incdir ../$(uvc_name)/sv
-    $(tabs)../$(uvc_name)/sv/$(uvc_name)_tdefs_pkg.sv
-    $(tabs)../$(uvc_name)/sv/$(uvc_name)_pkg.sv
-    $(tabs)../$(uvc_name)/sv/$(uvc_name)_$(if_name).sv
+    $(tabs)-incdir $(agents_dir)/$(uvc_name)
+    $(tabs)-incdir $(sequences_dir)/$(uvc_name)
+    $(tabs)$(agents_dir)/$(uvc_name)/$(uvc_name)_tdefs_pkg.sv
+    $(tabs)$(agents_dir)/$(uvc_name)/$(uvc_name)_pkg.sv
+    $(tabs)$(agents_dir)/$(uvc_name)/$(uvc_name)_$(if_name).sv
 
     """
 end
     
-sim_args_gen() = (!run_sim_args_gen) ? "" : begin
-    if !(simulator in supported_simulators)
-        error("Invalid simulator: $simulator. Expected of of: \n$supported_simulators")
-    end
-    output_file_setup("generated_files/test_top"; reset_folder=false)
-    if simulator == "xrun"
-        write_file("generated_files/test_top/xrun_args.f", gen_xrun_args_base())
-    elseif simulator == "dsim"
-        write_file("generated_files/test_top/dsim_args.f", gen_dsim_args_base())
+sim_args_gen() = begin
+    if run_sim_args_gen == true
+        # if !(simulator in supported_simulators) # This check is done in run.jl now
+        #     error("Invalid simulator: $simulator. Expected of of: \n$supported_simulators")
+        # end
+        output_file_setup("$(tb_top_dir)"; reset_folder=false)
+        if simulator == "xrun"
+            write_file("$(tb_top_dir)/xrun_args.f", gen_xrun_args_base())
+        elseif simulator == "dsim"
+            write_file("$(tb_top_dir)/dsim_args.f", gen_dsim_args_base())
+        end
     end
 end
 
@@ -39,32 +41,26 @@ common_args() = begin
     if has_paramaters
         my_str *= """
         // Parameters package
-            ./$(dut_name)_params_pkg.sv
-            
-        """
-    end
-    if gen_clknrst
-        if_name = use_short_names ? short_names_dict["interface"] : long_names_dict["interface"]
-        my_str *= """
-        // CLKNRST UVC
-            -incdir ../clknrst/sv
-            ../clknrst/sv/clknrst_tdefs_pkg.sv
-            ../clknrst/sv/clknrst_pkg.sv
-            ../clknrst/sv/clknrst_$(if_name).sv
+            $(env_dir)/$(dut_name)_params_pkg.sv
             
         """
     end
     my_str *= """
-    $( gen_long_str(stub_if_names, "    ", gen_uvc_include)[1:end-1] )
+    $( gen_long_str(uvc_names, "    ", gen_uvc_include)[1:end-1] )
     // DUT env
-        -incdir .
-        ./$(dut_name)_env_pkg.sv
+        -incdir $(env_dir)
+        -incdir $(sequences_dir)
+        $(env_dir)/$(dut_name)_env_pkg.sv
     
     // RTL
-        ../rtl/$(dut_name).sv
+        $(rtl_dir)/$(dut_name).sv
+    
+    // Tests
+        -incdir $(tests_dir)
 
     // Top level
-        $(dut_name)_tb_top.sv
+        $(tb_top_dir)/$(dut_name)_tb_pkg.sv
+        $(tb_top_dir)/$(dut_name)_tb_top.sv
     """
     return my_str
 end

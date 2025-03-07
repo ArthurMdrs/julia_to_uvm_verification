@@ -4,3 +4,6 @@ test*
 
 /ignore/
 *ignore*
+
+my_env/
+TODO.txt

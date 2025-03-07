@@ -1,0 +1,80 @@
+# Configure each UVC's parameters here
+
+- uvc: some_uvc
+  rst_is_negedge_sensitive: true
+  clock_name: clock
+  reset_name: nreset
+
+  use_short_names: false
+  agent_has_coverage: true
+  
+  tr_props_vec:
+    - field_name: data_to_send
+      type: bit
+      range: "[7:0]"
+      is_rand: true
+    - field_name: data_received
+      type: bit
+      range: "[7:0]"
+      is_rand: false
+  
+  if_sigs_vec:
+    - field_name: ready_o
+      type: logic
+      range: ""
+      is_output: true
+    - field_name: valid_i
+      type: logic
+      range: ""
+      is_output: false
+    - field_name: data_o
+      type: logic
+      range: "[7:0]"
+      is_output: true
+    - field_name: data_i
+      type: logic
+      range: "[7:0]"
+      is_output: false
+
+
+
+- uvc: another_uvc
+  rst_is_negedge_sensitive: true
+  clock_name: clk
+  reset_name: rst_n
+
+  use_short_names: true
+  agent_has_coverage: false
+  
+  tr_props_vec:
+    - field_name: random_data
+      type: logic
+      range: "[15:0]"
+      is_rand: true
+    - field_name: data_received
+      type: bit
+      range: "[7:0]"
+      is_rand: false
+  
+  if_sigs_vec:
+    - field_name: another_ready_o
+      type: logic
+      range: ""
+      is_output: true
+    - field_name: another_valid_i
+      type: logic
+      range: ""
+      is_output: false
+    - field_name: another_data_o
+      type: logic
+      range: "[7:0]"
+      is_output: true
+    - field_name: another_data_i
+      type: logic
+      range: "[7:0]"
+      is_output: false
+  
+  class_names:
+    agent: agt
+    transaction: seq_item
+  

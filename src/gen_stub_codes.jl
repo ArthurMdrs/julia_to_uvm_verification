@@ -4,62 +4,58 @@
 # Creates a stub DUT module
 # ***********************************
 
-# OBS.: The function gen_line_if_signal() comes from interface_codes.jl
-gen_line_stub_if_signals(vec, tabs) = gen_line_if_signal(vec, tabs; end_of_line=",")
-gen_stub_if_signals(if_vector, gen_line, tabs) = begin
+
+gen_line_stub_if_signal(vec::if_field_t, tabs) = begin
+    if vec.is_output == true
+        return "$(tabs)output reg $(vec.range) $(vec.field_name),\n"
+    else
+        return "$(tabs)input      $(vec.range) $(vec.field_name),\n"
+    end
+end
+gen_stub_if_signals(tabs) = begin
     str = ""
-    for x in if_vector
-        str *= "$(tabs)// Signals from $(x[1])'s interface - begin\n"
-        str *= gen_long_str(x[2], tabs*"    ", gen_line)
-        str = (x == if_vector[end]) ? str[1:end-2]*"\n" : str
-        str *= "$(tabs)// Signals from $(x[1])'s interface - end\n"
+    uvc_names_ = uvc_names
+    if using_this_clknrst == true
+        uvc_names_ = filter(x -> x!= clknrst_name, uvc_names)
+    end
+    for uvc_name in uvc_names_
+        if_sigs_vec = get_uvc_cfg_fld(uvc_name, :if_sigs_vec)
+        str *= "$(tabs)// Signals from $(uvc_name)'s interface - begin\n"
+        str *= gen_long_str(if_sigs_vec, tabs*"    ", gen_line_stub_if_signal)
+        str = (uvc_name == uvc_names_[end]) ? str[1:end-2]*"\n" : str
+        str *= "$(tabs)// Signals from $(uvc_name)'s interface - end\n"
     end
     return str
 end
-gen_stub_parameters_str_file(if_vector, stub_if_names, clock_name, reset_name) = 
-    "if_vector = $(if_vector)\nstub_if_names = $(stub_if_names)\nclk_rst_vec = $([clock_name, reset_name, rst_is_negedge_sensitive])"
-update_signals_if_config(signals_if_config) = begin
-    out_vec = []
-    for x in signals_if_config
-        if x[4] == true
-            push!(out_vec, ["output reg", x[2], x[3]])
-        else
-            push!(out_vec, ["input    ", x[2], x[3]])
-        end
+# gen_stub_parameters_str_file(if_vector) = 
+#     "if_vector = $(if_vector)\nuvc_names = $(uvc_names)\nclk_rst_vec = $([clock_name, reset_name, rst_is_negedge_sensitive])"
+# get_interface_signals() = begin
+#     if_gather = []
+#     for uvc_name in uvc_names
+#         if_sigs_vec = get_uvc_cfg_fld(uvc_name, :if_sigs_vec)
+#         append!(if_gather, if_sigs_vec)
+#     end
+#     return if_gather
+# end
+
+stub_gen() = begin
+    if run_stub_gen == true
+        # if_vector = get_interface_signals()
+        
+        output_file_setup("$(rtl_dir)")
+        
+        write_file("$(rtl_dir)/$(dut_name).sv", gen_stub_base())
+        # write_file("$(rtl_dir)/$(dut_name)_parameters.jl", gen_stub_parameters_str_file(if_vector))
     end
-    return out_vec
-end
-get_interface_signals() = begin
-    if_gather = []
-    item_to_delete = []
-    for x in stub_if_names
-        include_jl("$(cwd)/generated_files/$(x)/parameter_folder/$(x)_parameters.jl")
-        push!(if_gather,[x,update_signals_if_config(signals_if_config)])
-    end
-    # Restore settings overwritten by including $(x)_parameters.jl
-    restore_config()
-    setdiff!(stub_if_names, item_to_delete)
-    return if_gather
 end
 
-stub_gen() = (!run_stub_gen) ? "" : begin
-    if_vector = get_interface_signals()
-    # clock_name = if_vec[1]
-    # reset_name = if_vec[2]
-    
-    output_file_setup("generated_files/rtl")
-    write_file("generated_files/rtl/$(dut_name).sv", gen_stub_base(clock_name, reset_name, rst_is_negedge_sensitive, if_vector))
-    write_file("generated_files/rtl/$(dut_name)_parameters.jl", 
-                gen_stub_parameters_str_file(if_vector, stub_if_names, clock_name, reset_name))
-end
-
-gen_stub_base(clock_name, reset_name, rst_is_negedge_sensitive, vec) = begin 
+gen_stub_base() = begin 
     param_str = has_paramaters ? "import $(dut_name)_params_pkg::*; " : ""
     return """
     module $(dut_name) $(param_str)$(get_param_declaration(params_vec, dut_name, "    "))(
         input $(clock_name), 
         input $(reset_name), 
-    $(gen_stub_if_signals(vec, gen_line_stub_if_signals, "    ")[1:end-1])
+    $( gen_stub_if_signals("    ")[1:end-1] )
     );
 
         always @(posedge $(clock_name) or $( (rst_is_negedge_sensitive) ? "negedge" : "posedge" ) $(reset_name)) begin
@@ -75,7 +71,7 @@ gen_stub_base(clock_name, reset_name, rst_is_negedge_sensitive, vec) = begin
             // Combinational logic
         end
 
-    endmodule: $(dut_name)
+    endmodule : $(dut_name)
     """
 end
 # ****************************************************************

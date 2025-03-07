@@ -6,7 +6,7 @@
 
 
 gen_refmod_base() = begin
-    rm_name = use_short_names ? short_names_dict["ref_model"] : long_names_dict["ref_model"]
+    rm_name = class_names["ref_model"]
     my_str = """
     class $(dut_name)_$(rm_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_subscriber#(seq_item_t);
         
@@ -14,7 +14,7 @@ gen_refmod_base() = begin
     
     if has_paramaters
         my_str *= """
-            `uvm_component_param_utils($(dut_name)_$(rm_name) $(get_param_conn_w_seq_item2("    ")[1:end-1]))
+            `uvm_component_param_utils($(dut_name)_$(rm_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -31,7 +31,7 @@ gen_refmod_base() = begin
         function new(string name="$(dut_name)_$(rm_name)", uvm_component parent = null);
             super.new(name, parent);
             $(rm_name)_port = new("$(rm_name)_port", this);
-        endfunction: new
+        endfunction : new
         
         function void write(seq_item_t t);
             seq_item = seq_item_t::type_id::create("seq_item");
@@ -43,7 +43,7 @@ gen_refmod_base() = begin
             `uvm_info("$(uppercase(dut_name)) REFMOD", \$sformatf("Processed item: \\n%s", seq_item.convert2string()), UVM_HIGH)
         endfunction : write
         
-    endclass: $(dut_name)_$(rm_name)
+    endclass : $(dut_name)_$(rm_name)
     """
     return my_str
 end

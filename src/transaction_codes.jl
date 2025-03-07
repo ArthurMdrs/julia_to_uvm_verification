@@ -2,35 +2,23 @@
 # Transaction Codes
 # ***********************************
 # Creates an transaction class (a.k.a. sequence item)
-# The gen_tr_base function needs a vector as an argument
-# Form of the vector to generate the transaction:
-#  is_rand? | type | length | name
-# 
-# E.g.:
-# tr_vec = [
-#   [true , "bit", "[7:0]", "addr" ],
-#   [false, "bit", "[7:0]", "data" ],
-#   [false, "bit", "1"    , "value"],
-#   [true , "bit", "1"    , "bit_" ]]
-#
-# This vector comes from the file UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
-gen_line_convert_to_string(vec, tabs) = 
-    "$(tabs)string_aux = {string_aux, \$sformatf(\"** $(vec[4]) value: %h\\n\", $(vec[4]))};\n"
-gen_line_object_utils(vec, tabs) = 
-    "$(tabs)`uvm_field_int($(vec[4]), UVM_ALL_ON)\n"
-gen_line_instanciate_obj(vec, tabs) = 
-    "$(tabs)$((vec[1]) ? "rand" : "    ") $(vec[2]) $((vec[3]=="1" || vec[3]=="") ? "      " : vec[3]) $(vec[4]);\n"
+gen_line_convert_to_string(vec::tr_field_t, tabs) = 
+    "$(tabs)string_aux = {string_aux, \$sformatf(\"** $(vec.field_name) value: %h\\n\", $(vec.field_name))};\n"
+# gen_line_object_utils(vec::tr_field_t, tabs) = 
+#     "$(tabs)`uvm_field_int($(vec.field_name), UVM_ALL_ON)\n"
+gen_line_instanciate_obj(vec::tr_field_t, tabs) = 
+    "$(tabs)$((vec.is_rand) ? "rand" : "    ") $(vec.type) $(vec.range) $(vec.field_name);\n"
 
-gen_line_attribute_copy(vec, tabs) = begin
-    my_str = "$(tabs)$(vec[4]) = _rhs.$(vec[4]);\n"
+gen_line_attribute_copy(vec::tr_field_t, tabs) = begin
+    my_str = "$(tabs)$(vec.field_name) = _rhs.$(vec.field_name);\n"
     return my_str
 end
-gen_do_copy(prefix_name, vec) = begin
-    tr_name = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
+gen_do_copy(prefix_name, vec::Vector{tr_field_t}) = begin
+    tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     my_str = """
         function void do_copy (uvm_object rhs);
-            $(prefix_name)_$(tr_name) $(get_param_conn("        "))_rhs;
+            $(prefix_name)_$(tr_name) $(get_param_conn(dut_name, "        "))_rhs;
             
             \$cast(_rhs, rhs);
             
@@ -41,16 +29,16 @@ gen_do_copy(prefix_name, vec) = begin
     """
     return my_str
 end
-gen_line_attribute_comp(vec, tabs) = begin
-    my_str = "$(tabs)res = res && ($(vec[4]) === _rhs.$(vec[4]));\n"
+gen_line_attribute_comp(vec::tr_field_t, tabs) = begin
+    my_str = "$(tabs)res = res && ($(vec.field_name) === _rhs.$(vec.field_name));\n"
     return my_str
 end
-gen_do_compare(prefix_name, vec) = begin
-    tr_name = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
+gen_do_compare(prefix_name, vec::Vector{tr_field_t}) = begin
+    tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     my_str = """
         function bit do_compare (uvm_object rhs, uvm_comparer comparer);
             bit res;
-            $(prefix_name)_$(tr_name) $(get_param_conn("        "))_rhs;
+            $(prefix_name)_$(tr_name) $(get_param_conn(dut_name, "        "))_rhs;
             
             \$cast(_rhs, rhs);
             
@@ -63,7 +51,7 @@ gen_do_compare(prefix_name, vec) = begin
     """
     return my_str
 end
-gen_do_print(prefix_name, vec) = begin
+gen_do_print(prefix_name, vec::Vector{tr_field_t}) = begin
     my_str = """
         function void do_print (uvm_printer printer);
             if (printer.knobs.sprint == 0)
@@ -74,25 +62,28 @@ gen_do_print(prefix_name, vec) = begin
     """
     return my_str
 end
-gen_line_attribute_record(vec, tabs) = begin
-    my_str = "$(tabs)`uvm_record_field(\"$(vec[4])\", $(vec[4]))\n"
+gen_line_attribute_record(vec::tr_field_t, tabs) = begin
+    my_str = "$(tabs)`uvm_record_field(\"$(vec.field_name)\", $(vec.field_name))\n"
     return my_str
 end
-gen_do_record(prefix_name, vec) = begin
+gen_do_record(prefix_name, vec::Vector{tr_field_t}) = begin
     my_str = """
         function void do_record (uvm_recorder recorder);
             super.do_record(recorder);
+            
+            // Use the example below to record integral types
+            // `uvm_record_int("m_some_property", m_some_property, 32, UVM_DEC)
             
     $( gen_long_str(vec, "        ", gen_line_attribute_record)[1:end-1] )
         endfunction : do_record
     """
     return my_str
 end
-gen_line_attribute_pack(vec, tabs) = begin
-    my_str = "$(tabs)`uvm_pack_int($(vec[4]))\n"
+gen_line_attribute_pack(vec::tr_field_t, tabs) = begin
+    my_str = "$(tabs)`uvm_pack_int($(vec.field_name))\n"
     return my_str
 end
-gen_do_pack(prefix_name, vec) = begin
+gen_do_pack(prefix_name, vec::Vector{tr_field_t}) = begin
     my_str = """
         function void do_pack (uvm_packer packer);
             super.do_pack(packer);
@@ -103,11 +94,11 @@ gen_do_pack(prefix_name, vec) = begin
     """
     return my_str
 end
-gen_line_attribute_unpack(vec, tabs) = begin
-    my_str = "$(tabs)`uvm_unpack_int($(vec[4]))\n"
+gen_line_attribute_unpack(vec::tr_field_t, tabs) = begin
+    my_str = "$(tabs)`uvm_unpack_int($(vec.field_name))\n"
     return my_str
 end
-gen_do_unpack(prefix_name, vec) = begin
+gen_do_unpack(prefix_name, vec::Vector{tr_field_t}) = begin
     my_str = """
         function void do_unpack (uvm_packer packer);
             super.do_unpack(packer);
@@ -120,16 +111,17 @@ gen_do_unpack(prefix_name, vec) = begin
     return my_str
 end
 
-gen_tr_base(prefix_name, vec) = begin 
-    tr_name = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
+gen_tr_base(prefix_name) = begin 
+    tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
+    vec = get_uvc_cfg_fld(prefix_name, :tr_props_vec)
     my_str = """
-    class $(prefix_name)_$(tr_name) $(get_param_declaration(params_vec, dut_name, ""))extends uvm_sequence_item;
+    class $(prefix_name)_$(tr_name) $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_sequence_item;
         
     """
     
     if has_paramaters
         my_str *= """
-            `uvm_object_param_utils($(prefix_name)_$(tr_name) $(get_param_conn("    ")[1:end-1]))
+            `uvm_object_param_utils($(prefix_name)_$(tr_name) $(get_param_conn(dut_name, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -143,7 +135,7 @@ gen_tr_base(prefix_name, vec) = begin
         
         function new(string name="$(prefix_name)_$(tr_name)");
             super.new(name);
-        endfunction: new
+        endfunction : new
         
         // Type your constraints!
         constraint some_constraint {}
@@ -155,10 +147,10 @@ gen_tr_base(prefix_name, vec) = begin
     $( gen_long_str(vec, "        ", gen_line_convert_to_string)[1:end-1] )
             string_aux = {string_aux, "***********************************"};
             return string_aux;
-        endfunction: convert2string
+        endfunction : convert2string
         
         // function void post_randomize();
-        // endfunction: post_randomize
+        // endfunction : post_randomize
         
     """
     my_str *= """
@@ -176,22 +168,21 @@ gen_tr_base(prefix_name, vec) = begin
         
     """
     my_str *= """
-    endclass: $(prefix_name)_$(tr_name)
+    endclass : $(prefix_name)_$(tr_name)
     """
     return my_str
 end
 
-gen_clknrst_tr() = begin 
-    prefix_name = "clknrst"
-    tr_name = use_short_names ? short_names_dict["transaction"] : long_names_dict["transaction"]
+gen_clknrst_tr(prefix_name) = begin 
+    tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     my_str = """
-    class $(prefix_name)_$(tr_name) $(get_param_declaration(params_vec, dut_name, ""))extends uvm_sequence_item;
+    class $(prefix_name)_$(tr_name) $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_sequence_item;
         
     """
     
     if has_paramaters
         my_str *= """
-            `uvm_object_param_utils($(prefix_name)_$(tr_name) $(get_param_conn("    ")[1:end-1]))
+            `uvm_object_param_utils($(prefix_name)_$(tr_name) $(get_param_conn(dut_name, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -209,7 +200,7 @@ gen_clknrst_tr() = begin
         
         function new(string name="$(prefix_name)_$(tr_name)");
             super.new(name);
-        endfunction: new
+        endfunction : new
         
         constraint max_clk_period {
             clk_period <= 20_000; // 20ns
@@ -222,7 +213,7 @@ gen_clknrst_tr() = begin
             rst_assert_duration <= 15_000; // 15ns
         }
         
-    endclass: $(prefix_name)_$(tr_name)
+    endclass : $(prefix_name)_$(tr_name)
     """
     return my_str
 end
