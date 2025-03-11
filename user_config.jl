@@ -21,6 +21,7 @@ user_config.params_vec = [ # Make sure to include all your params in this vector
 ]
 user_config.config_inst_convention = "m_config"
 user_config.class_names = short_names_dict
+user_config.gen_tdefs_pkg = false
 
 # Clock and reset info
 user_config.clock_name = "clk"

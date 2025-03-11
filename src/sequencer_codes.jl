@@ -26,7 +26,8 @@ gen_sequencer_base(prefix_name) = begin
     
     my_str *= """
         
-    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param)[1:end-1] )
+    $( gen_lines_tdefs_w_param("$(prefix_name)_$(cfg_name)", "    ")[1:end-1] )
+    $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
         
         $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
         

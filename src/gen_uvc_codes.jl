@@ -51,6 +51,10 @@ gen_files(uvc_name) = begin
             if get_uvc_cfg_fld(uvc_name, :agent_has_coverage) == true
                 gen_single_file(uvc_name, class_name, function_dict_)
             end
+        elseif class_name == "tdefs_pkg"
+            if get_uvc_cfg_fld(uvc_name, :gen_tdefs_pkg) == true
+                gen_single_file(uvc_name, class_name, function_dict_)
+            end
         elseif getfield(gen_classes, class_symbol) == true
             gen_single_file(uvc_name, class_name, function_dict_)
         end

@@ -44,7 +44,11 @@ gen_tdefs_base(prefix_name) = begin
         """
     end
     my_str *= """
-    $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
+        // Define your typedefs here!
+        typedef enum int {
+            SOME_VAL,
+            OTHER_VAL
+        } type_name_t;
         
     """
     my_str *= """
@@ -56,31 +60,35 @@ end
 gen_pkg_base(prefix_name) = begin
     vec = vector_to_pattern(prefix_name)
     my_str = """
-        package $(prefix_name)_pkg;
-            
-            import uvm_pkg::*;
-            `include "uvm_macros.svh"
-        """
+    package $(prefix_name)_pkg;
         
-        if has_paramaters
-            my_str *= """
-                
-                import $(dut_name)_params_pkg::*;
-            """
-        end
+        import uvm_pkg::*;
+        `include "uvm_macros.svh"
         
+    """
+    
+    if has_paramaters
         my_str *= """
+            import $(dut_name)_params_pkg::*;
             
-            //`include "$(prefix_name)_tdefs.sv"
+        """
+    end
+    
+    if get_uvc_cfg_fld(prefix_name, :gen_tdefs_pkg) == true
+        my_str *= """
             import $(prefix_name)_tdefs_pkg::*;
             
-        $( gen_long_str(vec, "    ", gen_line_include)[1:end-1] )
-            
-            `include "$(prefix_name)_base_sequence.sv"
-            `include "$(prefix_name)_random_seq.sv"
-            
-        endpackage : $(prefix_name)_pkg
         """
+    end
+    
+    my_str *= """
+    $( gen_long_str(vec, "    ", gen_line_include)[1:end-1] )
+        
+        `include "$(prefix_name)_base_sequence.sv"
+        `include "$(prefix_name)_random_seq.sv"
+        
+    endpackage : $(prefix_name)_pkg
+    """
     return my_str
 end
 
@@ -90,16 +98,12 @@ gen_clknrst_tdefs(prefix_name) = begin
     package $(prefix_name)_tdefs_pkg;
         
     """
-    if has_paramaters
-        my_str *= """
-            import $(dut_name)_params_pkg::*;
+    # if has_paramaters
+    #     my_str *= """
+    #         import $(dut_name)_params_pkg::*;
             
-        """
-    end
-    my_str *= """
-    $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
-        
-    """
+    #     """
+    # end
     my_str *= """
         typedef enum bit [1:0] {
             $(uppercase(prefix_name))_ACTION_START_CLK   ,
@@ -119,42 +123,44 @@ gen_clknrst_tdefs(prefix_name) = begin
     return my_str
 end
 
-gen_clknrst_pkg(prefix_name) = gen_pkg_base(prefix_name)
-
 gen_clknrst_pkg(prefix_name) = begin
     vec = vector_to_pattern(prefix_name)
     my_str = """
-        package $(prefix_name)_pkg;
-            
-            import uvm_pkg::*;
-            `include "uvm_macros.svh"
-        """
+    package $(prefix_name)_pkg;
         
-        if has_paramaters
-            my_str *= """
-                
-                import $(dut_name)_params_pkg::*;
-            """
-        end
+        import uvm_pkg::*;
+        `include "uvm_macros.svh"
         
-        seq_vec = []
-        for x in clknrst_actions_vec
-            push!(seq_vec, prefix_name*"_"*x*"_seq")
-        end
-        
+    """
+    
+    if has_paramaters
         my_str *= """
+            import $(dut_name)_params_pkg::*;
             
-            //`include "$(prefix_name)_tdefs.sv"
+        """
+    end
+    
+    if get_uvc_cfg_fld(prefix_name, :gen_tdefs_pkg) == true
+        my_str *= """
             import $(prefix_name)_tdefs_pkg::*;
             
-        $( gen_long_str(vec, "    ", gen_line_include)[1:end-1] )
-            
-            `include "$(prefix_name)_base_sequence.sv"
-        $( gen_long_str(seq_vec, "    ", gen_line_include)[1:end-1] )
-            `include "$(prefix_name)_reset_and_start_clk_seq.sv"
-            
-        endpackage : $(prefix_name)_pkg
         """
+    end
+    
+    seq_vec = []
+    for x in clknrst_actions_vec
+        push!(seq_vec, prefix_name*"_"*x*"_seq")
+    end
+    
+    my_str *= """
+    $( gen_long_str(vec, "    ", gen_line_include)[1:end-1] )
+        
+        `include "$(prefix_name)_base_sequence.sv"
+    $( gen_long_str(seq_vec, "    ", gen_line_include)[1:end-1] )
+        `include "$(prefix_name)_reset_and_start_clk_seq.sv"
+        
+    endpackage : $(prefix_name)_pkg
+    """
     return my_str
 end
 

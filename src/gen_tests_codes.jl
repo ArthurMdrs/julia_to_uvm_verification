@@ -87,6 +87,7 @@ gen_test_base() = begin
         // Typedefs - begin
     $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param)[1:end-1] )
     $( gen_vseq_tdef("base_vsequence", "    ")[1:end-1] )
+    $( gen_long_str(uvc_names, "    ", gen_line_vif_typedef)[1:end-1] )
         // Typedefs - end
     """
     my_str *= """
@@ -144,7 +145,7 @@ gen_test_base() = begin
             m_$(dut_name)_env_$(cfg_name) = $(dut_name)_env_$(cfg_name)_t::type_id::create(\"m_$(dut_name)_env_$(cfg_name)\");
             
             // Set ENV configuration
-            m_$(dut_name)_env_$(cfg_name).some_config = 10;
+            m_$(dut_name)_env_$(cfg_name).has_virtual_sequencer = 1'b1;
     """
     if env_has_coverage
         my_str *= "        m_$(dut_name)_env_$(cfg_name).has_coverage = 1'b1;\n"
@@ -196,14 +197,9 @@ gen_test_base() = begin
         task main_phase(uvm_phase phase);
             obj = phase.get_objection();
             obj.set_drain_time(this, 200ns);
-            //phase.raise_objection(this, get_type_name());
-            //`uvm_info("$(uppercase(dut_name))) BASE TEST", "phase.raise_objection", UVM_HIGH)
             
             $(vseq_inst_name).set_starting_phase(phase);
             $(vseq_inst_name).start(.sequencer(m_$(dut_name)_env.m_$(dut_name)_$(vsqr_name)));
-            
-            //phase.drop_objection(this, get_type_name());
-            //`uvm_info("$(uppercase(dut_name))) BASE TEST", "phase.drop_objection", UVM_HIGH)
         endtask : main_phase
         
     """

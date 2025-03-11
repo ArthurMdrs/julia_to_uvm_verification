@@ -18,13 +18,13 @@ end
 # gen_line_cfg_utils(uvc_name, tabs) = begin
 #     return "$(tabs)`uvm_field_object(cfg_$(uvc_name), UVM_ALL_ON)\n"
 # end
-gen_line_connect_sequencers(uvc_name, tabs) = begin
+gen_line_connect_sequencers(uvc_name, tabs, env_cfg_name) = begin
     vsqr_name = class_names["vsequencer"]
     sqr_name   = get_uvc_cfg_fld(uvc_name, :class_names)["sequencer"]
     agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
     cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
     my_str = """
-    $(tabs)if (m_$(uvc_name)_$(cfg_name).is_active == UVM_ACTIVE)
+    $(tabs)if ($(env_cfg_name).has_virtual_sequencer && m_$(uvc_name)_$(cfg_name).is_active == UVM_ACTIVE)
     $(tabs)    m_$(dut_name)_$(vsqr_name).m_$(uvc_name)_$(sqr_name) = m_$(uvc_name)_$(agent_name).m_sequencer;\n
     """
     return my_str
@@ -73,35 +73,33 @@ gen_vsqr_tdef(tabs) = begin
     """
     return my_str
 end
-get_sb_ports_conn() = begin
+get_sb_ports_conn(tabs, env_cfg_name) = begin
     sb_name = class_names["scoreboard"]
     @assert size(uvc_names, 1) >= 1
     agent_name = get_uvc_cfg_fld(uvc_names[1], :class_names)["agent"]
-    my_str = "m_$(uvc_names[1])_$(agent_name).item_from_monitor_port.connect(m_$(dut_name)_$(sb_name).item_from_monitor_fifo.analysis_export);"
+    my_str  = "$(tabs)if ($(env_cfg_name).has_scoreboard)\n"
+    my_str *= "$(tabs)    m_$(uvc_names[1])_$(agent_name).item_from_monitor_port.connect(m_$(dut_name)_$(sb_name).item_from_monitor_fifo.analysis_export);"
     return my_str
 end
-get_rm_ports_conn(tabs) = begin
+get_rm_ports_conn(tabs, env_cfg_name) = begin
     sb_name = class_names["scoreboard"]
     rm_name = class_names["ref_model" ]
     @assert size(uvc_names, 1) >= 1
     agent_name = get_uvc_cfg_fld(uvc_names[1], :class_names)["agent"]
-    my_str = "$(tabs)m_$(uvc_names[1])_$(agent_name).item_from_monitor_port.connect(m_$(dut_name)_$(rm_name).analysis_export);\n"
+    my_str  = "$(tabs)if ($(env_cfg_name).has_refmod)\n"
+    my_str *= "$(tabs)    m_$(uvc_names[1])_$(agent_name).item_from_monitor_port.connect(m_$(dut_name)_$(rm_name).analysis_export);\n"
     if gen_scoreboard
-        my_str *= "$(tabs)m_$(dut_name)_$(rm_name).$(rm_name)_port.connect(m_$(dut_name)_$(sb_name).item_from_refmod_fifo.analysis_export);\n"
+        my_str *= "$(tabs)if ($(env_cfg_name).has_refmod && $(env_cfg_name).has_scoreboard)\n"
+        my_str *= "$(tabs)    m_$(dut_name)_$(rm_name).$(rm_name)_port.connect(m_$(dut_name)_$(sb_name).item_from_refmod_fifo.analysis_export);\n"
     end
     return my_str
 end
-get_cov_ports_conn(tabs) = begin
+get_cov_ports_conn(tabs, env_cfg_name) = begin
     cov_name = class_names["coverage"]
     @assert size(uvc_names, 1) >= 1
     agent_name = get_uvc_cfg_fld(uvc_names[1], :class_names)["agent"]
-    # my_str = """
-    # $(tabs)if ($(config_inst_convention).has_coverage) begin
-    # $(tabs)    m_$(uvc_names[1])_$(agent_name).item_from_monitor_port.connect(m_$(dut_name)_$(cov_name).analysis_export);
-    # $(tabs)end
-    # """
     my_str = """
-    $(tabs)if ($(config_inst_convention).has_coverage)
+    $(tabs)if ($(env_cfg_name).has_coverage)
     $(tabs)    m_$(uvc_names[1])_$(agent_name).item_from_monitor_port.connect(m_$(dut_name)_$(cov_name).analysis_export);
     """
     return my_str
@@ -188,6 +186,7 @@ gen_env_base() = begin
     my_str *= gen_scoreboard ? "    typedef $(dut_name)_$(sb_name) $(get_sb_param_conn("    "))$(dut_name)_$(sb_name)_t;\n" : ""
     my_str *= env_has_coverage ? "    typedef $(dut_name)_$(cov_name) $(get_sb_param_conn("    "))$(dut_name)_$(cov_name)_t;\n" : ""
     my_str *= """
+    $( gen_long_str(uvc_names, "    ", gen_line_vif_typedef)[1:end-1] )
         // Typedefs - end
         
         
@@ -273,17 +272,20 @@ gen_env_base() = begin
             uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(dut_name)_$(vsqr_name)"), .field_name("$(config_inst_convention)"), .value($(env_cfg_name)));
             
             // Create virtual sequencer
-            m_$(dut_name)_$(vsqr_name) = $(dut_name)_$(vsqr_name)_t::type_id::create("m_$(dut_name)_$(vsqr_name)", this);
+            if ($(env_cfg_name).has_virtual_sequencer)
+                m_$(dut_name)_$(vsqr_name) = $(dut_name)_$(vsqr_name)_t::type_id::create("m_$(dut_name)_$(vsqr_name)", this);
             
     """
     my_str *= gen_refmod ? """
             // Create reference model
-            m_$(dut_name)_$(rm_name) = $(dut_name)_$(rm_name)_t::type_id::create("m_$(dut_name)_$(rm_name)", this);
+            if ($(env_cfg_name).has_refmod)
+                m_$(dut_name)_$(rm_name) = $(dut_name)_$(rm_name)_t::type_id::create("m_$(dut_name)_$(rm_name)", this);
             
     """ : ""
     my_str *= gen_scoreboard ? """
             // Create scoreboard
-            m_$(dut_name)_$(sb_name) = $(dut_name)_$(sb_name)_t::type_id::create("m_$(dut_name)_$(sb_name)", this);
+            if ($(env_cfg_name).has_scoreboard)
+                m_$(dut_name)_$(sb_name) = $(dut_name)_$(sb_name)_t::type_id::create("m_$(dut_name)_$(sb_name)", this);
             
     """ : ""
     my_str *= env_has_coverage ? """
@@ -305,24 +307,25 @@ gen_env_base() = begin
             
             // Sequencers connect - begin
     """
+    gen_line(uvc_name, tabs) = gen_line_connect_sequencers(uvc_name, tabs, env_cfg_name)
     my_str *= """
-    $( gen_long_str(uvc_names, "        ", gen_line_connect_sequencers)[1:end-2] )
+    $( gen_long_str(uvc_names, "        ", gen_line)[1:end-2] )
             // Sequencers connect - end
             
     """
     my_str *= gen_refmod ? """
             // Make reference model connections
-    $(get_rm_ports_conn("        ")[1:end-1])
+    $( get_rm_ports_conn("        ", env_cfg_name)[1:end-1] )
             
     """ : ""
     my_str *= gen_scoreboard ? """
             // Connect agents to scoreboard
-            $(get_sb_ports_conn())
+    $( get_sb_ports_conn("        ", env_cfg_name) )
             
     """ : ""
     my_str *= env_has_coverage ? """
             // Connect monitor to coverage collector
-    $(get_cov_ports_conn("        ")[1:end-1])
+    $( get_cov_ports_conn("        ", env_cfg_name)[1:end-1] )
             
     """ : ""
     my_str *= """
@@ -347,8 +350,6 @@ gen_env_pkg() = begin
 
         import uvm_pkg::*;
         `include "uvm_macros.svh"
-        
-        // `include "$(dut_name)_tdefs.sv"
         
     """
     my_str *= has_paramaters ? gen_line_import("$(dut_name)_params", "    ") : ""
@@ -432,29 +433,45 @@ gen_env_cfg() = begin
     if has_paramaters
         my_str *= """
             `uvm_object_param_utils($(dut_name)_env_$(cfg_name) $(get_param_conn(dut_name, "    ")))
-            
         """
     else
         my_str *= """
             `uvm_object_utils($(dut_name)_env_$(cfg_name))
-            
         """
     end
+    my_str *="""
+        
+        bit has_virtual_sequencer;
+    """
     
     if env_has_coverage
         my_str *= "    bit has_coverage;\n"
-    end 
+    end
+    if gen_scoreboard
+        my_str *= "    bit has_scoreboard;\n"
+    end
+    if gen_refmod
+        my_str *= "    bit has_refmod;\n"
+    end
+    
     my_str *="""
-        int some_config;
         
         function new (string name = "$(dut_name)_env_$(cfg_name)");
             super.new(name);
+            has_virtual_sequencer = 1'b1;
     """
+    
     if env_has_coverage
-        my_str *= "    has_coverage = 1'b1;\n"
+        my_str *= "        has_coverage = 1'b1;\n"
+    end
+    if gen_scoreboard
+        my_str *= "        has_scoreboard = 1'b1;\n"
     end 
+    if gen_refmod
+        my_str *= "        has_refmod = 1'b1;\n"
+    end 
+    
     my_str *="""
-            some_config = 0;
         endfunction : new
 
     endclass : $(dut_name)_env_$(cfg_name)

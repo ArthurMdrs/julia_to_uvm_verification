@@ -6,15 +6,20 @@
 
 gen_uvc_include(uvc_name, tabs) = begin
     if_name = get_uvc_cfg_fld(uvc_name, :class_names)["interface"]
-    return """
+    my_str = """
     // $(uppercase(uvc_name)) UVC
     $(tabs)-incdir $(agents_dir)/$(uvc_name)
     $(tabs)-incdir $(sequences_dir)/$(uvc_name)
-    $(tabs)$(agents_dir)/$(uvc_name)/$(uvc_name)_tdefs_pkg.sv
+    """
+    if get_uvc_cfg_fld(uvc_name, :gen_tdefs_pkg) == true
+        my_str *= "$(tabs)$(agents_dir)/$(uvc_name)/$(uvc_name)_tdefs_pkg.sv\n"
+    end
+    my_str *= """
     $(tabs)$(agents_dir)/$(uvc_name)/$(uvc_name)_pkg.sv
     $(tabs)$(agents_dir)/$(uvc_name)/$(uvc_name)_$(if_name).sv
 
     """
+    return my_str
 end
     
 sim_args_gen() = begin

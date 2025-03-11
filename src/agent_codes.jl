@@ -37,6 +37,7 @@ gen_agent_base(prefix_name) = begin
     end
     
     my_str *= """
+        
         // Typedefs - begin
     $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param)[1:end-1] )
     """
@@ -44,6 +45,7 @@ gen_agent_base(prefix_name) = begin
     gen_lines(name, tabs) = gen_lines_tdefs_w_param_w_seq_item(name, prefix_name, tabs)
     my_str *= """
     $( gen_long_str(tdefs_list_w_seq_item, "    ", gen_lines)[1:end-1] )
+    $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
         // Typedefs - end
     """
     
@@ -62,7 +64,6 @@ gen_agent_base(prefix_name) = begin
     # """
     
     my_str *= """
-        
         $(prefix_name)_vif_t vif;
         $(prefix_name)_$(mon_name)_t m_monitor;
         $(prefix_name)_$(drv_name)_t m_driver;

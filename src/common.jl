@@ -173,9 +173,13 @@ gen_line_cfg_instance(uvc_name, tabs) = begin
 end
 
 gen_line_import_tdefs(uvc_name, tabs) = begin
-    return """
-    $(tabs)import $(uvc_name)_tdefs_pkg::*;
-    """
+    if get_uvc_cfg_fld(uvc_name, :gen_tdefs_pkg) == true
+        return """
+        $(tabs)import $(uvc_name)_tdefs_pkg::*;
+        """
+    else
+        return ""
+    end
 end
 
 

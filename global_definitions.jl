@@ -95,6 +95,7 @@ mutable struct config_t
     # params_vec::Vector{Vector{String}}
     config_inst_convention::String
     class_names::Dict{String, String}
+    gen_tdefs_pkg::Union{Bool, Nothing}
     # Clock and reset info
     clock_name::String
     reset_name::String
@@ -143,6 +144,7 @@ param_len = 3
 # config_inst_convention = "m_$(cfg_name)"
 global_config.config_inst_convention = "m_config"
 global_config.class_names = short_names_dict
+global_config.gen_tdefs_pkg = false
 
 # Clock and reset info
 global_config.clock_name = "clk"
@@ -191,6 +193,7 @@ mutable struct uvc_config_t
     reset_name::String
     use_short_names::Union{Bool, Nothing}
     agent_has_coverage::Union{Bool, Nothing}
+    gen_tdefs_pkg::Union{Bool, Nothing}
     tr_props_vec::Vector{tr_field_t}
     if_sigs_vec::Vector{if_field_t}
     class_names::Dict{String, String}
