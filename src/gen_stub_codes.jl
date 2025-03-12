@@ -50,7 +50,7 @@ stub_gen() = begin
 end
 
 gen_stub_base() = begin 
-    param_str = has_paramaters ? "import $(dut_name)_params_pkg::*; " : ""
+    param_str = has_parameters ? "import $(dut_name)_params_pkg::*; " : ""
     return """
     module $(dut_name) $(param_str)$(get_param_declaration(params_vec, dut_name, "    "))(
         input $(clock_name), 

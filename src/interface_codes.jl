@@ -37,7 +37,7 @@ gen_if_base(prefix_name) = begin
     reset_name = get_uvc_cfg_fld(prefix_name, :reset_name)
     rst_is_negedge_sensitive = get_uvc_cfg_fld(prefix_name, :rst_is_negedge_sensitive)
     if_sigs_vec = get_uvc_cfg_fld(prefix_name, :if_sigs_vec)
-    param_str = has_paramaters ? "import $(dut_name)_params_pkg::$(dut_name)_params_t;\n$(get_param_declaration(params_vec, dut_name, "    "))" : ""
+    param_str = has_parameters ? "import $(dut_name)_params_pkg::$(dut_name)_params_t;\n$(get_param_declaration(params_vec, dut_name, "    "))" : ""
     return """
     interface $(prefix_name)_$(if_name) $(param_str)(
         input logic $(clock_name), 
@@ -121,7 +121,7 @@ gen_clknrst_if(prefix_name) = begin
     if_name = get_uvc_cfg_fld(prefix_name, :class_names)["interface"]
     clock_name = get_uvc_cfg_fld(prefix_name, :clock_name)
     reset_name = get_uvc_cfg_fld(prefix_name, :reset_name)
-    param_str = has_paramaters ? "import $(dut_name)_params_pkg::$(dut_name)_params_t;\n$(get_param_declaration(params_vec, dut_name, "    "))" : ""
+    param_str = has_parameters ? "import $(dut_name)_params_pkg::$(dut_name)_params_t;\n$(get_param_declaration(params_vec, dut_name, "    "))" : ""
     return """
     interface $(prefix_name)_$(if_name) $(param_str)(
         output logic $(clock_name), 

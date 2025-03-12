@@ -37,7 +37,7 @@ gen_tdefs_base(prefix_name) = begin
     #     // } $(prefix_name)_some_tdef_t;
         
     # """
-    if has_paramaters
+    if has_parameters
         my_str *= """
             import $(dut_name)_params_pkg::*;
             
@@ -67,7 +67,7 @@ gen_pkg_base(prefix_name) = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             import $(dut_name)_params_pkg::*;
             
@@ -98,7 +98,7 @@ gen_clknrst_tdefs(prefix_name) = begin
     package $(prefix_name)_tdefs_pkg;
         
     """
-    # if has_paramaters
+    # if has_parameters
     #     my_str *= """
     #         import $(dut_name)_params_pkg::*;
             
@@ -133,7 +133,7 @@ gen_clknrst_pkg(prefix_name) = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             import $(dut_name)_params_pkg::*;
             

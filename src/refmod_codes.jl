@@ -7,18 +7,23 @@
 
 gen_refmod_base() = begin
     rm_name = class_names["ref_model"]
+    @assert size(uvc_names, 1) >= 1
+    tr_name = get_uvc_cfg_fld(uvc_names[1], :class_names)["transaction"]
+    tr_str = has_parameters ? "seq_item_t" : "$(uvc_names[1])_$(tr_name)"
     my_str = """
-    class $(dut_name)_$(rm_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_subscriber#(seq_item_t);
+    class $(dut_name)_$(rm_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_subscriber#($(tr_str));
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_component_param_utils($(dut_name)_$(rm_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
         """
     else
         my_str *= """
             `uvm_component_utils($(dut_name)_$(rm_name))
+            
+            typedef $(uvc_names[1])_$(tr_name) seq_item_t;
         """
     end
     

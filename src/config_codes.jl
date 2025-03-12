@@ -12,7 +12,7 @@ gen_config_base(prefix_name) = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_object_param_utils($(prefix_name)_$(cfg_name) $(get_param_conn(dut_name, "    ")))
             
@@ -64,7 +64,7 @@ gen_clknrst_config(prefix_name) = begin
         
     """
         
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_object_param_utils($(prefix_name)_$(cfg_name) $(get_param_conn(dut_name, "    ")))
             

@@ -18,7 +18,7 @@ gen_driver_base(prefix_name) = begin
     cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     if_name  = get_uvc_cfg_fld(prefix_name, :class_names)["interface"  ]
-    tr_type = has_paramaters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     reset_name = get_uvc_cfg_fld(prefix_name, :reset_name)
     rst_is_negedge_sensitive = get_uvc_cfg_fld(prefix_name, :rst_is_negedge_sensitive)
     my_str = """
@@ -26,7 +26,7 @@ gen_driver_base(prefix_name) = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_component_param_utils($(prefix_name)_$(drv_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
         """
@@ -142,13 +142,13 @@ gen_clknrst_driver(prefix_name) = begin
     cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     if_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
-    tr_type = has_paramaters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     my_str = """
     class $(prefix_name)_$(drv_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_driver #($(tr_type));
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_component_param_utils($(prefix_name)_$(drv_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
         """

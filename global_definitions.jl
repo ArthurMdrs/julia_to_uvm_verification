@@ -90,7 +90,7 @@ mutable struct config_t
     agent_has_coverage::Union{Bool, Nothing}
     agent_has_tdefs_pkg::Union{Bool, Nothing}
     env_has_coverage::Union{Bool, Nothing}
-    has_paramaters::Union{Bool, Nothing}
+    has_parameters::Union{Bool, Nothing}
     params_vec::Vector{sv_params_t}
     # params_vec::Vector{Vector{String}}
     config_inst_convention::String
@@ -128,7 +128,7 @@ global_config.reset_generated_files_folder = true
 global_config.uvc_names = []
 # stub_if_names = global_config.uvc_names
 global_config.dut_name = ""
-global_config.gen_clknrst = true
+global_config.gen_clknrst = false
 clknrst_name = "clknrst"
 using_this_clknrst = false
 clknrst_actions_vec = ["start_clk", "stop_clk", "restart_clk", "assert_reset"]
@@ -138,7 +138,7 @@ global_config.use_short_names = true
 global_config.agent_has_coverage = false
 global_config.agent_has_tdefs_pkg = false
 global_config.env_has_coverage = false
-global_config.has_paramaters = false
+global_config.has_parameters = false
 global_config.params_vec = []
 param_len = 3
 # cfg_name = use_short_names ? short_names_dict["config"] : long_names_dict["config"]

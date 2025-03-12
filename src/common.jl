@@ -82,7 +82,7 @@ end
 
 get_param_declaration(params_vec, prefix_name, tabs) = begin
     my_str = ""
-    if has_paramaters
+    if has_parameters
         my_str *= "#(\n"
         my_str *= "$(tabs)parameter $(prefix_name)_params_t $(prefix_name)_params = '0\n"
         my_str *= ") "
@@ -92,7 +92,7 @@ end
 
 get_param_declaration_w_seq_item(params_vec, prefix_name, tabs) = begin
     my_str = ""
-    if has_paramaters
+    if has_parameters
         my_str *= """
         #(
         $(tabs)parameter type seq_item_t = uvm_sequence_item,
@@ -103,7 +103,7 @@ get_param_declaration_w_seq_item(params_vec, prefix_name, tabs) = begin
 end
 
 get_param_conn(prefix_name, tabs) = begin
-    if has_paramaters
+    if has_parameters
         my_str = "#(\n$(tabs)    .$(prefix_name)_params($(prefix_name)_params)\n$(tabs)) "
     else
         my_str = ""
@@ -112,7 +112,7 @@ get_param_conn(prefix_name, tabs) = begin
 end
 
 get_param_conn_w_seq_item(prefix_name, tabs) = begin
-    if has_paramaters
+    if has_parameters
         tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
         my_str = """
         #(
@@ -126,7 +126,7 @@ get_param_conn_w_seq_item(prefix_name, tabs) = begin
 end
 
 get_param_conn_w_seq_item2(prefix_name, tabs) = begin
-    if has_paramaters
+    if has_parameters
         my_str = """
         #(
         $(tabs)    .seq_item_t(seq_item_t),
@@ -139,7 +139,7 @@ get_param_conn_w_seq_item2(prefix_name, tabs) = begin
 end
 
 gen_vsqr_param_conn(tabs) = begin
-    if has_paramaters
+    if has_parameters
         my_str = """
         #(
         $( gen_long_str(uvc_names, "$(tabs)    ", gen_line_seq_item_t_conn)[1:end-1] )

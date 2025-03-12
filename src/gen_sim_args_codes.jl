@@ -43,7 +43,7 @@ common_args() = begin
         //+UVM_TESTNAME=random_test
         
     """
-    if has_paramaters
+    if has_parameters
         my_str *= """
         // Parameters package
             $(env_dir)/$(dut_name)_params_pkg.sv

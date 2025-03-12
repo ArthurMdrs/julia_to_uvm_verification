@@ -119,7 +119,7 @@ gen_tr_base(prefix_name) = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_object_param_utils($(prefix_name)_$(tr_name) $(get_param_conn(dut_name, "    ")[1:end-1]))
         """
@@ -180,7 +180,7 @@ gen_clknrst_tr(prefix_name) = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_object_param_utils($(prefix_name)_$(tr_name) $(get_param_conn(dut_name, "    ")[1:end-1]))
         """

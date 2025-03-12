@@ -11,7 +11,7 @@ gen_line_seq_item_t_decl(uvc_name, tabs) = begin
 end
 get_vsqr_param_declaration(tabs) = begin
     my_str = ""
-    if has_paramaters
+    if has_parameters
         gen_line(param_vec, tabs) = "$(tabs)$(param_vec.name): $(param_vec.default_val),\n"
         my_str *= """
         #(
@@ -22,7 +22,7 @@ get_vsqr_param_declaration(tabs) = begin
     return my_str
 end
 get_vsqr_param_conn(tabs) = begin
-    if has_paramaters
+    if has_parameters
         my_str = """
         #(
         $( gen_long_str(uvc_names, tabs*"    ", gen_line_seq_item_t_conn)[1:end-1] )
@@ -51,7 +51,7 @@ gen_vsequencer() = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_component_param_utils($(dut_name)_$(vsqr_name) $(get_vsqr_param_conn("    ")[1:end-1]))
         """

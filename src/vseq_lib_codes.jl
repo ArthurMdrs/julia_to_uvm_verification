@@ -30,7 +30,7 @@ gen_vseq_base() = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_object_param_utils($(dut_name)_base_vsequence $(get_vsqr_param_conn("    ")[1:end-1]))
         """
@@ -139,7 +139,7 @@ gen_vseq_random() = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_object_param_utils($(dut_name)_random_vseq $(get_vsqr_param_conn("    ")[1:end-1]))
         """

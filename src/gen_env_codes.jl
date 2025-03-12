@@ -54,7 +54,7 @@ gen_cfg_config_db_env(uvc_name, tabs) = begin
     """
 end
 get_sb_param_conn(tabs) = begin
-    if has_paramaters
+    if has_parameters
         @assert size(uvc_names, 1) >= 1
         tr_name = get_uvc_cfg_fld(uvc_names[1], :class_names)["transaction"]
         my_str = """
@@ -139,7 +139,7 @@ env_gen() = begin
         write_file("$(env_dir)/$(dut_name)_env.sv", gen_env_base())
         write_file("$(env_dir)/$(dut_name)_env_pkg.sv", gen_env_pkg())
         write_file("$(env_dir)/$(dut_name)_env_$(cfg_name).sv", gen_env_cfg())
-        if has_paramaters 
+        if has_parameters 
             write_file("$(env_dir)/$(dut_name)_params_pkg.sv", gen_params_pkg())
         end
         write_file("$(env_dir)/$(dut_name)_$(vsqr_name).sv", gen_vsequencer())
@@ -178,6 +178,7 @@ gen_env_base() = begin
         push!(tdefs_list, "$(uvc_name)_$(cfg_name)")
         push!(tdefs_list, "$(uvc_name)_$(tr_name)")
     end
+    cfg_name   = class_names["config"      ]
     
     vif_list = []
     for uvc_name in uvc_names
@@ -191,7 +192,7 @@ gen_env_base() = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_component_param_utils($(dut_name)_env $(get_param_conn(dut_name, "    ")[1:end-1]))
         """
@@ -397,8 +398,8 @@ gen_env_pkg() = begin
         `include "uvm_macros.svh"
         
     """
-    my_str *= has_paramaters ? gen_line_import("$(dut_name)_params", "    ") : ""
-    my_str *= has_paramaters ? "    \n" : ""
+    my_str *= has_parameters ? gen_line_import("$(dut_name)_params", "    ") : ""
+    my_str *= has_parameters ? "    \n" : ""
     my_str *= """
     $( gen_long_str(uvc_names, "    ", gen_line_import_tdefs)[1:end-1] )
     $( gen_long_str(uvc_names, "    ", gen_line_import)[1:end-1] )
@@ -438,7 +439,7 @@ gen_line_param_assign(param_vec::sv_params_t, tabs) = begin
 end
 gen_param_inst(tabs) = begin
     str = ""
-    if has_paramaters == true
+    if has_parameters == true
         str *= "$(tabs)localparam $(dut_name)_params_t $(dut_name)_params = '{\n"
         str *= gen_long_str(params_vec, tabs*"    ", gen_line_param_assign)[1:end-2]
         str *= "\n$(tabs)};\n"
@@ -469,13 +470,13 @@ end
 # ****************************************************************
 
 gen_env_cfg() = begin
-    cfg_name = class_names["config"]
-    
     tdefs_list = []
     for uvc_name in uvc_names
         cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
         push!(tdefs_list, "$(uvc_name)_$(cfg_name)")
     end
+    
+    cfg_name = class_names["config"]
     
     # vif_list = []
     # for uvc_name in uvc_names
@@ -489,7 +490,7 @@ gen_env_cfg() = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_object_param_utils($(dut_name)_env_$(cfg_name) $(get_param_conn(dut_name, "    ")))
         """

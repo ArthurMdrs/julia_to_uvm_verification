@@ -20,7 +20,7 @@ gen_agent_base(prefix_name) = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_component_param_utils($(prefix_name)_$(agent_name) $(get_param_conn(dut_name, "    ")[1:end-1]))
         """

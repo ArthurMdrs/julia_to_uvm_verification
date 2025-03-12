@@ -8,7 +8,7 @@ gen_base_seq(prefix_name) = begin
     sqr_name = get_uvc_cfg_fld(prefix_name, :class_names)["sequencer"  ]
     cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
-    tr_type = has_paramaters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     my_str = """
     class $(prefix_name)_base_sequence $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_sequence #($(tr_type));
         
@@ -21,7 +21,7 @@ gen_base_seq(prefix_name) = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_object_param_utils($(prefix_name)_base_sequence $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
         """
@@ -76,7 +76,7 @@ end
 
 gen_random_seq(prefix_name) = begin
     tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
-    tr_type = has_paramaters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     my_str = """
     class $(prefix_name)_random_seq $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends $(prefix_name)_base_sequence$(get_param_conn_w_seq_item2(dut_name, "")[1:end-1]);
         
@@ -105,7 +105,7 @@ end
 
 gen_clknrst_action_seq(clknrst_action, prefix_name) = begin
     tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
-    tr_type = has_paramaters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     my_str = """
     class $(prefix_name)_$(clknrst_action)_seq $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends $(prefix_name)_base_sequence$(get_param_conn_w_seq_item2(dut_name, "")[1:end-1]);
 

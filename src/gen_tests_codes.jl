@@ -95,7 +95,7 @@ gen_test_base() = begin
         
     """
     
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_component_registry($(dut_name)_test_base #(
                 .$(dut_name)_params($(dut_name)_params)
@@ -277,7 +277,7 @@ gen_test_random() = begin
     class $(dut_name)_test_random $(get_param_declaration(params_vec, dut_name, "    "))extends $(dut_name)_test_base $(get_param_conn(dut_name, ""));
     
     """
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_component_registry($(dut_name)_test_random $(get_param_conn(dut_name, "    ")), "$(dut_name)_test_random")
             

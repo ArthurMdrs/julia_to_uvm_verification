@@ -22,14 +22,14 @@ gen_coverage_base(prefix_name) = begin
     cov_name = get_uvc_cfg_fld(prefix_name, :class_names)["coverage"]
     cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"]
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
-    tr_type = has_paramaters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     vec = get_uvc_cfg_fld(prefix_name, :tr_props_vec)
     my_str = """
     class $(prefix_name)_$(cov_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_subscriber #($(tr_type));
         
     """
 
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_component_param_utils($(prefix_name)_$(cov_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
         """
@@ -112,16 +112,16 @@ gen_clknrst_coverage(prefix_name) = gen_coverage_base(prefix_name)
 gen_env_coverage_base() = begin
     cov_name = class_names["coverage"   ]
     cfg_name = class_names["config"     ]
-    tr_name  = class_names["transaction"]
     @assert size(uvc_names, 1) >= 1
     uvc_name = uvc_names[1]
-    tr_type = has_paramaters ? "seq_item_t" : "$(uvc_name)_$(tr_name)"
+    tr_name  = get_uvc_cfg_fld(uvc_name, :class_names)["transaction"]
+    tr_type = has_parameters ? "seq_item_t" : "$(uvc_name)_$(tr_name)"
     my_str = """
     class $(dut_name)_$(cov_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_subscriber #($(tr_type));
         
     """
 
-    if has_paramaters
+    if has_parameters
         my_str *= """
             `uvm_component_param_utils($(dut_name)_$(cov_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
         """
