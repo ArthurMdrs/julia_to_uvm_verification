@@ -91,10 +91,8 @@ gen_vsequencer() = begin
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             
-            if(uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(config_inst_convention)"), .value($(config_inst_convention))))
-                `uvm_info("$(uppercase(dut_name))) VSEQUENCER", "Configuration object was successfully set!", UVM_MEDIUM)
-            else
-                `uvm_fatal("$(uppercase(dut_name))) VSEQUENCER", "No configuration object was set!")
+            if ($(config_inst_convention) == null)
+                `uvm_fatal("$(uppercase(dut_name)) VSEQUENCER", "No configuration object was set!")
         endfunction : build_phase
 
         task pre_reset_phase(uvm_phase phase);

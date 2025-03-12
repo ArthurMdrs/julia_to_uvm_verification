@@ -66,6 +66,16 @@ gen_line_vif_typedef(uvc_name, tabs) = begin
     return my_str
 end
 
+gen_vif_config_db_component(uvc_name, tabs, class_name) = begin
+    agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
+    return """
+        $(tabs)if(uvm_config_db#($(uvc_name)_vif_t)::get(.cntxt(this), .inst_name(""), .field_name("vif"), .value(vif)))
+        $(tabs)    `uvm_info("$(uppercase(uvc_name)) $(uppercase(class_name))", "Virtual interface was successfully set!", UVM_MEDIUM)
+        $(tabs)else
+        $(tabs)    `uvm_fatal("$(uppercase(uvc_name)) $(uppercase(class_name))", "No virtual interface was set!")
+        """
+end
+
 gen_line_if_signal(vec::if_field_t, tabs; end_of_line=";") = begin
     return "$(tabs)$(vec.type) $(vec.range) $(vec.field_name)$(end_of_line)\n"
 end

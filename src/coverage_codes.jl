@@ -64,9 +64,7 @@ gen_coverage_base(prefix_name) = begin
         
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
-            if(uvm_config_db#($(prefix_name)_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(config_inst_convention)"), .value($(config_inst_convention))))
-                `uvm_info("$(uppercase(prefix_name)) COVERAGE", "Configuration object was successfully set!", UVM_MEDIUM)
-            else
+            if ($(config_inst_convention) == null)
                 `uvm_fatal("$(uppercase(prefix_name)) COVERAGE", "No configuration object was set!")
         endfunction : build_phase
         
@@ -167,9 +165,9 @@ gen_env_coverage_base() = begin
     #     function void build_phase (uvm_phase phase);
     #         super.build_phase(phase);
     #         if(uvm_config_db#(_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(config_inst_convention)"), .value($(config_inst_convention))))
-    #             `uvm_info("$(uppercase(dut_name))) COVERAGE", "Configuration object was successfully set!", UVM_MEDIUM)
+    #             `uvm_info("$(uppercase(dut_name)) COVERAGE", "Configuration object was successfully set!", UVM_MEDIUM)
     #         else
-    #             `uvm_fatal("$(uppercase(dut_name))) COVERAGE", "No configuration object was set!")
+    #             `uvm_fatal("$(uppercase(dut_name)) COVERAGE", "No configuration object was set!")
     #     endfunction : build_phase
         
     # """

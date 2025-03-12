@@ -24,6 +24,14 @@ gen_config_base(prefix_name) = begin
         """
     end
     
+    if get_uvc_cfg_fld(prefix_name, :vif_in_config) == true
+        my_str *= """
+        $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
+                
+            $(prefix_name)_vif_t vif;
+        """
+    end
+    
     if agent_has_coverage
         my_str *= "    bit has_coverage;\n"
     end 
@@ -65,6 +73,14 @@ gen_clknrst_config(prefix_name) = begin
         my_str *= """
             `uvm_object_utils($(prefix_name)_$(cfg_name))
             
+        """
+    end
+    
+    if get_uvc_cfg_fld(prefix_name, :vif_in_config) == true
+        my_str *= """
+        $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
+                
+            $(prefix_name)_vif_t vif;
         """
     end
     

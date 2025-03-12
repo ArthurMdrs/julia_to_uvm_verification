@@ -45,7 +45,15 @@ gen_agent_base(prefix_name) = begin
     gen_lines(name, tabs) = gen_lines_tdefs_w_param_w_seq_item(name, prefix_name, tabs)
     my_str *= """
     $( gen_long_str(tdefs_list_w_seq_item, "    ", gen_lines)[1:end-1] )
-    $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
+    """
+    
+    if get_uvc_cfg_fld(prefix_name, :vif_in_config) == false
+        my_str *= """
+        $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
+        """
+    end
+    
+    my_str *= """
         // Typedefs - end
     """
     
@@ -54,17 +62,12 @@ gen_agent_base(prefix_name) = begin
         $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
         
     """
-    
-    # my_str *= """
-        
-    #     $(prefix_name)_vif_t vif;
-    #     $(prefix_name)_$(mon_name)_t m_$(prefix_name)_$(mon_name);
-    #     $(prefix_name)_$(drv_name)_t m_$(prefix_name)_$(drv_name);
-    #     $(prefix_name)_$(sqr_name)_t m_$(prefix_name)_$(sqr_name);
-    # """
-    
+    if get_uvc_cfg_fld(prefix_name, :vif_in_config) == false
+        my_str *= """
+            $(prefix_name)_vif_t vif;
+        """
+    end
     my_str *= """
-        $(prefix_name)_vif_t vif;
         $(prefix_name)_$(mon_name)_t m_monitor;
         $(prefix_name)_$(drv_name)_t m_driver;
         $(prefix_name)_$(sqr_name)_t m_sequencer;
@@ -89,20 +92,36 @@ gen_agent_base(prefix_name) = begin
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Configuration object was successfully set!", UVM_MEDIUM)
             else
                 `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No configuration object was set!")
-            uvm_config_db#($(prefix_name)_$(cfg_name)_t)::set(.cntxt(this), .inst_name("*"), .field_name("$(config_inst_convention)"), .value($(config_inst_convention)));
             
-            if(uvm_config_db#($(prefix_name)_vif_t)::get(.cntxt(this), .inst_name(""), .field_name("vif"), .value(vif)))
-                `uvm_info("$(uppercase(prefix_name)) AGENT", "Virtual interface was successfully set!", UVM_MEDIUM)
-            else
-                `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No interface was set!")
-            uvm_config_db#($(prefix_name)_vif_t)::set(.cntxt(this), .inst_name("*"), .field_name("vif"), .value(vif));
-            
+    """
+    
+    if get_uvc_cfg_fld(prefix_name, :vif_in_config) == false
+        my_str *= """
+                if(uvm_config_db#($(prefix_name)_vif_t)::get(.cntxt(this), .inst_name(""), .field_name("vif"), .value(vif)))
+                    `uvm_info("$(uppercase(prefix_name)) AGENT", "Virtual interface was successfully set!", UVM_MEDIUM)
+                else
+                    `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No interface was set!")
+                uvm_config_db#($(prefix_name)_vif_t)::set(.cntxt(this), .inst_name("*"), .field_name("vif"), .value(vif));
+                
+        """
+    else
+        my_str *= """
+                if($(config_inst_convention).vif == null)
+                    `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No interface was set!")
+                
+        """
+    end
+    
+    my_str *= """
             if ($(config_inst_convention).has_monitor == 1'b1) begin
                 m_monitor = $(prefix_name)_$(mon_name)_t::type_id::create("m_monitor", this);
+                m_monitor.$(config_inst_convention) = $(config_inst_convention);
             end
             if ($(config_inst_convention).is_active == UVM_ACTIVE) begin
                 m_sequencer = $(prefix_name)_$(sqr_name)_t::type_id::create("m_sequencer", this);
+                m_sequencer.$(config_inst_convention) = $(config_inst_convention);
                 m_driver = $(prefix_name)_$(drv_name)_t::type_id::create("m_driver", this);
+                m_driver.$(config_inst_convention) = $(config_inst_convention);
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Agent is active." , UVM_MEDIUM)
             end else begin
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Agent is not active." , UVM_MEDIUM)
@@ -112,6 +131,7 @@ gen_agent_base(prefix_name) = begin
     my_str *= agent_has_coverage ? """
             if ($(config_inst_convention).has_coverage == 1'b1) begin
                 m_$(prefix_name)_$(cov_name) = $(prefix_name)_$(cov_name)_t::type_id::create("m_$(prefix_name)_$(cov_name)", this);
+                m_$(prefix_name)_$(cov_name).$(config_inst_convention) = $(config_inst_convention);
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Coverage is enabled." , UVM_MEDIUM)
             end else begin
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Coverage is disabled." , UVM_MEDIUM)

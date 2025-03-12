@@ -8,6 +8,7 @@
   use_short_names: false
   agent_has_coverage: true
   gen_tdefs_pkg: false
+  vif_in_config: false
   
   tr_props_vec:
     - field_name: data_to_send
@@ -47,6 +48,7 @@
   use_short_names: true
   agent_has_coverage: false
   gen_tdefs_pkg: true
+  vif_in_config: true
   
   tr_props_vec:
     - field_name: random_data
@@ -79,4 +81,5 @@
   class_names:
     agent: agt
     transaction: seq_item
+    config: conf
   

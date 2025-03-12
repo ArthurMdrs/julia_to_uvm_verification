@@ -75,6 +75,7 @@ params_vec = get_usr_cfg_fld(:params_vec)
 config_inst_convention = get_usr_cfg_fld(:config_inst_convention)
 class_names = get_usr_cfg_fld(:class_names)
 gen_tdefs_pkg = get_usr_cfg_fld(:gen_tdefs_pkg)
+vif_in_config = get_usr_cfg_fld(:vif_in_config)
 
 # Clock and reset info
 clock_name = get_usr_cfg_fld(:clock_name)
@@ -135,6 +136,7 @@ if gen_clknrst == true && !haskey(uvc_config_dict, clknrst_name)
     clknrst_config.use_short_names = use_short_names
     clknrst_config.agent_has_coverage = false
     clknrst_config.gen_tdefs_pkg = true
+    clknrst_config.vif_in_config = true
     clknrst_config.tr_props_vec = []
     clknrst_config.if_sigs_vec = []
     clknrst_config.class_names = use_short_names ? short_names_dict : long_names_dict

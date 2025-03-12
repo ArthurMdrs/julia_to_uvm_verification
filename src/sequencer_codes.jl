@@ -40,15 +40,23 @@ gen_sequencer_base(prefix_name) = begin
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             
-            if(uvm_config_db#($(prefix_name)_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(config_inst_convention)"), .value($(config_inst_convention))))
-                `uvm_info("$(uppercase(prefix_name)) SEQUENCER", "Configuration object was successfully set!", UVM_MEDIUM)
-            else
+            if ($(config_inst_convention) == null)
                 `uvm_fatal("$(uppercase(prefix_name)) SEQUENCER", "No configuration object was set!")
-            
-            if(uvm_config_db#($(prefix_name)_vif_t)::get(.cntxt(this), .inst_name(""), .field_name("vif"), .value(vif)))
-                `uvm_info("$(uppercase(prefix_name)) SEQUENCER", "Virtual interface was successfully set!", UVM_MEDIUM)
-            else
-                `uvm_fatal("$(uppercase(prefix_name)) SEQUENCER", "No interface was set!")
+    """
+    if get_uvc_cfg_fld(prefix_name, :vif_in_config) == false
+        my_str *= """
+                
+        $( gen_vif_config_db_component(prefix_name, "        ", "SEQUENCER")[1:end-1] )
+        """
+    else
+        my_str *= """
+                
+                if ($(config_inst_convention).vif == null)
+                    `uvm_fatal("$(uppercase(prefix_name)) SEQUENCER", "No interface was set!")
+                vif = $(config_inst_convention).vif;
+        """
+    end
+    my_str *= """
         endfunction : build_phase
         
     endclass : $(prefix_name)_$(sqr_name)

@@ -31,23 +31,24 @@ gen_line_connect_sequencers(uvc_name, tabs, env_cfg_name) = begin
 end
 gen_vif_config_db_env(uvc_name, tabs) = begin
     agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
-    return """
-        $(tabs)if(uvm_config_db#($(uvc_name)_vif_t)::get(.cntxt(this), .inst_name(""), .field_name("$(uvc_name)_vif"), .value($(uvc_name)_vif)))
-        $(tabs)    `uvm_info("$(uppercase(dut_name))) ENV", "$(uppercase(uvc_name)) virtual interface was successfully set!", UVM_MEDIUM)
-        $(tabs)else
-        $(tabs)    `uvm_fatal("$(uppercase(dut_name))) ENV", "No $(uppercase(uvc_name)) interface was set!")
-        $(tabs)uvm_config_db#($(uvc_name)_vif_t)::set(.cntxt(this), .inst_name("m_$(uvc_name)_$(agent_name)"), .field_name("vif"), .value($(uvc_name)_vif));
-        $(tabs)
-        """
+    my_str = """
+    $(tabs)if(uvm_config_db#($(uvc_name)_vif_t)::get(.cntxt(this), .inst_name(""), .field_name("$(uvc_name)_vif"), .value($(uvc_name)_vif)))
+    $(tabs)    `uvm_info("$(uppercase(dut_name)) ENV", "$(uppercase(uvc_name)) virtual interface was successfully set!", UVM_MEDIUM)
+    $(tabs)else
+    $(tabs)    `uvm_fatal("$(uppercase(dut_name)) ENV", "No $(uppercase(uvc_name)) interface was set!")
+    $(tabs)uvm_config_db#($(uvc_name)_vif_t)::set(.cntxt(this), .inst_name("m_$(uvc_name)_$(agent_name)"), .field_name("vif"), .value($(uvc_name)_vif));
+    $(tabs)
+    """
+    return my_str
 end
 gen_cfg_config_db_env(uvc_name, tabs) = begin
     agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
     cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
     return """
     $(tabs)if(uvm_config_db#($(uvc_name)_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("m_$(uvc_name)_$(cfg_name)"), .value(m_$(uvc_name)_$(cfg_name))))
-    $(tabs)    `uvm_info("$(uppercase(dut_name))) ENV", "$(uppercase(uvc_name)) config object was successfully set!", UVM_MEDIUM)
+    $(tabs)    `uvm_info("$(uppercase(dut_name)) ENV", "$(uppercase(uvc_name)) config object was successfully set!", UVM_MEDIUM)
     $(tabs)else
-    $(tabs)    `uvm_fatal("$(uppercase(dut_name))) ENV", "No $(uppercase(uvc_name)) config object was set!")
+    $(tabs)    `uvm_fatal("$(uppercase(dut_name)) ENV", "No $(uppercase(uvc_name)) config object was set!")
     $(tabs)uvm_config_db#($(uvc_name)_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(uvc_name)_$(agent_name)"), .field_name("$(config_inst_convention)"), .value(m_$(uvc_name)_$(cfg_name)));
     $(tabs)
     """
@@ -71,6 +72,12 @@ gen_vsqr_tdef(tabs) = begin
     my_str = """
     $(tabs)typedef $(dut_name)_$(vsqr_name) $(gen_vsqr_param_conn(tabs))$(dut_name)_$(vsqr_name)_t;
     """
+    return my_str
+end
+gen_line_assign_config_env(uvc_name, tabs, env_cfg_name) = begin
+    cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
+    my_str = "$(tabs)m_$(uvc_name)_$(agent_name).$(config_inst_convention) = $(env_cfg_name).m_$(uvc_name)_$(cfg_name);\n"
     return my_str
 end
 get_sb_ports_conn(tabs, env_cfg_name) = begin
@@ -103,6 +110,16 @@ get_cov_ports_conn(tabs, env_cfg_name) = begin
     $(tabs)    m_$(uvc_names[1])_$(agent_name).item_from_monitor_port.connect(m_$(dut_name)_$(cov_name).analysis_export);
     """
     return my_str
+end
+gen_line_assign_uvc_config(uvc_name, tabs, env_cfg_name) = begin
+    cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    my_str = "$(tabs)m_$(uvc_name)_$(cfg_name) = $(env_cfg_name).m_$(uvc_name)_$(cfg_name);\n"
+    return my_str
+end
+gen_line_cfg_config_db(uvc_name, tabs) = begin
+    agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
+    cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    return "$(tabs)uvm_config_db#($(uvc_name)_$(cfg_name)_t)::set(.cntxt(this), .inst_name(\"m_$(uvc_name)_$(agent_name)\"), .field_name(\"$(config_inst_convention)\"), .value(m_$(uvc_name)_$(cfg_name)));\n"
 end
 
 # ****************************************************************
@@ -149,6 +166,26 @@ gen_env_base() = begin
     sb_name    = class_names["scoreboard"  ]
     rm_name    = class_names["ref_model"   ]
     cov_name   = class_names["coverage"    ]
+    
+    # env_cfg_name = "m_$(dut_name)_env_$(cfg_name)"
+    env_cfg_name = config_inst_convention
+    tdefs_list = ["$(dut_name)_env_$(cfg_name)"]
+    for uvc_name in uvc_names
+        agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
+        cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+        tr_name    = get_uvc_cfg_fld(uvc_name, :class_names)["transaction"]
+        push!(tdefs_list, "$(uvc_name)_$(agent_name)")
+        push!(tdefs_list, "$(uvc_name)_$(cfg_name)")
+        push!(tdefs_list, "$(uvc_name)_$(tr_name)")
+    end
+    
+    vif_list = []
+    for uvc_name in uvc_names
+        if get_uvc_cfg_fld(uvc_name, :vif_in_config) == false
+            push!(vif_list, uvc_name)
+        end
+    end
+    
     my_str = """
     class $(dut_name)_env $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_env;
         
@@ -164,18 +201,6 @@ gen_env_base() = begin
         """
     end
     
-    # env_cfg_name = "m_$(dut_name)_env_$(cfg_name)"
-    env_cfg_name = config_inst_convention
-    tdefs_list = ["$(dut_name)_env_$(cfg_name)"]
-    for uvc_name in uvc_names
-        agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
-        cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
-        tr_name    = get_uvc_cfg_fld(uvc_name, :class_names)["transaction"]
-        push!(tdefs_list, "$(uvc_name)_$(agent_name)")
-        push!(tdefs_list, "$(uvc_name)_$(cfg_name)")
-        push!(tdefs_list, "$(uvc_name)_$(tr_name)")
-    end
-    
     my_str *= """
         
         // Typedefs - begin
@@ -185,37 +210,43 @@ gen_env_base() = begin
     my_str *= gen_refmod ? "    typedef $(dut_name)_$(rm_name) $(get_sb_param_conn("    "))$(dut_name)_$(rm_name)_t;\n" : ""
     my_str *= gen_scoreboard ? "    typedef $(dut_name)_$(sb_name) $(get_sb_param_conn("    "))$(dut_name)_$(sb_name)_t;\n" : ""
     my_str *= env_has_coverage ? "    typedef $(dut_name)_$(cov_name) $(get_sb_param_conn("    "))$(dut_name)_$(cov_name)_t;\n" : ""
+    
+    if size(vif_list, 1) != 0
+        my_str *= """
+        $( gen_long_str(vif_list, "    ", gen_line_vif_typedef)[1:end-1] )
+        """
+    end
+    
     my_str *= """
-    $( gen_long_str(uvc_names, "    ", gen_line_vif_typedef)[1:end-1] )
         // Typedefs - end
         
         
-        // Env config
     """
-    my_str *= """
-        $(dut_name)_env_$(cfg_name)_t $(env_cfg_name);
-        
     
-        // Config objects - begin
-    """
     my_str *= """
+        // Config objects - begin
     $( gen_long_str(uvc_names, "    ", gen_line_cfg_instance)[1:end-1] )
         // Config objects - end
-    """
-    my_str *= """
-
-        // Interfaces instances - begin
-    """
-    my_str *= """
-    $( gen_long_str(uvc_names, "    ", gen_line_vif_instance)[1:end-1] )
-        // Interfaces instances - end
-
-        // UVCs instances - begin
-    """
-    my_str *= """
-    $( gen_long_str(uvc_names, "    ", gen_line_uvc_instance)[1:end-1] )
-        // UVCs instances - end 
         
+    """
+    
+    if size(vif_list, 1) != 0
+        my_str *= """
+            // Interfaces instances - begin
+        $( gen_long_str(vif_list, "    ", gen_line_vif_instance)[1:end-1] )
+            // Interfaces instances - end
+            
+        """
+    end
+    
+    my_str *= """
+        // UVCs instances - begin
+    $( gen_long_str(uvc_names, "    ", gen_line_uvc_instance)[1:end-1] )
+        // UVCs instances - end
+        
+        
+        // Env config
+        $(dut_name)_env_$(cfg_name)_t $(env_cfg_name);
         
         // Virtual Sequencer
         $(dut_name)_$(vsqr_name)_t m_$(dut_name)_$(vsqr_name);
@@ -245,35 +276,49 @@ gen_env_base() = begin
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             
-            // Get VIFs from database and set them for the agents
     """
     
+    if size(vif_list, 1) != 0
+        my_str *= """
+                // Get VIFs from database and set them for the agents
+        $( gen_long_str(vif_list, "        ", gen_vif_config_db_env)[1:end-1] )
+        """
+    end
+    
+    gen_line2(uvc_name, tabs) = gen_line_assign_uvc_config(uvc_name, tabs, env_cfg_name)
     my_str *= """
-    $( gen_long_str(uvc_names, "        ", gen_vif_config_db_env)[1:end-1] )
-            
-            // Get config objects from database and set them for the agents
-    """
-    my_str *= """
-    $( gen_long_str(uvc_names, "        ", gen_cfg_config_db_env)[1:end-1] )
-            
             // Get Env config
             if(uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(env_cfg_name)"), .value($(env_cfg_name))))
-                `uvm_info("$(uppercase(dut_name))) ENV", "$(uppercase(dut_name))) ENV config object was successfully set!", UVM_MEDIUM)
+                `uvm_info("$(uppercase(dut_name)) ENV", "$(uppercase(dut_name)) ENV config object was successfully set!", UVM_MEDIUM)
             else
-                `uvm_fatal("$(uppercase(dut_name))) ENV", "No $(uppercase(dut_name))) ENV config object was set!")
+                `uvm_fatal("$(uppercase(dut_name)) ENV", "No $(uppercase(dut_name)) ENV config object was set!")
             
-            // UVCs creation - begin
+            // Assign local UVC config objects
+    $( gen_long_str(uvc_names, "        ", gen_line2)[1:end-1] )
+            
+            // Set UVC config objects to the database
+    $( gen_long_str(uvc_names, "        ", gen_line_cfg_config_db)[1:end-1] )
+            
     """
+    
+    # gen_line0(uvc_name, tabs) = gen_line_assign_config_env(uvc_name, tabs, env_cfg_name)
     my_str *= """
+            // Create UVCs
     $( gen_long_str(uvc_names, "        ", gen_line_uvc_creation)[1:end-1] )
-            // UVCs creation - end
             
-            // Set config to virtual sequencer
-            uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(dut_name)_$(vsqr_name)"), .field_name("$(config_inst_convention)"), .value($(env_cfg_name)));
+    """
+    
+    # my_str *= """
+    #         // Set UVC config objects
+    # $( gen_long_str(uvc_names, "        ", gen_line0)[1:end-1] )
             
+    # """
+    
+    my_str *= """
             // Create virtual sequencer
             if ($(env_cfg_name).has_virtual_sequencer)
                 m_$(dut_name)_$(vsqr_name) = $(dut_name)_$(vsqr_name)_t::type_id::create("m_$(dut_name)_$(vsqr_name)", this);
+            m_$(dut_name)_$(vsqr_name).$(config_inst_convention) = $(env_cfg_name);
             
     """
     my_str *= gen_refmod ? """
@@ -299,7 +344,7 @@ gen_env_base() = begin
             
     """ : ""
     my_str *= """
-            `uvm_info("$(uppercase(dut_name))) ENV", "Reached the end of build phase", UVM_HIGH)
+            `uvm_info("$(uppercase(dut_name)) ENV", "Reached the end of build phase", UVM_HIGH)
         endfunction : build_phase
 
         function void connect_phase (uvm_phase phase);
@@ -307,9 +352,9 @@ gen_env_base() = begin
             
             // Sequencers connect - begin
     """
-    gen_line(uvc_name, tabs) = gen_line_connect_sequencers(uvc_name, tabs, env_cfg_name)
+    gen_line1(uvc_name, tabs) = gen_line_connect_sequencers(uvc_name, tabs, env_cfg_name)
     my_str *= """
-    $( gen_long_str(uvc_names, "        ", gen_line)[1:end-2] )
+    $( gen_long_str(uvc_names, "        ", gen_line1)[1:end-2] )
             // Sequencers connect - end
             
     """
@@ -425,6 +470,20 @@ end
 
 gen_env_cfg() = begin
     cfg_name = class_names["config"]
+    
+    tdefs_list = []
+    for uvc_name in uvc_names
+        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+        push!(tdefs_list, "$(uvc_name)_$(cfg_name)")
+    end
+    
+    # vif_list = []
+    # for uvc_name in uvc_names
+    #     if get_uvc_cfg_fld(uvc_name, :vif_in_config) == true
+    #         push!(vif_list, uvc_name)
+    #     end
+    # end
+    
     my_str = """
     class $(dut_name)_env_$(cfg_name) $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_object;
         
@@ -439,7 +498,21 @@ gen_env_cfg() = begin
             `uvm_object_utils($(dut_name)_env_$(cfg_name))
         """
     end
+    
+    # if size(vif_list, 1) != 0
+    #     my_str *= """
+            
+    #     $( gen_long_str(vif_list, "    ", gen_line_vif_typedef)[1:end-1] )
+            
+    #     $( gen_long_str(vif_list, "    ", gen_line_vif_instance)[1:end-1] )
+    #     """
+    # end
+    
     my_str *="""
+        
+    $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param)[1:end-1] )
+        
+    $( gen_long_str(uvc_names, "    ", gen_line_cfg_instance)[1:end-1] )
         
         bit has_virtual_sequencer;
     """
