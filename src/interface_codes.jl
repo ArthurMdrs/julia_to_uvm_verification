@@ -28,8 +28,14 @@ gen_lines_mon_cb(vec::Vector{if_field_t}, tabs, clock_name) = begin
     $(tabs)endclocking
     """
 end
+gen_line_reset_sig(sig::if_field_t, tabs) = begin
+    my_str = ""
+    if sig.is_output == false
+        my_str = "$(tabs)$(sig.field_name) <= '0;\n"
+    end
+    return my_str
+end
 
-    # TODO: USE CLOCKING BLOCKS!!
 gen_if_base(prefix_name) = begin 
     if_name = get_uvc_cfg_fld(prefix_name, :class_names)["interface"]
     tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
@@ -53,9 +59,9 @@ gen_if_base(prefix_name) = begin
     $( gen_long_str(if_sigs_vec, "    ", gen_line_if_signal)[1:end-1] )
         // Interface Signals - End
         
-    $(gen_lines_drv_cb(if_sigs_vec, "    ", clock_name)[1:end-1])
+    $( gen_lines_drv_cb(if_sigs_vec, "    ", clock_name)[1:end-1] )
         
-    $(gen_lines_mon_cb(if_sigs_vec, "    ", clock_name)[1:end-1])
+    $( gen_lines_mon_cb(if_sigs_vec, "    ", clock_name)[1:end-1] )
         
         // Signals for transaction recording
         bit monstart, drvstart;
@@ -70,11 +76,11 @@ gen_if_base(prefix_name) = begin
         
         $(prefix_name)_$(tr_name)_t tr = new("TR");
         
-        task $(prefix_name)_reset();
-            @($((rst_is_negedge_sensitive) ? "negedge" : "posedge") $(reset_name));
+        task $(prefix_name)_reset ();
             monstart = 0;
             drvstart = 0;
-            disable send_to_dut;
+            
+    $( gen_long_str(if_sigs_vec, "        ", gen_line_reset_sig)[1:end-1] )
         endtask
         
         // Gets a transaction and drive it into the DUT

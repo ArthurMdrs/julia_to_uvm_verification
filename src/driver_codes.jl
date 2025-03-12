@@ -77,20 +77,21 @@ gen_driver_base(prefix_name) = begin
     """
     
     my_str *= """
-        task run_phase (uvm_phase phase);
-            super.run_phase(phase);
-            fork
-                get_and_drive();
-                reset_signals();
-            join
-        endtask : run_phase
+        task reset_phase (uvm_phase phase);
+            `uvm_info("$(uppercase(prefix_name)) DRIVER", "Entering reset phase.", UVM_MEDIUM)
+            vif.$(prefix_name)_reset();
+            get_and_drive();
+        endtask: reset_phase
+        
+        task main_phase (uvm_phase phase);
+            super.main_phase(phase);
+            
+            `uvm_info("$(uppercase(prefix_name)) DRIVER", "Entering main phase", UVM_MEDIUM)
+            
+            get_and_drive();
+        endtask : main_phase
         
         task get_and_drive();
-            @($((rst_is_negedge_sensitive) ? "negedge" : "posedge") vif.$(reset_name));
-            @($((rst_is_negedge_sensitive) ? "posedge" : "negedge") vif.$(reset_name));
-            
-            `uvm_info("$(uppercase(prefix_name)) DRIVER", "Reset dropped", UVM_MEDIUM)
-            
             forever begin
                 // Get new item from the sequencer
                 seq_item_port.get_next_item(req);
@@ -115,13 +116,6 @@ gen_driver_base(prefix_name) = begin
                 seq_item_port.item_done();
             end
         endtask : get_and_drive
-        
-        task reset_signals();
-            forever begin
-                vif.$(prefix_name)_reset();
-                `uvm_info("$(uppercase(prefix_name)) DRIVER", "Detected reset", UVM_LOW)
-            end
-        endtask : reset_signals
         
         function void start_of_simulation_phase (uvm_phase phase);
             super.start_of_simulation_phase(phase);

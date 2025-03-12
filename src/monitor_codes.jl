@@ -43,7 +43,7 @@ gen_monitor_base(prefix_name) = begin
         $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
         
         $(prefix_name)_vif_t vif;
-        $(tr_type) tr;
+        $(tr_type) mon_tr;
         int num_tr_col;
         
         uvm_analysis_port #($(tr_type)) item_collected_port;
@@ -76,36 +76,45 @@ gen_monitor_base(prefix_name) = begin
     my_str *= """
         endfunction : build_phase
         
-        task run_phase (uvm_phase phase);
-            super.run_phase(phase);
-            @($((rst_is_negedge_sensitive) ? "negedge" : "posedge") vif.$(reset_name));
-            @($((rst_is_negedge_sensitive) ? "posedge" : "negedge") vif.$(reset_name));
+        task reset_phase (uvm_phase phase);
+            `uvm_info("$(uppercase(prefix_name)) MONITOR", "Entering reset phase.", UVM_MEDIUM)
+            mon_tr = null;
+            collect();
+        endtask: reset_phase
+        
+        task main_phase (uvm_phase phase);
+            super.main_phase(phase);
+            `uvm_info("$(uppercase(prefix_name)) MONITOR", "Entering main phase", UVM_MEDIUM)
             
-            `uvm_info("$(uppercase(prefix_name)) MONITOR", "Reset dropped", UVM_MEDIUM)
+            end_tr(mon_tr);
             
+            collect();
+        endtask : main_phase
+        
+        task collect ();
             forever begin
-                tr = $(tr_type)::type_id::create("tr", this);
+                mon_tr = $(tr_type)::type_id::create("mon_tr", this);
                 
                 // concurrent blocks for transaction collection and transaction recording
                 fork
                     // collect transaction
                     begin
                         // collect transaction from interface
-                        vif.collect_tr(tr);
+                        vif.collect_tr(mon_tr);
                     end
                     
                     // Start transaction recording at start of transaction (vif.monstart triggered from interface.collect_tr())
                     begin
-                        @(posedge vif.monstart) void'(begin_tr(tr, "$(uppercase(prefix_name))_MONITOR_TR"));
+                        @(posedge vif.monstart) void'(begin_tr(mon_tr, "$(uppercase(prefix_name))_MONITOR_TR"));
                     end
                 join
                 
-                end_tr(tr);
-                `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Transaction Collected:\\n%s", tr.convert2string()), UVM_MEDIUM)
-                item_collected_port.write(tr);
+                end_tr(mon_tr);
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Transaction Collected:\\n%s", mon_tr.convert2string()), UVM_MEDIUM)
+                item_collected_port.write(mon_tr);
                 num_tr_col++;
             end
-        endtask : run_phase
+        endtask : collect
         
         function void start_of_simulation_phase (uvm_phase phase);
             super.start_of_simulation_phase(phase);
