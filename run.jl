@@ -1,4 +1,4 @@
-import YAML, StructTypes
+import YAML, StructTypes, ArgParse
 
 cwd = pwd()
 
@@ -10,21 +10,51 @@ include_jl(file) = begin
     end
 end
 
+function parse_command_line()
+    settings = ArgParse.ArgParseSettings()
+    ArgParse.@add_arg_table! settings begin
+        "-c", "--user_config"
+            help = "Specify a user configuration file (.jl)"
+            arg_type = String
+            default = "$(cwd)/user_config.jl"
+        "-u", "--uvc_config"
+            help = "Specify a UVC configuration file (.yaml)"
+            arg_type = String
+            default = "$(cwd)/uvc_config.yaml"
+        "-v", "--verbose"
+            help = "Print more messages"
+            action = :store_true
+        "-t", "--debug_time"
+            help = "Print elapsed time messages"
+            action = :store_true
+    end
 
-# Check for arguments
-if length(ARGS) >= 1
-    user_config_file = ARGS[1]
-    println("Using user config file $(user_config_file)")
-else
-    user_config_file = "$(cwd)/user_config.jl"
-    println("You can pass a config file as an argument. Using default $(user_config_file)")
+    return ArgParse.parse_args(ARGS, settings)
 end
 
+elapsed_time_array = Dict()
+
+println("You are using the Julia to UVM generator!")
+
+# Check for arguments
+time_now = time_ns()
+parsed_args = parse_command_line()
+verbose = parsed_args["verbose"]
+debug_elapsed_time = parsed_args["debug_time"]
+if verbose
+    println("Parsed Arguments: ")
+    for (arg, val) in parsed_args
+        println("    $(rpad(arg, 12)) => $(val)")
+    end
+end
+elapsed_time_array["arg_parse"] = (time_ns() - time_now) / 1e9
 
 # Set paths
+time_now = time_ns()
+user_config_file = parsed_args["user_config"]
+uvc_config_file = parsed_args["uvc_config"]
 src_path = "$(cwd)/src"
 global_config_file = "$(cwd)/global_definitions.jl"
-uvc_config_file = "$(cwd)/uvc_config.yaml"
 generated_files_dir = "$(cwd)/generated_files"
 # tb_top_dir = "$(generated_files_dir)/test_top"
 tb_top_dir = generated_files_dir
@@ -33,8 +63,11 @@ sequences_dir = "$(tb_top_dir)/sequences"
 env_dir = "$(tb_top_dir)/env"
 agents_dir = "$(tb_top_dir)/agents"
 rtl_dir = "$(tb_top_dir)/rtl"
+elapsed_time_array["set_paths"] = (time_ns() - time_now) / 1e9
 
 #######################################################################################################################
+
+time_now = time_ns()
 
 # Global parameters
 include_jl(global_config_file)
@@ -54,9 +87,13 @@ if !(simulator_ in supported_simulators)
     error("Unsupported simulator: $(simulator_). Provide one of: $(supported_simulators)")
 end
 
+elapsed_time_array["include_setup"] = (time_ns() - time_now) / 1e9
+
 #######################################################################################################################
 
 # Set fields for use in later functions
+
+time_now = time_ns()
 
 # Delete generated files folder before running
 reset_generated_files_folder = get_usr_cfg_fld(:reset_generated_files_folder)
@@ -94,23 +131,39 @@ run_sim_args_gen = get_usr_cfg_fld(:run_sim_args_gen)
 simulator = get_usr_cfg_fld(:simulator)
 
 # Debug
-debug_function_time = get_usr_cfg_fld(:debug_function_time)
+# debug_elapsed_time = get_usr_cfg_fld(:debug_elapsed_time)
 
+elapsed_time_array["set_configs"] = (time_ns() - time_now) / 1e9
 
 #######################################################################################################################
 
 # Load UVC configuration
+time_now = time_ns()
+if verbose
+    println("Loading UVC configuration from $(uvc_config_file).")
+end
 uvc_yaml_obj = YAML.load_file(uvc_config_file; dicttype=Dict{Symbol,Any})
+elapsed_time_array["load_yaml"] = (time_ns() - time_now) / 1e9
 
+time_now = time_ns()
 uvc_config_dict = Dict()
 for x in uvc_yaml_obj
+    if !haskey(x, :uvc) || x[:uvc] == nothing
+        my_str = "UVC name is not defined for the following UVC:\n"
+        for (key, value) in x
+            my_str *= "  $(key): $(value)\n"
+        end
+        error(my_str)
+    end
     uvc_config_dict[x[:uvc]] = StructTypes.constructfrom(uvc_config_t, x)
     for y in fieldnames(uvc_config_t)
         if y == :class_names
             usn = get_uvc_cfg_fld(x[:uvc], :use_short_names)
             if !(isdefined(uvc_config_dict[x[:uvc]], :class_names))
                 uvc_config_dict[x[:uvc]].class_names = usn ? short_names_dict : long_names_dict
-                println("Using default class name dictionary for UVC.")
+                if verbose
+                    println("Using default class name dictionary for UVC $(x[:uvc]).")
+                end
             else
                 for key in keys(short_names_dict)
                     if !haskey(uvc_config_dict[x[:uvc]].class_names, key)
@@ -124,7 +177,9 @@ for x in uvc_yaml_obj
     end
     # println(uvc_config_dict[x[:uvc]])
 end
+elapsed_time_array["build_config_dict"] = (time_ns() - time_now) / 1e9
 
+time_now = time_ns()
 if gen_clknrst == true && !haskey(uvc_config_dict, clknrst_name)
     using_this_clknrst = true
     push!(uvc_names, clknrst_name)
@@ -142,7 +197,9 @@ if gen_clknrst == true && !haskey(uvc_config_dict, clknrst_name)
     clknrst_config.class_names = use_short_names ? short_names_dict : long_names_dict
     uvc_config_dict[clknrst_name] = clknrst_config
 end
+elapsed_time_array["build_clknrst_config"] = (time_ns() - time_now) / 1e9
 
+time_now = time_ns()
 for uvc in uvc_names
     status = false
     for uvc_ in keys(uvc_config_dict)
@@ -154,10 +211,13 @@ for uvc in uvc_names
         error("No configuration is provided for UVC $(uvc). Please provide its configuration in $(uvc_config_file)")
     end
 end
+elapsed_time_array["check_uvcs"] = (time_ns() - time_now) / 1e9
 
 #######################################################################################################################
 
-# # Codes for generating the UVC
+time_now = time_ns()
+
+# Codes for generating the UVC
 include_jl("$(src_path)/config_codes.jl")
 include_jl("$(src_path)/transaction_codes.jl")
 include_jl("$(src_path)/sequence_lib_codes.jl")
@@ -170,10 +230,10 @@ include_jl("$(src_path)/package_codes.jl")
 include_jl("$(src_path)/interface_codes.jl")
 include_jl("$(src_path)/gen_uvc_codes.jl")
 
-# # Codes for generating stub DUT
+# Codes for generating stub DUT
 include_jl("$(src_path)/gen_stub_codes.jl")
 
-# # Codes for generating stub env, its components and the test library
+# Codes for generating stub env, its components and the test library
 include_jl("$(src_path)/refmod_codes.jl")
 include_jl("$(src_path)/scoreboard_codes.jl")
 include_jl("$(src_path)/vsequencer_codes.jl")
@@ -189,22 +249,40 @@ include_jl("$(src_path)/gen_top_codes.jl")
 # Codes for generating simulator arguments file
 include_jl("$(src_path)/gen_sim_args_codes.jl")
 
+elapsed_time_array["include_codes"] = (time_ns() - time_now) / 1e9
 
 # Set up the output folder
 output_file_setup(generated_files_dir; reset_folder=reset_generated_files_folder)
 
 # Run generation functions
-elapsed_time_array = Dict()
-elapsed_time_array["uvc" ] = @elapsed uvc_files_gen()
-elapsed_time_array["stub"] = @elapsed stub_gen();
-elapsed_time_array["env" ] = @elapsed env_gen();
-elapsed_time_array["test"] = @elapsed test_gen();
-elapsed_time_array["top" ] = @elapsed top_gen();
-elapsed_time_array["args"] = @elapsed sim_args_gen();
+if verbose && run_uvc_gen
+    println("Running UVC generation.")
+end
+elapsed_time_array["gen_uvc" ] = @elapsed uvc_files_gen()
+if verbose && run_stub_gen
+    println("Running stub generation.")
+end
+elapsed_time_array["gen_stub"] = @elapsed stub_gen();
+if verbose && run_env_gen
+    println("Running env generation.")
+end
+elapsed_time_array["gen_env" ] = @elapsed env_gen();
+if verbose && run_test_gen
+    println("Running test generation.")
+end
+elapsed_time_array["gen_test"] = @elapsed test_gen();
+if verbose && run_top_gen
+    println("Running top generation.")
+end
+elapsed_time_array["gen_top" ] = @elapsed top_gen();
+if verbose && run_sim_args_gen
+    println("Running command line arguments generation.")
+end
+elapsed_time_array["gen_args"] = @elapsed sim_args_gen();
 
-if debug_function_time
+if debug_elapsed_time
     println("Elapsed times:")
-    for (key, value) in elapsed_time_array
-        println("$(key) => $(value)")
+    for (key, value) in sort(collect(elapsed_time_array))
+        println("    $(rpad(key, 20)) => $(value)")
     end
 end

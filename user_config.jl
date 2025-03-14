@@ -4,8 +4,10 @@
 user_config.reset_generated_files_folder = true
 
 # UVCs and env generation
-user_config.uvc_names = ["some_uvc", "another_uvc"]
-# stub_if_names = user_config.uvc_names
+user_config.uvc_names = [
+    "some_uvc", 
+    "another_uvc"
+]
 user_config.dut_name = "counter"
 user_config.gen_clknrst = true
 user_config.gen_scoreboard = true
@@ -14,10 +16,9 @@ user_config.use_short_names = true
 user_config.agent_has_coverage = false
 user_config.env_has_coverage = true
 user_config.has_parameters = true
-param1 = sv_params_t("int", "MY_PARAM1", "10")
-param2 = sv_params_t("int", "MY_PARAM2", "20")
 user_config.params_vec = [ # Make sure to include all your params in this vector!!
-    param1, param2
+    sv_params_t("int", "MY_PARAM1", "10"),
+    sv_params_t("int", "MY_PARAM2", "20"),
 ]
 user_config.config_inst_convention = "m_config"
 user_config.class_names = short_names_dict

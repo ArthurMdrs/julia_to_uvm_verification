@@ -111,7 +111,7 @@ mutable struct config_t
     # Others
     simulator::String
     # Debug
-    debug_function_time::Union{Bool, Nothing}
+    # debug_elapsed_time::Union{Bool, Nothing}
     config_t() = new()
 end
 # StructTypes.StructType(::Type{config_t}) = StructTypes.Mutable()
@@ -126,7 +126,6 @@ global_config.reset_generated_files_folder = true
 
 # UVCs and env generation
 global_config.uvc_names = []
-# stub_if_names = global_config.uvc_names
 global_config.dut_name = ""
 global_config.gen_clknrst = false
 clknrst_name = "clknrst"
@@ -166,7 +165,7 @@ global_config.simulator = "xrun"
 supported_simulators = ["xrun", "dsim"]
 
 # Debug
-global_config.debug_function_time = true
+# global_config.debug_elapsed_time = true
 
 
 
