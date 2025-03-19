@@ -63,60 +63,28 @@ gen_if_base(prefix_name) = begin
         
     $( gen_lines_mon_cb(if_sigs_vec, "    ", clock_name)[1:end-1] )
         
-        // Signals for transaction recording
-        bit monstart, drvstart;
-        
-        // Signal to control monitor activity
-        bit got_tr;
-        
-        // Test transaction
-        //$(prefix_name)_$(tr_name) tr = new("TR");
-        
         typedef $(prefix_name)_$(tr_name) $(get_param_conn(dut_name, "    "))$(prefix_name)_$(tr_name)_t;
         
-        $(prefix_name)_$(tr_name)_t tr = new("TR");
+        $(prefix_name)_$(tr_name)_t if_tr = new("if_tr");
         
         task $(prefix_name)_reset ();
-            monstart = 0;
-            drvstart = 0;
-            
     $( gen_long_str(if_sigs_vec, "        ", gen_line_reset_sig)[1:end-1] )
         endtask
         
         // Gets a transaction and drive it into the DUT
         task send_to_dut ($(prefix_name)_$(tr_name)_t req);
-            // Logic to start recording transaction
-            @(negedge $(clock_name));
+            @(drv_cb);
             
-            // trigger for transaction recording
-            drvstart = 1'b1;
-            
-            // Drive logic 
-            tr.copy(req);
-            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Driving transaction to DUT:%s", tr.convert2string()), UVM_HIGH)
-            got_tr = 1'b1;
-            @(negedge $(clock_name));
-            
-            // Reset trigger
-            drvstart = 1'b0;
+            if_tr.copy(req);
+            // drv.cb.some_signal = req.some_signal;
         endtask : send_to_dut
         
         // Collect transactions
         task collect_tr ($(prefix_name)_$(tr_name)_t req);
-            // Logic to start recording transaction
-            @(posedge $(clock_name) iff got_tr);
-            got_tr = 1'b0;
+            @(mon_cb);
             
-            // trigger for transaction recording
-            monstart = 1'b1;
-            
-            // Collect logic 
-            req.copy(tr);
-            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Collected transaction:%s", req.convert2string()), UVM_HIGH)
-            @(posedge $(clock_name));
-            
-            // Reset trigger
-            monstart = 1'b0;
+            req.copy(if_tr);
+            // req.some_signal = mon_cb.some_signal;
         endtask : collect_tr
         
     endinterface : $(prefix_name)_$(if_name)

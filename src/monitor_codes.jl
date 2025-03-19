@@ -34,24 +34,13 @@ get_normal_mon_funcs(prefix_name) = begin
         
         task collect ();
             forever begin
-                mon_tr = $(tr_type)::type_id::create("mon_tr", this);
+                mon_tr = seq_item_t::type_id::create("mon_tr", this);
                 
-                // concurrent blocks for transaction collection and transaction recording
-                fork
-                    // collect transaction
-                    begin
-                        // collect transaction from interface
-                        vif.collect_tr(mon_tr);
-                    end
-                    
-                    // Start transaction recording at start of transaction (vif.monstart triggered from interface.collect_tr())
-                    begin
-                        @(posedge vif.monstart) void'(begin_tr(mon_tr, "$(uppercase(prefix_name))_MONITOR_TR"));
-                    end
-                join
-                
+                void'(begin_tr(mon_tr, "$(uppercase(prefix_name))_MONITOR_TR"));
+                vif.collect_tr(mon_tr);
                 end_tr(mon_tr);
-                `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Transaction Collected:\\n%s", mon_tr.convert2string()), UVM_MEDIUM)
+                
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Transaction Collected:%s", mon_tr.convert2string()), UVM_MEDIUM)
                 item_collected_port.write(mon_tr);
                 num_tr_col++;
             end

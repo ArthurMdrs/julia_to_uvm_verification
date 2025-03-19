@@ -31,25 +31,13 @@ get_normal_drv_funcs(prefix_name) = begin
         
         task get_and_drive();
             forever begin
-                // Get new item from the sequencer
                 seq_item_port.get_next_item(req);
                 `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Sending transaction:%s", req.convert2string()), UVM_HIGH)
                 
-                // concurrent blocks for transaction driving and transaction recording
-                fork
-                    // send transaction
-                    begin
-                        // send transaction via interface
-                        vif.send_to_dut(req);
-                    end
-                    
-                    // Start transaction recording at start of transaction (vif.drvstart triggered from interface.send_to_dut())
-                    begin
-                        @(posedge vif.drvstart) void'(begin_tr(req, "$(uppercase(prefix_name))_DRIVER_TR"));
-                    end
-                join
-                
+                void'(begin_tr(req, "$(uppercase(prefix_name))_DRIVER_TR"));
+                vif.send_to_dut(req);
                 end_tr(req);
+                
                 num_sent++;
                 seq_item_port.item_done();
             end
