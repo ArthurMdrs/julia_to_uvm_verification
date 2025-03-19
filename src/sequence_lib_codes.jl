@@ -91,9 +91,10 @@ gen_random_seq(prefix_name) = begin
             req = $(tr_type)::type_id::create("req");
             repeat(3) begin
                 start_item(req);
-                void'(req.randomize());
+                if (!req.randomize())
+                    `uvm_fatal("$(uppercase(prefix_name)) SEQ", "Could not randomize transaction.")
                 // It is possible to put constraints into randomize, like below.
-                // void'(req.randomize() with {field_1==value_1; field_2==value_2;});
+                // if (!(req.randomize() with {field_1==value_1; field_2==value_2;}));
                 finish_item(req);
             end
         endtask : body

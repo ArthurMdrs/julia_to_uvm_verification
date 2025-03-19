@@ -203,3 +203,8 @@ mutable struct uvc_config_t
 end
 StructTypes.StructType(::Type{uvc_config_t}) = StructTypes.Mutable()
 
+
+@enum uvc_class_type begin
+    normal = 0
+    clknrst = 1
+end
