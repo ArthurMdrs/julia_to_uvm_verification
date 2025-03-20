@@ -113,6 +113,7 @@ config_inst_convention = get_usr_cfg_fld(:config_inst_convention)
 class_names = get_usr_cfg_fld(:class_names)
 gen_tdefs_pkg = get_usr_cfg_fld(:gen_tdefs_pkg)
 vif_in_config = get_usr_cfg_fld(:vif_in_config)
+reset_mechanism = get_usr_cfg_fld(:reset_mechanism)
 
 # Clock and reset info
 clock_name = get_usr_cfg_fld(:clock_name)

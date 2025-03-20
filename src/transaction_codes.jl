@@ -138,7 +138,7 @@ gen_tr_base(prefix_name) = begin
         endfunction : new
         
         // Type your constraints!
-        constraint some_constraint {}
+        // constraint some_constraint { some_property >= 0;}
         
         function string convert2string();
             string string_aux;

@@ -23,7 +23,7 @@ end
 gen_lines_mon_cb(vec::Vector{if_field_t}, tabs, clock_name) = begin
     my_str = """
     $(tabs)clocking mon_cb @(posedge $(clock_name));
-    $(tabs)    default input #1ns output #5ns;
+    $(tabs)    default input #1ns output #1ns;
     $( gen_long_str(vec, tabs*"    ", gen_line_mon_cb_sig)[1:end-1] )
     $(tabs)endclocking
     """
@@ -44,7 +44,7 @@ gen_if_base(prefix_name) = begin
     rst_is_negedge_sensitive = get_uvc_cfg_fld(prefix_name, :rst_is_negedge_sensitive)
     if_sigs_vec = get_uvc_cfg_fld(prefix_name, :if_sigs_vec)
     param_str = has_parameters ? "import $(dut_name)_params_pkg::$(dut_name)_params_t;\n$(get_param_declaration(params_vec, dut_name, "    "))" : ""
-    return """
+    my_str = """
     interface $(prefix_name)_$(if_name) $(param_str)(
         input logic $(clock_name), 
         input logic $(reset_name)
@@ -68,6 +68,16 @@ gen_if_base(prefix_name) = begin
         $(prefix_name)_$(tr_name)_t if_tr = new("if_tr");
         
         task $(prefix_name)_reset ();
+    """
+    
+    if reset_mechanism == run_phase_reset
+        my_str *= """
+                @($((rst_is_negedge_sensitive) ? "negedge" : "posedge") $(reset_name));
+                disable send_to_dut;
+        """
+    end
+    
+    my_str *= """
     $( gen_long_str(if_sigs_vec, "        ", gen_line_reset_sig)[1:end-1] )
         endtask
         
@@ -89,6 +99,7 @@ gen_if_base(prefix_name) = begin
         
     endinterface : $(prefix_name)_$(if_name)
     """
+    return my_str
 end
 
 gen_clknrst_if(prefix_name) = begin

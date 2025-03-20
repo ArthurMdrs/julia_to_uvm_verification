@@ -2,36 +2,46 @@
 # Monitor Codes
 # ***********************************
 # Creates an monitor class
-# The gen_monitor_base function needs a vector as an argument
-# Form of the vector to generate the monitor:
-#  [clock_name , [reset_name , is_negedge?] ]
-# 
-# E.g.:
-# vec = ["clock_name", ["reset_name", true]]
-# 
-# A part of the interface's vector is used: "if_vec[1:2]"
-# This vector comes from the file UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
 
 get_normal_mon_funcs(prefix_name) = begin
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
-    my_str =  """
-        task reset_phase (uvm_phase phase);
-            `uvm_info("$(uppercase(prefix_name)) MONITOR", "Entering reset phase.", UVM_MEDIUM)
-            mon_tr = null;
-            collect();
-        endtask: reset_phase
-        
-        task main_phase (uvm_phase phase);
-            super.main_phase(phase);
-            `uvm_info("$(uppercase(prefix_name)) MONITOR", "Entering main phase", UVM_MEDIUM)
+    if reset_mechanism == run_phase_reset
+        reset_name = get_uvc_cfg_fld(prefix_name, :reset_name)
+        rst_is_negedge_sensitive = get_uvc_cfg_fld(prefix_name, :rst_is_negedge_sensitive)
+        my_str =  """
+            task run_phase (uvm_phase phase);
+                super.run_phase(phase);
+                @($((rst_is_negedge_sensitive) ? "negedge" : "posedge") vif.$(reset_name));
+                @($((rst_is_negedge_sensitive) ? "posedge" : "negedge") vif.$(reset_name));
+                
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Reset dropped", UVM_MEDIUM)
+                
+                collect();
+            endtask : run_phase
             
-            end_tr(mon_tr);
+        """
+    elseif reset_mechanism == reset_phase_reset
+        my_str =  """
+            task reset_phase (uvm_phase phase);
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Entering reset phase.", UVM_MEDIUM)
+                mon_tr = null;
+                collect();
+            endtask: reset_phase
             
-            collect();
-        endtask : main_phase
-        
+            task main_phase (uvm_phase phase);
+                super.main_phase(phase);
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Entering main phase", UVM_MEDIUM)
+                
+                end_tr(mon_tr);
+                
+                collect();
+            endtask : main_phase
+            
+        """
+    end
+    my_str *= """
         task collect ();
             forever begin
                 mon_tr = seq_item_t::type_id::create("mon_tr", this);
@@ -78,8 +88,6 @@ gen_monitor(prefix_name, type::uvc_class_type) = begin
     cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
-    reset_name = get_uvc_cfg_fld(prefix_name, :reset_name)
-    rst_is_negedge_sensitive = get_uvc_cfg_fld(prefix_name, :rst_is_negedge_sensitive)
     my_str = """
     class $(prefix_name)_$(mon_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_monitor;
         

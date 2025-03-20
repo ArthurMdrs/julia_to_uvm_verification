@@ -2,33 +2,55 @@
 # Driver Codes!!!!!
 # ***********************************
 # Creates a driver class
-# The gen_driver_base function needs a vector as an argument
-# Form of the vector to generate the driver:
-#  [clock_name , [reset_name , is_negedge?] ]
-# 
-# E.g.:
-# vec = ["clock_name", ["reset_name", true]]
-# 
-# A part of the interface's vector is used: "if_vec[1:2]"
-# This vector comes from the file UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
 
 get_normal_drv_funcs(prefix_name) = begin
-    my_str =  """
-        task reset_phase (uvm_phase phase);
-            `uvm_info("$(uppercase(prefix_name)) DRIVER", "Entering reset phase.", UVM_MEDIUM)
-            vif.$(prefix_name)_reset();
-            get_and_drive();
-        endtask: reset_phase
-        
-        task main_phase (uvm_phase phase);
-            super.main_phase(phase);
+    if reset_mechanism == run_phase_reset
+        reset_name = get_uvc_cfg_fld(prefix_name, :reset_name)
+        rst_is_negedge_sensitive = get_uvc_cfg_fld(prefix_name, :rst_is_negedge_sensitive)
+        my_str =  """
+            task run_phase (uvm_phase phase);
+                super.run_phase(phase);
+                fork
+                    begin
+                        @($((rst_is_negedge_sensitive) ? "negedge" : "posedge") vif.$(reset_name));
+                        @($((rst_is_negedge_sensitive) ? "posedge" : "negedge") vif.$(reset_name));
+                        
+                        `uvm_info("$(uppercase(prefix_name)) DRIVER", "Reset dropped", UVM_MEDIUM)
+                        
+                        get_and_drive();
+                    end
+                    reset_signals();
+                join
+            endtask : run_phase
             
-            `uvm_info("$(uppercase(prefix_name)) DRIVER", "Entering main phase", UVM_MEDIUM)
+            task reset_signals();
+                forever begin
+                    vif.$(prefix_name)_reset();
+                    `uvm_info("$(uppercase(prefix_name)) DRIVER", "Detected reset", UVM_LOW)
+                end
+            endtask : reset_signals
             
-            get_and_drive();
-        endtask : main_phase
-        
+        """
+    elseif reset_mechanism == reset_phase_reset
+        my_str =  """
+            task reset_phase (uvm_phase phase);
+                `uvm_info("$(uppercase(prefix_name)) DRIVER", "Entering reset phase.", UVM_MEDIUM)
+                vif.$(prefix_name)_reset();
+                get_and_drive();
+            endtask: reset_phase
+            
+            task main_phase (uvm_phase phase);
+                super.main_phase(phase);
+                
+                `uvm_info("$(uppercase(prefix_name)) DRIVER", "Entering main phase", UVM_MEDIUM)
+                
+                get_and_drive();
+            endtask : main_phase
+            
+        """
+    end
+    my_str *= """
         task get_and_drive();
             forever begin
                 seq_item_port.get_next_item(req);
@@ -126,10 +148,7 @@ gen_driver(prefix_name, type::uvc_class_type) = begin
     drv_name = get_uvc_cfg_fld(prefix_name, :class_names)["driver"     ]
     cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
-    if_name  = get_uvc_cfg_fld(prefix_name, :class_names)["interface"  ]
     tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
-    reset_name = get_uvc_cfg_fld(prefix_name, :reset_name)
-    rst_is_negedge_sensitive = get_uvc_cfg_fld(prefix_name, :rst_is_negedge_sensitive)
     my_str = """
     class $(prefix_name)_$(drv_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_driver #($(tr_type));
         

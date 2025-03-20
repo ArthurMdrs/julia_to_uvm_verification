@@ -25,10 +25,6 @@ pkg_classes = classes_t(true,true,true,true,true,true,true,false,false,false)
 # Vector that defines which classes will be generated as files
 gen_classes = classes_t()
 
-# gen_classes_dict = Dict(
-    
-# )
-
 
 
 # Dictionaries used to define class names - You can edit
@@ -77,6 +73,11 @@ mutable struct sv_params_t
     sv_params_t(a, b, c) = new(a, b, c)
 end
 
+@enum reset_mechanism_t begin
+    run_phase_reset = 0
+    reset_phase_reset = 1
+end
+
 mutable struct config_t
     # Delete generated files folder before running
     reset_generated_files_folder::Union{Bool, Nothing}
@@ -97,6 +98,7 @@ mutable struct config_t
     class_names::Dict{String, String}
     gen_tdefs_pkg::Union{Bool, Nothing}
     vif_in_config::Union{Bool, Nothing}
+    reset_mechanism::reset_mechanism_t
     # Clock and reset info
     clock_name::String
     reset_name::String
@@ -146,6 +148,7 @@ global_config.config_inst_convention = "m_config"
 global_config.class_names = short_names_dict
 global_config.gen_tdefs_pkg = false
 global_config.vif_in_config = true
+global_config.reset_mechanism = run_phase_reset
 
 # Clock and reset info
 global_config.clock_name = "clk"

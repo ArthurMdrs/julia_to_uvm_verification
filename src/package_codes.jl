@@ -2,8 +2,6 @@
 # Package Codes
 # ***********************************
 # Creates the UVC package
-# This uses a struct found in global_vectors.jl that may
-# be overwritten in UVC_parameters/(UVC name)_parameters.jl
 # ***********************************
 gen_line_include(file_name, tabs) = "$(tabs)`include \"$(file_name).sv\"\n"
 
