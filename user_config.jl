@@ -24,6 +24,7 @@ user_config.config_inst_convention = "m_config"
 user_config.class_names = short_names_dict
 user_config.gen_tdefs_pkg = false
 user_config.vif_in_config = true
+user_config.pass_config_thru_db = false
 user_config.reset_mechanism = reset_phase_reset
 
 # Clock and reset info

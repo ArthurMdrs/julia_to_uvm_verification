@@ -214,12 +214,27 @@ gen_test_base() = begin
     my_str *= """
     $( gen_long_str(uvc_names, "        ", gen_line_assign_config_test)[1:end-1] )
             
-            // Set env config to the database
-            uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(dut_name)_env"), .field_name("$(env_cfg_name)"), .value(m_$(dut_name)_env_$(cfg_name)));
-            
-            // Create Env
-            m_$(dut_name)_env = $(dut_name)_env_t::type_id::create("m_$(dut_name)_env", this);
-            
+    """
+    if pass_config_thru_db
+        my_str *= """
+                // Set env config to the database
+                uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(dut_name)_env"), .field_name("$(env_cfg_name)"), .value(m_$(dut_name)_env_$(cfg_name)));
+                
+                // Create Env
+                m_$(dut_name)_env = $(dut_name)_env_t::type_id::create("m_$(dut_name)_env", this);
+                
+        """
+    else
+        my_str *= """
+                // Create Env
+                m_$(dut_name)_env = $(dut_name)_env_t::type_id::create("m_$(dut_name)_env", this);
+                
+                // Assign env config
+                m_$(dut_name)_env.$(env_cfg_name) = m_$(dut_name)_env_$(cfg_name);
+                
+        """
+    end
+    my_str *= """
             // Create virtual sequence
             $(vseq_inst_name) = $(dut_name)_base_vsequence_t::type_id::create("$(vseq_inst_name)");
             

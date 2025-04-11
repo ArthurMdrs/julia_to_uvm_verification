@@ -98,6 +98,7 @@ mutable struct config_t
     class_names::Dict{String, String}
     gen_tdefs_pkg::Union{Bool, Nothing}
     vif_in_config::Union{Bool, Nothing}
+    pass_config_thru_db::Union{Bool, Nothing}
     reset_mechanism::reset_mechanism_t
     # Clock and reset info
     clock_name::String
@@ -148,6 +149,7 @@ global_config.config_inst_convention = "m_config"
 global_config.class_names = short_names_dict
 global_config.gen_tdefs_pkg = false
 global_config.vif_in_config = true
+global_config.pass_config_thru_db = true
 global_config.reset_mechanism = run_phase_reset
 
 # Clock and reset info

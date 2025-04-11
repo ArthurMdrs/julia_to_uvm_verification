@@ -88,12 +88,23 @@ gen_agent_base(prefix_name) = begin
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             
-            if(uvm_config_db#($(prefix_name)_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(config_inst_convention)"), .value($(config_inst_convention))))
-                `uvm_info("$(uppercase(prefix_name)) AGENT", "Configuration object was successfully set!", UVM_MEDIUM)
-            else
-                `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No configuration object was set!")
-            
     """
+    
+    if pass_config_thru_db
+        my_str *= """
+                if(uvm_config_db#($(prefix_name)_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(config_inst_convention)"), .value($(config_inst_convention))))
+                    `uvm_info("$(uppercase(prefix_name)) AGENT", "Configuration object was successfully set!", UVM_MEDIUM)
+                else
+                    `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No configuration object was set!")
+                
+        """
+    else
+        my_str *= """
+                if($(config_inst_convention) == null)
+                    `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No configuration object was set!")
+                
+        """
+    end
     
     if get_uvc_cfg_fld(prefix_name, :vif_in_config) == false
         my_str *= """

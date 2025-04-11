@@ -121,6 +121,11 @@ gen_line_cfg_config_db(uvc_name, tabs) = begin
     cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
     return "$(tabs)uvm_config_db#($(uvc_name)_$(cfg_name)_t)::set(.cntxt(this), .inst_name(\"m_$(uvc_name)_$(agent_name)\"), .field_name(\"$(config_inst_convention)\"), .value(m_$(uvc_name)_$(cfg_name)));\n"
 end
+gen_assign_config(uvc_name, tabs) = begin
+    agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
+    cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    return "$(tabs)m_$(uvc_name)_$(agent_name).$(config_inst_convention) = m_$(uvc_name)_$(cfg_name);\n"
+end
 
 # ****************************************************************
 
@@ -286,35 +291,49 @@ gen_env_base() = begin
         """
     end
     
+    if pass_config_thru_db
+        my_str *= """
+                // Get Env config
+                if(uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(env_cfg_name)"), .value($(env_cfg_name))))
+                    `uvm_info("$(uppercase(dut_name)) ENV", "$(uppercase(dut_name)) ENV config object was successfully set!", UVM_MEDIUM)
+                else
+                    `uvm_fatal("$(uppercase(dut_name)) ENV", "No $(uppercase(dut_name)) ENV config object was set!")
+                
+        """
+    else
+        my_str *= """
+                // Check for Env config
+                if($(env_cfg_name) == null)
+                    `uvm_fatal("$(uppercase(dut_name)) ENV", "No $(uppercase(dut_name)) ENV config object was set!")
+                
+        """
+    end
+    
     gen_line2(uvc_name, tabs) = gen_line_assign_uvc_config(uvc_name, tabs, env_cfg_name)
     my_str *= """
-            // Get Env config
-            if(uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(env_cfg_name)"), .value($(env_cfg_name))))
-                `uvm_info("$(uppercase(dut_name)) ENV", "$(uppercase(dut_name)) ENV config object was successfully set!", UVM_MEDIUM)
-            else
-                `uvm_fatal("$(uppercase(dut_name)) ENV", "No $(uppercase(dut_name)) ENV config object was set!")
-            
             // Assign local UVC config objects
     $( gen_long_str(uvc_names, "        ", gen_line2)[1:end-1] )
             
-            // Set UVC config objects to the database
-    $( gen_long_str(uvc_names, "        ", gen_line_cfg_config_db)[1:end-1] )
-            
     """
-    
-    # gen_line0(uvc_name, tabs) = gen_line_assign_config_env(uvc_name, tabs, env_cfg_name)
-    my_str *= """
-            // Create UVCs
-    $( gen_long_str(uvc_names, "        ", gen_line_uvc_creation)[1:end-1] )
-            
-    """
-    
-    # my_str *= """
-    #         // Set UVC config objects
-    # $( gen_long_str(uvc_names, "        ", gen_line0)[1:end-1] )
-            
-    # """
-    
+    if pass_config_thru_db
+        my_str *= """
+                // Set UVC config objects to the database
+        $( gen_long_str(uvc_names, "        ", gen_line_cfg_config_db)[1:end-1] )
+                
+                // Create UVCs
+        $( gen_long_str(uvc_names, "        ", gen_line_uvc_creation)[1:end-1] )
+                
+        """
+    else
+        my_str *= """
+                // Create UVCs
+        $( gen_long_str(uvc_names, "        ", gen_line_uvc_creation)[1:end-1] )
+                
+                // Assign UVC config objects
+        $( gen_long_str(uvc_names, "        ", gen_assign_config)[1:end-1] )
+                
+        """
+    end
     my_str *= """
             // Create virtual sequencer
             if ($(env_cfg_name).has_virtual_sequencer)
