@@ -7,7 +7,7 @@
 gen_uvc_include(uvc_name, tabs) = begin
     if_name = get_uvc_cfg_fld(uvc_name, :class_names)["interface"]
     my_str = """
-    // $(uppercase(uvc_name)) UVC
+    // $(lowercase(uvc_name)) agent
     $(tabs)-incdir $(agents_dir)/$(uvc_name)
     $(tabs)-incdir $(sequences_dir)/$(uvc_name)
     """
@@ -21,6 +21,11 @@ gen_uvc_include(uvc_name, tabs) = begin
     """
     return my_str
 end
+gen_line_agent_lst(uvc_name, tabs) = begin
+    my_str = """
+    $(tabs)-f $(srclists_dir)/agents/$(uvc_name).lst
+    """
+end
     
 sim_args_gen() = begin
     if run_sim_args_gen == true
@@ -28,6 +33,13 @@ sim_args_gen() = begin
         #     error("Invalid simulator: $simulator. Expected of of: \n$supported_simulators")
         # end
         output_file_setup("$(tb_top_dir)"; reset_folder=false)
+        output_file_setup("$(srclists_dir)")
+        output_file_setup("$(srclists_dir)/agents")
+        for uvc_name in uvc_names
+            write_file("$(srclists_dir)/agents/$(uvc_name).lst", gen_uvc_include(uvc_name, "    "))
+        end
+        write_file("$(srclists_dir)/$(dut_name)_env.lst", gen_env_srclist())
+        write_file("$(srclists_dir)/$(dut_name)_tb.lst", gen_tb_srclist())
         if simulator == "xrun"
             write_file("$(tb_top_dir)/xrun_args.f", gen_xrun_args_base())
         elseif simulator == "dsim"
@@ -36,13 +48,8 @@ sim_args_gen() = begin
     end
 end
 
-common_args() = begin
-    my_str = """
-        +UVM_VERBOSITY=UVM_HIGH
-        +UVM_NO_RELNOTES
-        //+UVM_TESTNAME=random_test
-        
-    """
+gen_env_srclist() = begin
+    my_str = ""
     if has_parameters
         my_str *= """
         // Parameters package
@@ -51,21 +58,40 @@ common_args() = begin
         """
     end
     my_str *= """
-    $( gen_long_str(uvc_names, "    ", gen_uvc_include)[1:end-1] )
-    // DUT env
+    // Agents
+    $( gen_long_str(uvc_names, "    ", gen_line_agent_lst)[1:end-1] )
+    
+    // Env
         -incdir $(env_dir)
         -incdir $(sequences_dir)
+        -incdir $(tests_dir)
         $(env_dir)/$(dut_name)_env_pkg.sv
+    """
+    return my_str
+end
+
+gen_tb_srclist() = begin
+    my_str = """
+    // Env
+        -f $(srclists_dir)/$(dut_name)_env.lst
     
     // RTL
         $(rtl_dir)/$(dut_name).sv
-    
-    // Tests
-        -incdir $(tests_dir)
 
     // Top level
         $(tb_top_dir)/$(dut_name)_tb_pkg.sv
         $(tb_top_dir)/$(dut_name)_tb_top.sv
+    """
+    return my_str
+end
+
+common_args() = begin
+    my_str = """
+        +UVM_VERBOSITY=UVM_HIGH
+        +UVM_NO_RELNOTES
+        //+UVM_TESTNAME=random_test
+        
+        -f $(srclists_dir)/$(dut_name)_tb.lst
     """
     return my_str
 end

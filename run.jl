@@ -63,6 +63,7 @@ sequences_dir = "$(tb_top_dir)/sequences"
 env_dir = "$(tb_top_dir)/env"
 agents_dir = "$(tb_top_dir)/agents"
 rtl_dir = "$(tb_top_dir)/rtl"
+srclists_dir = "$(generated_files_dir)/srclists"
 elapsed_time_array["set_paths"] = (time_ns() - time_now) / 1e9
 
 #######################################################################################################################
