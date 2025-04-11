@@ -62,6 +62,13 @@ gen_line_assign_config_test(uvc_name, tabs) = begin
     my_str = "$(tabs)m_$(dut_name)_env_$(env_cfg_name).m_$(uvc_name)_$(cfg_name) = m_$(uvc_name)_$(cfg_name);\n"
     return my_str
 end
+gen_line_has_agent_comment(uvc_name, tabs) = begin
+    env_cfg_name = class_names["config"]
+    my_str = """
+    $(tabs)// m_$(dut_name)_env_$(env_cfg_name).has_$(uvc_name)_agent = 0;
+    """
+    return my_str
+end
 
 # ****************************************************************
 
@@ -82,13 +89,6 @@ gen_test_base() = begin
     vseq_inst_name = "m_vseq"
     
     env_cfg_name = config_inst_convention
-    
-    # vif_list = []
-    # for uvc_name in uvc_names
-    #     if get_uvc_cfg_fld(uvc_name, :vif_in_config) == false
-    #         push!(vif_list, uvc_name)
-    #     end
-    # end
     
     my_str = """
     class $(dut_name)_test_base $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_test;
@@ -120,14 +120,9 @@ gen_test_base() = begin
     $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param)[1:end-1] )
     $( gen_vseq_tdef("base_vsequence", "    ")[1:end-1] )
     """
-    # if size(vif_list, 1) != 0
-    #     my_str *= """
-    #     $( gen_long_str(vif_list, "    ", gen_line_vif_typedef)[1:end-1] )
-    #     """
-    # end
-        my_str *= """
-        $( gen_long_str(uvc_names, "    ", gen_line_vif_typedef)[1:end-1] )
-        """
+    my_str *= """
+    $( gen_long_str(uvc_names, "    ", gen_line_vif_typedef)[1:end-1] )
+    """
     my_str *= """
         // Typedefs - end
     """
@@ -139,20 +134,12 @@ gen_test_base() = begin
         
     """
     
-    # if size(vif_list, 1) != 0
-    #     my_str *= """
-    #         // Interfaces instances - begin
-    #     $( gen_long_str(vif_list, "    ", gen_line_vif_instance)[1:end-1] )
-    #         // Interfaces instances - end
-            
-    #     """
-    # end
-        my_str *= """
-            // Interfaces instances - begin
-        $( gen_long_str(uvc_names, "    ", gen_line_vif_instance)[1:end-1] )
-            // Interfaces instances - end
-            
-        """
+    my_str *= """
+        // Interfaces instances - begin
+    $( gen_long_str(uvc_names, "    ", gen_line_vif_instance)[1:end-1] )
+        // Interfaces instances - end
+        
+    """
     
     my_str *= """
         // Env
@@ -173,16 +160,10 @@ gen_test_base() = begin
             
     """
     
-    # if size(vif_list, 1) != 0
-    #     my_str *= """
-    #             // Get VIFs from database and set them for the ENV
-    #     $( gen_long_str(vif_list, "        ", gen_vif_config_db_tests)[1:end-1] )
-    #     """
-    # end
-        my_str *= """
-                // Get VIFs from database and set them for the ENV
-        $( gen_long_str(uvc_names, "        ", gen_vif_config_db_tests)[1:end-1] )
-        """
+    my_str *= """
+            // Get VIFs from database and set them for the ENV
+    $( gen_long_str(uvc_names, "        ", gen_vif_config_db_tests)[1:end-1] )
+    """
     
     my_str *= """
             // Create config objects
@@ -195,23 +176,19 @@ gen_test_base() = begin
             
     """
     
-    # my_str *= """
-    #         // Set config objects to the database
-    # $( gen_long_str(uvc_names, "        ", gen_line_cfg_set)[1:end-1] )
-            
-    # """
-    
     my_str *= """
             // Create ENV config
             m_$(dut_name)_env_$(cfg_name) = $(dut_name)_env_$(cfg_name)_t::type_id::create(\"m_$(dut_name)_env_$(cfg_name)\");
             
             // Set ENV configuration
-            m_$(dut_name)_env_$(cfg_name).has_virtual_sequencer = 1'b1;
+            // m_$(dut_name)_env_$(cfg_name).has_virtual_sequencer = 1'b1;
     """
     if env_has_coverage
-        my_str *= "        m_$(dut_name)_env_$(cfg_name).has_coverage = 1'b1;\n"
+        my_str *= "        // m_$(dut_name)_env_$(cfg_name).has_coverage = 1'b1;\n"
     end 
     my_str *= """
+    $( gen_long_str(uvc_names, "        ", gen_line_has_agent_comment)[1:end-1] )
+            
     $( gen_long_str(uvc_names, "        ", gen_line_assign_config_test)[1:end-1] )
             
     """

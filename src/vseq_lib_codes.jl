@@ -16,15 +16,29 @@ gen_line_rnd_seq_set_phase(uvc_name, tabs) = begin
     my_str = "$(tabs)m_$(uvc_name)_random_seq.set_starting_phase(get_starting_phase());\n"
     return my_str
 end
+gen_rnd_seq_setup(uvc_name, tabs) = begin
+    my_str = """
+    $(tabs)if ($(config_inst_convention).has_$(uvc_name)_agent) begin
+    $( gen_line_rnd_seq_creation(uvc_name, tabs*"    ")[1:end-1] )
+    $( gen_line_rnd_seq_set_phase(uvc_name, tabs*"    ")[1:end-1] )
+    $(tabs)end
+    """
+    return my_str
+end
 gen_line_rnd_seq_start(uvc_name, tabs) = begin
     sqr_name = get_uvc_cfg_fld(uvc_name, :class_names)["sequencer"]
     my_str = "$(tabs)m_$(uvc_name)_random_seq.start(.sequencer(p_sequencer.m_$(uvc_name)_$(sqr_name)), .call_pre_post(0));\n"
+    my_str = """
+    $(tabs)if ($(config_inst_convention).has_$(uvc_name)_agent)
+    $(tabs)    m_$(uvc_name)_random_seq.start(.sequencer(p_sequencer.m_$(uvc_name)_$(sqr_name)), .call_pre_post(0));
+    """
     return my_str
 end
 
 gen_vseq_base() = begin
     vsqr_name = class_names["vsequencer"]
     sqr_name  = class_names["sequencer" ]
+    cfg_name = class_names["config"]
     my_str = """
     class $(dut_name)_base_vsequence $(get_vsqr_param_declaration("    "))extends uvm_sequence;
         
@@ -43,6 +57,7 @@ gen_vseq_base() = begin
     my_str *= """
     
         // Typedefs - begin
+    $( gen_lines_tdefs_w_param("$(dut_name)_env_$(cfg_name)", "    ")[1:end-1] )
     """
     
     seq_list = []
@@ -60,7 +75,7 @@ gen_vseq_base() = begin
             continue
         end
         push!(seq_list, "$(uvc_name)_random_seq")
-        my_str *= gen_lines_tdefs_w_param_w_seq_item("$(uvc_name)_random_seq", uvc_name, "    ")
+        my_str *= gen_lines_tdefs_w_param_w_seq_item("$(uvc_name)_random_seq", uvc_name, "    ")[1:end-1]
     end
     
     my_str *= """ 
@@ -68,6 +83,8 @@ gen_vseq_base() = begin
         // Typedefs - end 
         
         `uvm_declare_p_sequencer($(dut_name)_$(vsqr_name)_t)
+        
+        $(dut_name)_env_$(cfg_name)_t $(config_inst_convention);
         
         // Sequence instances - begin
     $( gen_long_str(seq_list, "    ", gen_line_seq_instance)[1:end-1] )
@@ -90,7 +107,7 @@ gen_vseq_base() = begin
                 `uvm_info("$(uppercase(dut_name)) vSEQ", "Phase is null, so could not raise objection.", UVM_LOW)
             end
         
-            //$(config_inst_convention) = p_sequencer.$(config_inst_convention);
+            $(config_inst_convention) = p_sequencer.$(config_inst_convention);
         endtask : pre_start
         
         task post_start();
@@ -159,29 +176,26 @@ gen_vseq_random() = begin
     """
     
     if using_this_clknrst == true
-        my_str *= "        m_clknrst_reset_and_start_clk_seq = clknrst_reset_and_start_clk_seq_t::type_id::create(\"m_clknrst_reset_and_start_clk_seq\");\n"
+        my_str *= """
+                if ($(config_inst_convention).has_$(clknrst_name)_agent) begin
+                    m_$(clknrst_name)_reset_and_start_clk_seq = $(clknrst_name)_reset_and_start_clk_seq_t::type_id::create("m_$(clknrst_name)_reset_and_start_clk_seq");
+                    m_$(clknrst_name)_reset_and_start_clk_seq.set_starting_phase(get_starting_phase());
+                end
+        """
     else
         my_str *= ""
     end
     
     my_str *= """
-    $( gen_long_str(uvc_names_, "        ", gen_line_rnd_seq_creation)[1:end-1] )
+    $( gen_long_str(uvc_names_, "        ", gen_rnd_seq_setup)[1:end-1] )
             
     """
     
     if using_this_clknrst == true
-        my_str *= "        m_clknrst_reset_and_start_clk_seq.set_starting_phase(get_starting_phase());\n"
-    else
-        my_str *= ""
-    end
-    
-    my_str *= """
-    $( gen_long_str(uvc_names_, "        ", gen_line_rnd_seq_set_phase)[1:end-1] )
-            
-    """
-    
-    if using_this_clknrst == true
-        my_str *= "        m_clknrst_reset_and_start_clk_seq.start(.sequencer(p_sequencer.m_clknrst_$(sqr_name)), .call_pre_post(0));\n"
+        my_str *= """
+                if ($(config_inst_convention).has_$(clknrst_name)_agent)
+                    m_$(clknrst_name)_reset_and_start_clk_seq.start(.sequencer(p_sequencer.m_$(clknrst_name)_$(sqr_name)), .call_pre_post(0));
+        """
     else
         my_str *= ""
     end
