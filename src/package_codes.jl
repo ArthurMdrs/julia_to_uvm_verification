@@ -28,11 +28,18 @@ gen_tdefs_base(prefix_name) = begin
     package $(prefix_name)_tdefs_pkg;
         
     """
-    if has_parameters
-        my_str *= """
-            import $(dut_name)_params_pkg::*;
-            
-        """
+    if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
+        if get_uvc_cfg_fld(prefix_name, :use_env_params)
+            my_str *= """
+                import $(dut_name)_params_pkg::*;
+                
+            """
+        else
+            my_str *= """
+                import $(prefix_name)_params_pkg::*;
+                
+            """
+        end
     end
     my_str *= """
         // Define your typedefs here!
@@ -58,11 +65,18 @@ gen_pkg(prefix_name, type::uvc_class_type) = begin
         
     """
     
-    if has_parameters
-        my_str *= """
-            import $(dut_name)_params_pkg::*;
-            
-        """
+    if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
+        if get_uvc_cfg_fld(prefix_name, :use_env_params)
+            my_str *= """
+                import $(dut_name)_params_pkg::*;
+                
+            """
+        else
+            my_str *= """
+                import $(prefix_name)_params_pkg::*;
+                
+            """
+        end
     end
     
     if get_uvc_cfg_fld(prefix_name, :gen_tdefs_pkg) == true
@@ -127,5 +141,31 @@ end
 
 gen_pkg_base(prefix_name) = gen_pkg(prefix_name, normal::uvc_class_type)
 gen_clknrst_pkg(prefix_name) = gen_pkg(prefix_name, clknrst::uvc_class_type)
+
+# ****************************************************************
+
+gen_uvc_params_pkg(prefix_name) = begin
+    params_vec = get_uvc_cfg_fld(prefix_name, :params_vec)
+    my_str = """
+    package $(prefix_name)_params_pkg;
+        
+        typedef struct packed {
+    $( gen_long_str(params_vec, "        ", gen_line_param)[1:end-1] )
+        } $(prefix_name)_params_t;
+        
+    """
+    
+    my_str *= """
+        localparam $(prefix_name)_params_t $(prefix_name)_params = '{
+    $( gen_long_str(params_vec, "        ", gen_line_param_assign)[1:end-2] )
+        };
+        
+    """
+    
+    my_str *= """
+    endpackage : $(prefix_name)_params_pkg
+    """
+    return my_str
+end
 
 # ****************************************************************

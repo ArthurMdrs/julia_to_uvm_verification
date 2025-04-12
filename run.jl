@@ -108,7 +108,9 @@ gen_refmod = get_usr_cfg_fld(:gen_refmod)
 use_short_names = get_usr_cfg_fld(:use_short_names)
 agent_has_coverage = get_usr_cfg_fld(:agent_has_coverage)
 env_has_coverage = get_usr_cfg_fld(:env_has_coverage)
-has_parameters = get_usr_cfg_fld(:has_parameters)
+env_has_params = get_usr_cfg_fld(:env_has_params)
+uvc_has_params = get_usr_cfg_fld(:uvc_has_params)
+use_env_params = get_usr_cfg_fld(:use_env_params)
 params_vec = get_usr_cfg_fld(:params_vec)
 config_inst_convention = get_usr_cfg_fld(:config_inst_convention)
 class_names = get_usr_cfg_fld(:class_names)
@@ -139,6 +141,23 @@ simulator = get_usr_cfg_fld(:simulator)
 elapsed_time_array["set_configs"] = (time_ns() - time_now) / 1e9
 
 #######################################################################################################################
+
+# Define a default UVC configuration
+def_uvc_config = uvc_config_t()
+def_uvc_config.uvc = ""
+def_uvc_config.rst_is_negedge_sensitive = rst_is_negedge_sensitive
+def_uvc_config.clock_name = clock_name
+def_uvc_config.reset_name = reset_name
+def_uvc_config.use_short_names = use_short_names
+def_uvc_config.agent_has_coverage = agent_has_coverage
+def_uvc_config.gen_tdefs_pkg = gen_tdefs_pkg
+def_uvc_config.vif_in_config = vif_in_config
+def_uvc_config.tr_props_vec = []
+def_uvc_config.if_sigs_vec = []
+def_uvc_config.uvc_has_params = uvc_has_params
+def_uvc_config.use_env_params = use_env_params
+def_uvc_config.params_vec = params_vec
+def_uvc_config.class_names = use_short_names ? short_names_dict : long_names_dict
 
 # Load UVC configuration
 time_now = time_ns()
@@ -175,7 +194,12 @@ for x in uvc_yaml_obj
                 end
             end
         elseif !(isdefined(uvc_config_dict[x[:uvc]], y))
-            @warn "Field $(y) of UVC is undefined."
+            @warn "Field $(y) of UVC $(x[:uvc]) is undefined."
+        end
+        if y == :uvc_has_params
+            if uvc_config_dict[x[:uvc]].uvc_has_params
+                global env_has_params = true
+            end
         end
     end
     # println(uvc_config_dict[x[:uvc]])
@@ -197,6 +221,8 @@ if gen_clknrst == true && !haskey(uvc_config_dict, clknrst_name)
     clknrst_config.vif_in_config = true
     clknrst_config.tr_props_vec = []
     clknrst_config.if_sigs_vec = []
+    def_uvc_config.uvc_has_params = false
+    def_uvc_config.use_env_params = false
     clknrst_config.class_names = use_short_names ? short_names_dict : long_names_dict
     uvc_config_dict[clknrst_name] = clknrst_config
 end

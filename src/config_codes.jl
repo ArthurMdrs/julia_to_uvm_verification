@@ -7,14 +7,17 @@
 gen_config(prefix_name, type::uvc_class_type) = begin 
     cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"]
     agent_has_coverage = get_uvc_cfg_fld(prefix_name, :agent_has_coverage)
+    
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    
     my_str = """
-    class $(prefix_name)_$(cfg_name) $(get_param_declaration(params_vec, dut_name, "    ")) extends uvm_object;
+    class $(prefix_name)_$(cfg_name) $(get_param_declaration(params_prefix, "    ")) extends uvm_object;
         
     """
     
-    if has_parameters
+    if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
         my_str *= """
-            `uvm_object_param_utils($(prefix_name)_$(cfg_name) $(get_param_conn(dut_name, "    ")))
+            `uvm_object_param_utils($(prefix_name)_$(cfg_name) $(get_param_conn(params_prefix, "    ")))
             
         """
     else

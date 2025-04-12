@@ -16,9 +16,12 @@ gen_line_attribute_copy(vec::tr_field_t, tabs) = begin
 end
 gen_do_copy(prefix_name, vec::Vector{tr_field_t}) = begin
     tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
+    
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    
     my_str = """
         function void do_copy (uvm_object rhs);
-            $(prefix_name)_$(tr_name) $(get_param_conn(dut_name, "        "))_rhs;
+            $(prefix_name)_$(tr_name) $(get_param_conn(params_prefix, "        "))_rhs;
             
             \$cast(_rhs, rhs);
             
@@ -35,10 +38,13 @@ gen_line_attribute_comp(vec::tr_field_t, tabs) = begin
 end
 gen_do_compare(prefix_name, vec::Vector{tr_field_t}) = begin
     tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
+    
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    
     my_str = """
         function bit do_compare (uvm_object rhs, uvm_comparer comparer);
             bit res;
-            $(prefix_name)_$(tr_name) $(get_param_conn(dut_name, "        "))_rhs;
+            $(prefix_name)_$(tr_name) $(get_param_conn(params_prefix, "        "))_rhs;
             
             \$cast(_rhs, rhs);
             
@@ -114,14 +120,17 @@ end
 gen_tr_base(prefix_name) = begin 
     tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     vec = get_uvc_cfg_fld(prefix_name, :tr_props_vec)
+    
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    
     my_str = """
-    class $(prefix_name)_$(tr_name) $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_sequence_item;
+    class $(prefix_name)_$(tr_name) $(get_param_declaration(params_prefix, "    "))extends uvm_sequence_item;
         
     """
     
-    if has_parameters
+    if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
         my_str *= """
-            `uvm_object_param_utils($(prefix_name)_$(tr_name) $(get_param_conn(dut_name, "    ")[1:end-1]))
+            `uvm_object_param_utils($(prefix_name)_$(tr_name) $(get_param_conn(params_prefix, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -175,14 +184,17 @@ end
 
 gen_clknrst_tr(prefix_name) = begin 
     tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
+    
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    
     my_str = """
-    class $(prefix_name)_$(tr_name) $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_sequence_item;
+    class $(prefix_name)_$(tr_name) $(get_param_declaration(params_prefix, "    "))extends uvm_sequence_item;
         
     """
     
-    if has_parameters
+    if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
         my_str *= """
-            `uvm_object_param_utils($(prefix_name)_$(tr_name) $(get_param_conn(dut_name, "    ")[1:end-1]))
+            `uvm_object_param_utils($(prefix_name)_$(tr_name) $(get_param_conn(params_prefix, "    ")[1:end-1]))
         """
     else
         my_str *= """

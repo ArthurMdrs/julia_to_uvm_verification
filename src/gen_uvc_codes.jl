@@ -60,6 +60,10 @@ gen_files(uvc_name) = begin
         end
     end
     
+    if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
+        write_file("$(agents_dir)/$(uvc_name)/$(uvc_name)_params_pkg.sv", gen_uvc_params_pkg(uvc_name))
+    end
+    
     # Generate sequences
     write_file("$(sequences_dir)/$(uvc_name)/$(uvc_name)_base_sequence.sv", gen_base_seq(uvc_name))
     if using_this_clknrst == true && uvc_name == clknrst_name

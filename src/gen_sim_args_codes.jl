@@ -11,7 +11,10 @@ gen_uvc_include(uvc_name, tabs) = begin
     $(tabs)-incdir $(agents_dir)/$(uvc_name)
     $(tabs)-incdir $(sequences_dir)/$(uvc_name)
     """
-    if get_uvc_cfg_fld(uvc_name, :gen_tdefs_pkg) == true
+    if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
+        my_str *= "$(tabs)$(agents_dir)/$(uvc_name)/$(uvc_name)_params_pkg.sv\n"
+    end
+    if get_uvc_cfg_fld(uvc_name, :gen_tdefs_pkg)
         my_str *= "$(tabs)$(agents_dir)/$(uvc_name)/$(uvc_name)_tdefs_pkg.sv\n"
     end
     my_str *= """
@@ -50,17 +53,42 @@ end
 
 gen_env_srclist() = begin
     my_str = ""
-    if has_parameters
+    
+    agts_bef_env_params = []
+    agts_aft_env_params = []
+    for uvc_name in uvc_names
+        if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
+            push!(agts_bef_env_params, uvc_name)
+        else
+            push!(agts_aft_env_params, uvc_name)
+        end
+    end
+    
+    if size(agts_bef_env_params)[1] > 0
+        my_str *= """
+        // Agents
+        $( gen_long_str(agts_bef_env_params, "    ", gen_line_agent_lst)[1:end-1] )
+        
+        """
+    end
+    
+    if env_has_params
         my_str *= """
         // Parameters package
             $(env_dir)/$(dut_name)_params_pkg.sv
             
         """
     end
-    my_str *= """
-    // Agents
-    $( gen_long_str(uvc_names, "    ", gen_line_agent_lst)[1:end-1] )
     
+    if size(agts_aft_env_params)[1] > 0
+        my_str *= """
+        // Agents
+        $( gen_long_str(agts_aft_env_params, "    ", gen_line_agent_lst)[1:end-1] )
+        
+        """
+    end
+    
+    my_str *= """
     // Env
         -incdir $(env_dir)
         -incdir $(sequences_dir)

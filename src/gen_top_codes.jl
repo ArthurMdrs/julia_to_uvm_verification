@@ -8,12 +8,11 @@ gen_line_interfaces_instances(uvc_name, tabs) = begin
     uvc_clock_name = get_uvc_cfg_fld(uvc_name, :clock_name )
     uvc_reset_name = get_uvc_cfg_fld(uvc_name, :reset_name )
     if_name        = get_uvc_cfg_fld(uvc_name, :class_names)["interface"]
-    params_str = has_parameters ? "#(.$(dut_name)_params($(dut_name)_params)) " : ""
-    return """$(tabs)$(uvc_name)_$(if_name) $(get_param_conn(dut_name, tabs))$(uvc_name)_if (.$(uvc_clock_name)($(clock_name)), .$(uvc_reset_name)($(reset_name)));\n"""
+    params_prefix = get_uvc_params_prefix(uvc_name)
+    return """$(tabs)$(uvc_name)_$(if_name) $(get_param_conn_env(params_prefix, tabs))$(uvc_name)_if (.$(uvc_clock_name)($(clock_name)), .$(uvc_reset_name)($(reset_name)));\n"""
 end
 gen_line_send_if_to_uvc(uvc_name, tabs) = begin
     if_name = get_uvc_cfg_fld(uvc_name, :class_names)["interface"]
-    # return """$(tabs)uvm_config_db#(virtual interface $(uvc_name)_$(if_name))::set(.cntxt(null), .inst_name("uvm_test_top"), .field_name("vif_$(uvc_name)"), .value($(uvc_name)_if));\n"""
     return """$(tabs)uvm_config_db#($(uvc_name)_vif_t)::set(.cntxt(null), .inst_name("uvm_test_top"), .field_name("$(uvc_name)_vif"), .value($(uvc_name)_if));\n"""
 end
 gen_line_if_connection(signal_name, uvc_name, tabs) = begin
@@ -58,7 +57,7 @@ gen_top_base() = begin
         
     """
     
-    if has_parameters
+    if env_has_params
         my_str *= """
             import $(dut_name)_params_pkg::*;
         """
@@ -68,7 +67,7 @@ gen_top_base() = begin
         import $(dut_name)_tb_pkg::*;
     """
         
-    if has_parameters
+    if env_has_params
         my_str *= """
             
             typedef $(dut_name)_test_base $(get_param_conn(dut_name, "    "))$(dut_name)_test_base_rplc;
@@ -86,7 +85,7 @@ gen_top_base() = begin
         // Virtual interface typedefs - begin
     """
     my_str *= """
-    $( gen_long_str(uvc_names, "        ", gen_line_vif_typedef)[1:end-1] )
+    $( gen_long_str(uvc_names, "        ", gen_line_vif_typedef_env)[1:end-1] )
         // Virtual interface typedefs - end
         
         
@@ -152,7 +151,13 @@ gen_tb_pkg() = begin
         `include "uvm_macros.svh"
         
     """
-    my_str *= has_parameters ? gen_line_import("$(dut_name)_params", "    ")*"    \n" : ""
+    my_str *= env_has_params ? gen_line_import("$(dut_name)_params", "    ") : ""
+    for uvc_name in uvc_names
+        if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
+            my_str *= gen_line_import("$(uvc_name)_params", "    ")
+        end
+    end
+    my_str *= env_has_params ? "    \n" : ""
     my_str *= """
     $( gen_long_str(uvc_names, "    ", gen_line_import_tdefs)[1:end-1] )
         

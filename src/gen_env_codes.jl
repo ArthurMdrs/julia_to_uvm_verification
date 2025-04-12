@@ -52,7 +52,7 @@ gen_vif_config_db_env(uvc_name, tabs, env_cfg_name) = begin
     return my_str
 end
 get_sb_param_conn(tabs) = begin
-    if has_parameters
+    if env_has_params
         @assert size(uvc_names, 1) >= 1
         tr_name = get_uvc_cfg_fld(uvc_names[1], :class_names)["transaction"]
         my_str = """
@@ -175,7 +175,7 @@ env_gen() = begin
         write_file("$(env_dir)/$(dut_name)_env.sv", gen_env_base())
         write_file("$(env_dir)/$(dut_name)_env_pkg.sv", gen_env_pkg())
         write_file("$(env_dir)/$(dut_name)_env_$(cfg_name).sv", gen_env_cfg())
-        if has_parameters 
+        if env_has_params 
             write_file("$(env_dir)/$(dut_name)_params_pkg.sv", gen_params_pkg())
         end
         write_file("$(env_dir)/$(dut_name)_$(vsqr_name).sv", gen_vsequencer())
@@ -205,16 +205,6 @@ gen_env_base() = begin
     
     # env_cfg_name = "m_$(dut_name)_env_$(cfg_name)"
     env_cfg_name = config_inst_convention
-    tdefs_list = ["$(dut_name)_env_$(cfg_name)"]
-    for uvc_name in uvc_names
-        agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
-        cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
-        tr_name    = get_uvc_cfg_fld(uvc_name, :class_names)["transaction"]
-        push!(tdefs_list, "$(uvc_name)_$(agent_name)")
-        push!(tdefs_list, "$(uvc_name)_$(cfg_name)")
-        push!(tdefs_list, "$(uvc_name)_$(tr_name)")
-    end
-    cfg_name   = class_names["config"      ]
     
     vif_list = []
     for uvc_name in uvc_names
@@ -223,12 +213,14 @@ gen_env_base() = begin
         end
     end
     
+    gen_lines_tdefs_w_param_env(name, tabs) = gen_lines_tdefs_w_param(dut_name, name, tabs)
+    
     my_str = """
-    class $(dut_name)_env $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_env;
+    class $(dut_name)_env $(get_param_declaration(dut_name, "    "))extends uvm_env;
         
     """
     
-    if has_parameters
+    if env_has_params
         my_str *= """
             `uvm_component_param_utils($(dut_name)_env $(get_param_conn(dut_name, "    ")[1:end-1]))
         """
@@ -241,7 +233,25 @@ gen_env_base() = begin
     my_str *= """
         
         // Typedefs - begin
-    $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param)[1:end-1] )
+    $( gen_lines_tdefs_w_param(dut_name, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1] )
+    """
+    
+    for uvc_name in uvc_names
+        tdefs_list = []
+        params_prefix = get_uvc_params_prefix(uvc_name)
+        agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
+        cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+        tr_name    = get_uvc_cfg_fld(uvc_name, :class_names)["transaction"]
+        my_str *= """
+        $( gen_lines_tdefs_w_param(params_prefix, "$(uvc_name)_$(agent_name)", "    ")[1:end-1] )
+        $( gen_lines_tdefs_w_param(params_prefix, "$(uvc_name)_$(cfg_name)", "    ")[1:end-1] )
+        $( gen_lines_tdefs_w_param(params_prefix, "$(uvc_name)_$(tr_name)", "    ")[1:end-1] )
+        """
+    end
+    cfg_name = class_names["config"]
+    
+    # $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param_env)[1:end-1] )
+    my_str *="""
     $( gen_vsqr_tdef("    ")[1:end-1] )
     """
     my_str *= gen_refmod ? "    typedef $(dut_name)_$(rm_name) $(get_sb_param_conn("    "))$(dut_name)_$(rm_name)_t;\n" : ""
@@ -454,8 +464,13 @@ gen_env_pkg() = begin
         `include "uvm_macros.svh"
         
     """
-    my_str *= has_parameters ? gen_line_import("$(dut_name)_params", "    ") : ""
-    my_str *= has_parameters ? "    \n" : ""
+    my_str *= env_has_params ? gen_line_import("$(dut_name)_params", "    ") : ""
+    for uvc_name in uvc_names
+        if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
+            my_str *= gen_line_import("$(uvc_name)_params", "    ")
+        end
+    end
+    my_str *= env_has_params ? "    \n" : ""
     my_str *= """
     $( gen_long_str(uvc_names, "    ", gen_line_import_tdefs)[1:end-1] )
     $( gen_long_str(uvc_names, "    ", gen_line_import)[1:end-1] )
@@ -489,17 +504,23 @@ gen_line_param(param_vec::sv_params_t, tabs) = begin
     my_str = "$(tabs)$(param_vec.type) $(param_vec.name);\n"
     return my_str
 end
-gen_line_param_assign(param_vec::sv_params_t, tabs) = begin
-    my_str = "$(tabs)$(param_vec.name): $(param_vec.default_val),\n"
+gen_line_default_uvc_param(uvc_name, tabs) = begin
+    if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
+        my_str = "$(tabs)$(uvc_name)_params: $(uvc_name)_params_pkg::$(uvc_name)_params,\n"
+    else
+        my_str = ""
+    end
     return my_str
 end
 gen_param_inst(tabs) = begin
+    aux_str = """
+    $( gen_long_str(params_vec, tabs*"    ", gen_line_param_assign)[1:end-1] )
+    $( gen_long_str(uvc_names, tabs*"    ", gen_line_default_uvc_param)[1:end-1] )
+    """
     str = ""
-    if has_parameters == true
-        str *= "$(tabs)localparam $(dut_name)_params_t $(dut_name)_params = '{\n"
-        str *= gen_long_str(params_vec, tabs*"    ", gen_line_param_assign)[1:end-2]
-        str *= "\n$(tabs)};\n"
-    end
+    str *= "$(tabs)localparam $(dut_name)_params_t $(dut_name)_params = '{\n"
+    str *= aux_str[1:end-2]
+    str *= "\n$(tabs)};\n"
     return str
 end
 
@@ -507,8 +528,23 @@ gen_params_pkg() = begin
     my_str = """
     package $(dut_name)_params_pkg;
         
+    """
+    for uvc_name in uvc_names
+        if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
+            my_str *= gen_line_import("$(uvc_name)_params", "    ")
+        end
+    end
+    my_str *= """
+        
         typedef struct packed {
     $( gen_long_str(params_vec, "        ", gen_line_param)[1:end-1] )
+    """
+    for uvc_name in uvc_names
+        if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
+            my_str *= "        $(uvc_name)_params_t $(uvc_name)_params;\n"
+        end
+    end
+    my_str *= """
         } $(dut_name)_params_t;
         
     """
@@ -534,40 +570,34 @@ gen_env_cfg() = begin
     
     cfg_name = class_names["config"]
     
-    # vif_list = []
-    # for uvc_name in uvc_names
-    #     if get_uvc_cfg_fld(uvc_name, :vif_in_config) == true
-    #         push!(vif_list, uvc_name)
-    #     end
-    # end
+    gen_lines_tdefs_w_param_env(name, tabs) = gen_lines_tdefs_w_param(dut_name, name, tabs)
     
     my_str = """
-    class $(dut_name)_env_$(cfg_name) $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_object;
+    class $(dut_name)_env_$(cfg_name) $(get_param_declaration(dut_name, "    "))extends uvm_object;
         
     """
     
-    if has_parameters
+    if env_has_params
         my_str *= """
             `uvm_object_param_utils($(dut_name)_env_$(cfg_name) $(get_param_conn(dut_name, "    ")))
+            
         """
     else
         my_str *= """
             `uvm_object_utils($(dut_name)_env_$(cfg_name))
+            
         """
     end
     
-    # if size(vif_list, 1) != 0
-    #     my_str *= """
-            
-    #     $( gen_long_str(vif_list, "    ", gen_line_vif_typedef)[1:end-1] )
-            
-    #     $( gen_long_str(vif_list, "    ", gen_line_vif_instance)[1:end-1] )
-    #     """
-    # end
+    for uvc_name in uvc_names
+        params_prefix = get_uvc_params_prefix(uvc_name)
+        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+        my_str *= """
+        $( gen_lines_tdefs_w_param(params_prefix, "$(uvc_name)_$(cfg_name)", "    ")[1:end-1] )
+        """
+    end
     
     my_str *="""
-        
-    $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param)[1:end-1] )
         
     $( gen_long_str(uvc_names, "    ", gen_line_cfg_instance)[1:end-1] )
         

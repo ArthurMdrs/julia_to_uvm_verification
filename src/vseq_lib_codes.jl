@@ -39,12 +39,13 @@ gen_vseq_base() = begin
     vsqr_name = class_names["vsequencer"]
     sqr_name  = class_names["sequencer" ]
     cfg_name = class_names["config"]
+    gen_lines_tdefs_w_param_env(name, tabs) = gen_lines_tdefs_w_param(dut_name, name, tabs)
     my_str = """
     class $(dut_name)_base_vsequence $(get_vsqr_param_declaration("    "))extends uvm_sequence;
         
     """
     
-    if has_parameters
+    if env_has_params
         my_str *= """
             `uvm_object_param_utils($(dut_name)_base_vsequence $(get_vsqr_param_conn("    ")[1:end-1]))
         """
@@ -57,7 +58,7 @@ gen_vseq_base() = begin
     my_str *= """
     
         // Typedefs - begin
-    $( gen_lines_tdefs_w_param("$(dut_name)_env_$(cfg_name)", "    ")[1:end-1] )
+    $( gen_lines_tdefs_w_param_env("$(dut_name)_env_$(cfg_name)", "    ")[1:end-1] )
     """
     
     seq_list = []
@@ -156,7 +157,7 @@ gen_vseq_random() = begin
         
     """
     
-    if has_parameters
+    if env_has_params
         my_str *= """
             `uvm_object_param_utils($(dut_name)_random_vseq $(get_vsqr_param_conn("    ")[1:end-1]))
         """

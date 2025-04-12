@@ -6,7 +6,7 @@
 
 get_normal_mon_funcs(prefix_name) = begin
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
-    tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     if reset_mechanism == run_phase_reset
         reset_name = get_uvc_cfg_fld(prefix_name, :reset_name)
         rst_is_negedge_sensitive = get_uvc_cfg_fld(prefix_name, :rst_is_negedge_sensitive)
@@ -44,7 +44,7 @@ get_normal_mon_funcs(prefix_name) = begin
     my_str *= """
         task collect ();
             forever begin
-                mon_tr = seq_item_t::type_id::create("mon_tr", this);
+                mon_tr = $(tr_type)::type_id::create("mon_tr", this);
                 
                 void'(begin_tr(mon_tr, "$(uppercase(prefix_name))_MONITOR_TR"));
                 vif.collect_tr(mon_tr);
@@ -61,7 +61,7 @@ get_normal_mon_funcs(prefix_name) = begin
 end
 get_clknrst_mon_funcs(prefix_name) = begin
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
-    tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     my_str =  """
         task run_phase (uvm_phase phase);
             super.run_phase(phase);
@@ -87,15 +87,19 @@ gen_monitor(prefix_name, type::uvc_class_type) = begin
     mon_name = get_uvc_cfg_fld(prefix_name, :class_names)["monitor"    ]
     cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
-    tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    
+    gen_lines_tdefs_w_param_uvc(name, tabs) = gen_lines_tdefs_w_param(params_prefix, name, tabs)
     my_str = """
-    class $(prefix_name)_$(mon_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_monitor;
+    class $(prefix_name)_$(mon_name) $(get_param_declaration_w_seq_item(params_prefix, "    "))extends uvm_monitor;
         
     """
     
-    if has_parameters
+    if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
         my_str *= """
-            `uvm_component_param_utils($(prefix_name)_$(mon_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(mon_name) $(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -105,7 +109,7 @@ gen_monitor(prefix_name, type::uvc_class_type) = begin
     
     my_str *= """
         
-    $( gen_lines_tdefs_w_param("$(prefix_name)_$(cfg_name)", "    ")[1:end-1] )
+    $( gen_lines_tdefs_w_param_uvc("$(prefix_name)_$(cfg_name)", "    ")[1:end-1] )
     $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
         
         $(prefix_name)_$(cfg_name)_t $(config_inst_convention);

@@ -62,7 +62,15 @@ end
 
 gen_line_vif_typedef(uvc_name, tabs) = begin
     if_name = get_uvc_cfg_fld(uvc_name, :class_names)["interface"]
-    my_str = "$(tabs)typedef virtual interface $(uvc_name)_$(if_name) $(get_param_conn(dut_name, tabs))$(uvc_name)_vif_t;\n"
+    params_prefix = get_uvc_params_prefix(uvc_name)
+    my_str = "$(tabs)typedef virtual interface $(uvc_name)_$(if_name) $(get_param_conn(params_prefix, tabs))$(uvc_name)_vif_t;\n"
+    return my_str
+end
+
+gen_line_vif_typedef_env(uvc_name, tabs) = begin
+    if_name = get_uvc_cfg_fld(uvc_name, :class_names)["interface"]
+    params_prefix = get_uvc_params_prefix(uvc_name)
+    my_str = "$(tabs)typedef virtual interface $(uvc_name)_$(if_name) $(get_param_conn_env(params_prefix, tabs))$(uvc_name)_vif_t;\n"
     return my_str
 end
 
@@ -80,9 +88,39 @@ gen_line_if_signal(vec::if_field_t, tabs; end_of_line=";") = begin
     return "$(tabs)$(vec.type) $(vec.range) $(vec.field_name)$(end_of_line)\n"
 end
 
-get_param_declaration(params_vec, prefix_name, tabs) = begin
+check_for_params(prefix_name) = begin
+    do_flag = false
+    hierarchical = false
+    if prefix_name in uvc_names
+        if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
+            do_flag = true
+            if !get_uvc_cfg_fld(prefix_name, :use_env_params)
+                hierarchical = true
+            end
+        end
+    elseif prefix_name == dut_name && env_has_params
+        do_flag = true
+    end
+    return do_flag, hierarchical
+end
+
+get_uvc_params_prefix(prefix_name) = begin
+    if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
+        if get_uvc_cfg_fld(prefix_name, :use_env_params)
+            params_prefix = dut_name
+        else
+            params_prefix = prefix_name
+        end
+    else
+        params_prefix = ""
+    end
+    return params_prefix
+end
+
+get_param_declaration(prefix_name, tabs) = begin
+    do_flag, hierarchical = check_for_params(prefix_name)
     my_str = ""
-    if has_parameters
+    if do_flag
         my_str *= "#(\n"
         my_str *= "$(tabs)parameter $(prefix_name)_params_t $(prefix_name)_params = '0\n"
         my_str *= ") "
@@ -90,9 +128,10 @@ get_param_declaration(params_vec, prefix_name, tabs) = begin
     return my_str
 end
 
-get_param_declaration_w_seq_item(params_vec, prefix_name, tabs) = begin
+get_param_declaration_w_seq_item(prefix_name, tabs) = begin
+    do_flag, hierarchical = check_for_params(prefix_name)
     my_str = ""
-    if has_parameters
+    if do_flag
         my_str *= """
         #(
         $(tabs)parameter type seq_item_t = uvm_sequence_item,
@@ -103,7 +142,8 @@ get_param_declaration_w_seq_item(params_vec, prefix_name, tabs) = begin
 end
 
 get_param_conn(prefix_name, tabs) = begin
-    if has_parameters
+    do_flag, hierarchical = check_for_params(prefix_name)
+    if do_flag
         my_str = "#(\n$(tabs)    .$(prefix_name)_params($(prefix_name)_params)\n$(tabs)) "
     else
         my_str = ""
@@ -111,13 +151,55 @@ get_param_conn(prefix_name, tabs) = begin
     return my_str
 end
 
+get_param_conn_env(prefix_name, tabs) = begin
+    do_flag, hierarchical = check_for_params(prefix_name)
+    if do_flag
+        if hierarchical
+            my_str = "#(\n$(tabs)    .$(prefix_name)_params($(dut_name)_params.$(prefix_name)_params)\n$(tabs)) "
+        else
+            my_str = "#(\n$(tabs)    .$(prefix_name)_params($(prefix_name)_params)\n$(tabs)) "
+        end
+    else
+        my_str = ""
+    end
+    return my_str
+end
+
 get_param_conn_w_seq_item(prefix_name, tabs) = begin
-    if has_parameters
+    do_flag, hierarchical = check_for_params(prefix_name)
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    if do_flag
         tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
         my_str = """
         #(
         $(tabs)    .seq_item_t($(prefix_name)_$(tr_name)_t),
-        $(tabs)    .$(dut_name)_params($(dut_name)_params)
+        $(tabs)    .$(params_prefix)_params($(params_prefix)_params)
+        $(tabs)) """
+    else
+        my_str = ""
+    end
+    return my_str
+end
+
+get_param_conn_w_seq_item_env(prefix_name, tabs) = begin
+    do_flag, hierarchical = check_for_params(prefix_name)
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    if do_flag
+        tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
+        my_str = """
+        #(
+        $(tabs)    .seq_item_t($(prefix_name)_$(tr_name)_t),
+        """
+        if hierarchical
+            my_str *= """
+            $(tabs)    .$(params_prefix)_params($(dut_name)_params.$(params_prefix)_params)
+            """
+        else
+            my_str *= """
+            $(tabs)    .$(params_prefix)_params($(params_prefix)_params)
+            """
+        end
+        my_str *= """
         $(tabs)) """
     else
         my_str = ""
@@ -126,7 +208,8 @@ get_param_conn_w_seq_item(prefix_name, tabs) = begin
 end
 
 get_param_conn_w_seq_item2(prefix_name, tabs) = begin
-    if has_parameters
+    do_flag, hierarchical = check_for_params(prefix_name)
+    if do_flag
         my_str = """
         #(
         $(tabs)    .seq_item_t(seq_item_t),
@@ -139,7 +222,8 @@ get_param_conn_w_seq_item2(prefix_name, tabs) = begin
 end
 
 gen_vsqr_param_conn(tabs) = begin
-    if has_parameters
+    # do_flag, hierarchical = check_for_params(prefix_name)
+    if env_has_params
         my_str = """
         #(
         $( gen_long_str(uvc_names, "$(tabs)    ", gen_line_seq_item_t_conn)[1:end-1] )
@@ -151,8 +235,13 @@ gen_vsqr_param_conn(tabs) = begin
     return my_str
 end
 
-gen_lines_tdefs_w_param(name, tabs) = begin
-    my_str = "$(tabs)typedef $(name) $(get_param_conn(dut_name, tabs))$(name)_t;\n"
+gen_lines_tdefs_w_param(params_prefix, name, tabs) = begin
+    my_str = "$(tabs)typedef $(name) $(get_param_conn(params_prefix, tabs))$(name)_t;\n"
+    return my_str
+end
+
+gen_lines_tdefs_w_param_env(params_prefix, name, tabs) = begin
+    my_str = "$(tabs)typedef $(name) $(get_param_conn_env(params_prefix, tabs))$(name)_t;\n"
     return my_str
 end
 
@@ -161,8 +250,13 @@ gen_lines_tdefs_w_param_w_seq_item(name, uvc_name, tabs) = begin
     return my_str
 end
 
-gen_lines_tdefs_w_param_w_seq_item2(name, tabs) = begin
-    my_str = "$(tabs)typedef $(name) $(get_param_conn_w_seq_item2(dut_name, tabs))$(name)_t;\n"
+gen_lines_tdefs_w_param_w_seq_item_env(name, uvc_name, tabs) = begin
+    my_str = "$(tabs)typedef $(name) $(get_param_conn_w_seq_item_env(uvc_name, tabs))$(name)_t;\n"
+    return my_str
+end
+
+gen_lines_tdefs_w_param_w_seq_item2(params_prefix, name, tabs) = begin
+    my_str = "$(tabs)typedef $(name) $(get_param_conn_w_seq_item2(params_prefix, tabs))$(name)_t;\n"
     return my_str
 end
 
@@ -192,4 +286,8 @@ gen_line_import_tdefs(uvc_name, tabs) = begin
     end
 end
 
+gen_line_param_assign(param_vec::sv_params_t, tabs) = begin
+    my_str = "$(tabs)$(param_vec.name): $(param_vec.default_val),\n"
+    return my_str
+end
 

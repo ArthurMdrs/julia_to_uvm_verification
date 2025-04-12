@@ -37,6 +37,16 @@
       type: logic
       range: "[7:0]"
       is_output: false
+  
+  uvc_has_params: true
+  use_env_params: false
+  params_vec:
+    - type: int
+      name: PARAM1
+      default_val: "100"
+    - type: bit [7:0]
+      name: PARAM2
+      default_val: 8'hAB
 
 
 
@@ -82,4 +92,64 @@
     agent: agt
     transaction: seq_item
     config: conf
+  
+  uvc_has_params: true
+  use_env_params: true
+  params_vec:
+    - type: int
+      name: PARAM1
+      default_val: "100"
+    - type: bit [7:0]
+      name: PARAM2
+      default_val: 8'hAB
+
+
+
+- uvc: too_many_uvc
+  rst_is_negedge_sensitive: true
+  clock_name: clk
+  reset_name: rst_n
+
+  use_short_names: true
+  agent_has_coverage: false
+  gen_tdefs_pkg: false
+  vif_in_config: true
+  
+  tr_props_vec:
+    - field_name: random_data
+      type: logic
+      range: "[15:0]"
+      is_rand: true
+    - field_name: data_received
+      type: bit
+      range: "[7:0]"
+      is_rand: false
+  
+  if_sigs_vec:
+    - field_name: too_many_ready_o
+      type: logic
+      range: ""
+      is_output: true
+    - field_name: too_many_valid_i
+      type: logic
+      range: ""
+      is_output: false
+    - field_name: too_many_data_o
+      type: logic
+      range: "[7:0]"
+      is_output: true
+    - field_name: too_many_data_i
+      type: logic
+      range: "[7:0]"
+      is_output: false
+  
+  uvc_has_params: false
+  use_env_params: true
+  params_vec:
+    - type: int
+      name: PARAM1
+      default_val: "100"
+    - type: bit [7:0]
+      name: PARAM2
+      default_val: 8'hAB
   

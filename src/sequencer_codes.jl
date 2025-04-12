@@ -8,15 +8,19 @@ gen_sequencer_base(prefix_name) = begin
     sqr_name = get_uvc_cfg_fld(prefix_name, :class_names)["sequencer"]
     cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"]
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
-    tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    
+    gen_lines_tdefs_w_param_uvc(name, tabs) = gen_lines_tdefs_w_param(params_prefix, name, tabs)
     my_str = """
-    class $(prefix_name)_$(sqr_name) $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_sequencer#($(tr_type));
+    class $(prefix_name)_$(sqr_name) $(get_param_declaration_w_seq_item(params_prefix, "    "))extends uvm_sequencer#($(tr_type));
         
     """
     
-    if has_parameters
+    if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
         my_str *= """
-            `uvm_component_param_utils($(prefix_name)_$(sqr_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(sqr_name) $(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -26,7 +30,7 @@ gen_sequencer_base(prefix_name) = begin
     
     my_str *= """
         
-    $( gen_lines_tdefs_w_param("$(prefix_name)_$(cfg_name)", "    ")[1:end-1] )
+    $( gen_lines_tdefs_w_param_uvc("$(prefix_name)_$(cfg_name)", "    ")[1:end-1] )
     $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
         
         $(prefix_name)_$(cfg_name)_t $(config_inst_convention);

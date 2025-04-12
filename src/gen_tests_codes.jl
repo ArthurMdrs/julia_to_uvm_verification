@@ -90,12 +90,14 @@ gen_test_base() = begin
     
     env_cfg_name = config_inst_convention
     
+    gen_line0(name, tabs) = gen_lines_tdefs_w_param_env(dut_name, name, tabs)
+    
     my_str = """
-    class $(dut_name)_test_base $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_test;
+    class $(dut_name)_test_base $(get_param_declaration(dut_name, "    "))extends uvm_test;
         
     """
     
-    if has_parameters
+    if env_has_params
         my_str *= """
             `uvm_component_registry($(dut_name)_test_base #(
                 .$(dut_name)_params($(dut_name)_params)
@@ -110,18 +112,27 @@ gen_test_base() = begin
     end
     
     tdefs_list = ["$(dut_name)_env", "$(dut_name)_env_$(cfg_name)"]
+    my_str *= """
+        // Typedefs - begin
+    $( gen_long_str(tdefs_list, "    ", gen_line0)[1:end-1] )
+    """
+    
     for uvc_name in uvc_names
+        tdefs_list = []
         push!(tdefs_list, "$(uvc_name)_$(get_uvc_cfg_fld(uvc_name, :class_names)["config"])")
         push!(tdefs_list, "$(uvc_name)_$(get_uvc_cfg_fld(uvc_name, :class_names)["transaction"])")
+        params_prefix = get_uvc_params_prefix(uvc_name)
+        gen_line1(name, tabs) = gen_lines_tdefs_w_param_env(params_prefix, name, tabs)
+        my_str *= """
+        $( gen_long_str(tdefs_list, "    ", gen_line1)[1:end-1] )
+        """
     end
     
     my_str *= """
-        // Typedefs - begin
-    $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param)[1:end-1] )
     $( gen_vseq_tdef("base_vsequence", "    ")[1:end-1] )
     """
     my_str *= """
-    $( gen_long_str(uvc_names, "    ", gen_line_vif_typedef)[1:end-1] )
+    $( gen_long_str(uvc_names, "    ", gen_line_vif_typedef_env)[1:end-1] )
     """
     my_str *= """
         // Typedefs - end
@@ -266,10 +277,10 @@ end
 
 gen_test_random() = begin 
     my_str = """
-    class $(dut_name)_test_random $(get_param_declaration(params_vec, dut_name, "    "))extends $(dut_name)_test_base $(get_param_conn(dut_name, ""));
+    class $(dut_name)_test_random $(get_param_declaration(dut_name, "    "))extends $(dut_name)_test_base $(get_param_conn(dut_name, ""));
     
     """
-    if has_parameters
+    if env_has_params
         my_str *= """
             `uvm_component_registry($(dut_name)_test_random $(get_param_conn(dut_name, "    ")), "$(dut_name)_test_random")
             

@@ -15,14 +15,18 @@ gen_agent_base(prefix_name) = begin
     cov_name   = get_uvc_cfg_fld(prefix_name, :class_names)["coverage"   ]
     tr_name    = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     agent_has_coverage = get_uvc_cfg_fld(prefix_name, :agent_has_coverage)
+    
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    
+    gen_lines_tdefs_w_param_uvc(name, tabs) = gen_lines_tdefs_w_param(params_prefix, name, tabs)
     my_str = """
-    class $(prefix_name)_$(agent_name) $(get_param_declaration(params_vec, dut_name, "    "))extends uvm_agent;
+    class $(prefix_name)_$(agent_name) $(get_param_declaration(params_prefix, "    "))extends uvm_agent;
         
     """
     
-    if has_parameters
+    if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
         my_str *= """
-            `uvm_component_param_utils($(prefix_name)_$(agent_name) $(get_param_conn(dut_name, "    ")[1:end-1]))
+            `uvm_component_param_utils($(prefix_name)_$(agent_name) $(get_param_conn(params_prefix, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -39,7 +43,7 @@ gen_agent_base(prefix_name) = begin
     my_str *= """
         
         // Typedefs - begin
-    $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param)[1:end-1] )
+    $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param_uvc)[1:end-1] )
     """
     
     gen_lines(name, tabs) = gen_lines_tdefs_w_param_w_seq_item(name, prefix_name, tabs)

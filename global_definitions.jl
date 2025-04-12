@@ -91,7 +91,9 @@ mutable struct config_t
     agent_has_coverage::Union{Bool, Nothing}
     agent_has_tdefs_pkg::Union{Bool, Nothing}
     env_has_coverage::Union{Bool, Nothing}
-    has_parameters::Union{Bool, Nothing}
+    env_has_params::Union{Bool, Nothing}
+    uvc_has_params::Union{Bool, Nothing}
+    use_env_params::Union{Bool, Nothing}
     params_vec::Vector{sv_params_t}
     # params_vec::Vector{Vector{String}}
     config_inst_convention::String
@@ -140,7 +142,9 @@ global_config.use_short_names = true
 global_config.agent_has_coverage = false
 global_config.agent_has_tdefs_pkg = false
 global_config.env_has_coverage = false
-global_config.has_parameters = false
+global_config.env_has_params = false
+global_config.uvc_has_params = false
+global_config.use_env_params = false
 global_config.params_vec = []
 param_len = 3
 # cfg_name = use_short_names ? short_names_dict["config"] : long_names_dict["config"]
@@ -203,6 +207,9 @@ mutable struct uvc_config_t
     vif_in_config::Union{Bool, Nothing}
     tr_props_vec::Vector{tr_field_t}
     if_sigs_vec::Vector{if_field_t}
+    uvc_has_params::Union{Bool, Nothing}
+    use_env_params::Union{Bool, Nothing}
+    params_vec::Vector{sv_params_t}
     class_names::Dict{String, String}
     uvc_config_t() = new()
 end

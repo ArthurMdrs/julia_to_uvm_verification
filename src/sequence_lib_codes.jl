@@ -8,22 +8,26 @@ gen_base_seq(prefix_name) = begin
     sqr_name = get_uvc_cfg_fld(prefix_name, :class_names)["sequencer"  ]
     cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
-    tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    
+    gen_lines_tdefs_w_param_uvc(name, tabs) = gen_lines_tdefs_w_param(params_prefix, name, tabs)
     my_str = """
-    class $(prefix_name)_base_sequence $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends uvm_sequence #($(tr_type));
+    class $(prefix_name)_base_sequence $(get_param_declaration_w_seq_item(params_prefix, "    "))extends uvm_sequence #($(tr_type));
         
     """
     
     my_str *= """
-    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param)[1:end-1] )
+    $( gen_long_str(["$(prefix_name)_$(cfg_name)"], "    ", gen_lines_tdefs_w_param_uvc)[1:end-1] )
         
         $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
         
     """
     
-    if has_parameters
+    if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
         my_str *= """
-            `uvm_object_param_utils($(prefix_name)_base_sequence $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
+            `uvm_object_param_utils($(prefix_name)_base_sequence $(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -33,7 +37,7 @@ gen_base_seq(prefix_name) = begin
     
     my_str *= """
         
-        `uvm_declare_p_sequencer($(prefix_name)_$(sqr_name)$(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
+        `uvm_declare_p_sequencer($(prefix_name)_$(sqr_name)$(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
 
         function new(string name="$(prefix_name)_base_sequence");
             super.new(name);
@@ -76,11 +80,14 @@ end
 
 gen_random_seq(prefix_name) = begin
     tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
-    tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    
     my_str = """
-    class $(prefix_name)_random_seq $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends $(prefix_name)_base_sequence$(get_param_conn_w_seq_item2(dut_name, "")[1:end-1]);
+    class $(prefix_name)_random_seq $(get_param_declaration_w_seq_item(params_prefix, "    "))extends $(prefix_name)_base_sequence$(get_param_conn_w_seq_item2(params_prefix, "")[1:end-1]);
         
-        `uvm_object_param_utils($(prefix_name)_random_seq$(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
+        `uvm_object_param_utils($(prefix_name)_random_seq$(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
         
         function new(string name="$(prefix_name)_random_seq");
             super.new(name);
@@ -106,11 +113,14 @@ end
 
 gen_clknrst_action_seq(clknrst_action, prefix_name) = begin
     tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
-    tr_type = has_parameters ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    
     my_str = """
-    class $(prefix_name)_$(clknrst_action)_seq $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends $(prefix_name)_base_sequence$(get_param_conn_w_seq_item2(dut_name, "")[1:end-1]);
+    class $(prefix_name)_$(clknrst_action)_seq $(get_param_declaration_w_seq_item(params_prefix, "    "))extends $(prefix_name)_base_sequence$(get_param_conn_w_seq_item2(params_prefix, "")[1:end-1]);
 
-        `uvm_object_param_utils($(prefix_name)_$(clknrst_action)_seq$(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
+        `uvm_object_param_utils($(prefix_name)_$(clknrst_action)_seq$(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
 
         function new(string name="$(prefix_name)_$(clknrst_action)_seq");
             super.new(name);
@@ -132,21 +142,25 @@ gen_clknrst_action_seq(clknrst_action, prefix_name) = begin
 end
 
 gen_clknrst_rst_and_start_clk_seq(prefix_name) = begin 
+    
+    params_prefix = get_uvc_params_prefix(prefix_name)
+    
     my_str = """
-    class $(prefix_name)_reset_and_start_clk_seq $(get_param_declaration_w_seq_item(params_vec, dut_name, "    "))extends $(prefix_name)_base_sequence$(get_param_conn_w_seq_item2(dut_name, "")[1:end-1]);
+    class $(prefix_name)_reset_and_start_clk_seq $(get_param_declaration_w_seq_item(params_prefix, "    "))extends $(prefix_name)_base_sequence$(get_param_conn_w_seq_item2(params_prefix, "")[1:end-1]);
         
         // Typedefs - begin
     """
     
     tdefs_list_w_seq_item = ["$(prefix_name)_start_clk_seq", "$(prefix_name)_assert_reset_seq"]
+    gen_lines_tdefs_w_param_w_seq_item_uvc(name, tabs) = gen_lines_tdefs_w_param_w_seq_item2(params_prefix, name, tabs)
     my_str *= """
-    $( gen_long_str(tdefs_list_w_seq_item, "    ", gen_lines_tdefs_w_param_w_seq_item2)[1:end-1] )
+    $( gen_long_str(tdefs_list_w_seq_item, "    ", gen_lines_tdefs_w_param_w_seq_item_uvc)[1:end-1] )
         // Typedefs - end
         
         $(prefix_name)_start_clk_seq_t    m_start_clk_seq;
         $(prefix_name)_assert_reset_seq_t m_assert_reset_seq;
         
-        `uvm_object_param_utils($(prefix_name)_reset_and_start_clk_seq$(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
+        `uvm_object_param_utils($(prefix_name)_reset_and_start_clk_seq$(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
 
         function new(string name="$(prefix_name)_reset_and_start_clk_seq");
             super.new(name);
