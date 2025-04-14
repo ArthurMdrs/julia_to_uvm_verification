@@ -75,7 +75,7 @@ gen_env_srclist() = begin
     if env_has_params
         my_str *= """
         // Parameters package
-            $(env_dir)/$(dut_name)_params_pkg.sv
+            $(env_dir)/$(dut_name)_env_params_pkg.sv
             
         """
     end

@@ -176,7 +176,7 @@ env_gen() = begin
         write_file("$(env_dir)/$(dut_name)_env_pkg.sv", gen_env_pkg())
         write_file("$(env_dir)/$(dut_name)_env_$(cfg_name).sv", gen_env_cfg())
         if env_has_params 
-            write_file("$(env_dir)/$(dut_name)_params_pkg.sv", gen_params_pkg())
+            write_file("$(env_dir)/$(dut_name)_env_params_pkg.sv", gen_env_params_pkg())
         end
         write_file("$(env_dir)/$(dut_name)_$(vsqr_name).sv", gen_vsequencer())
         write_file("$(sequences_dir)/$(dut_name)_base_vsequence.sv", gen_vseq_base())
@@ -464,7 +464,7 @@ gen_env_pkg() = begin
         `include "uvm_macros.svh"
         
     """
-    my_str *= env_has_params ? gen_line_import("$(dut_name)_params", "    ") : ""
+    my_str *= env_has_params ? gen_line_import("$(dut_name)_env_params", "    ") : ""
     for uvc_name in uvc_names
         if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
             my_str *= gen_line_import("$(uvc_name)_params", "    ")
@@ -524,9 +524,9 @@ gen_param_inst(tabs) = begin
     return str
 end
 
-gen_params_pkg() = begin
+gen_env_params_pkg() = begin
     my_str = """
-    package $(dut_name)_params_pkg;
+    package $(dut_name)_env_params_pkg;
         
     """
     for uvc_name in uvc_names
@@ -554,7 +554,7 @@ gen_params_pkg() = begin
     """
     
     my_str *= """
-    endpackage : $(dut_name)_params_pkg
+    endpackage : $(dut_name)_env_params_pkg
     """
     return my_str
 end

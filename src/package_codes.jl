@@ -31,7 +31,7 @@ gen_tdefs_base(prefix_name) = begin
     if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
         if get_uvc_cfg_fld(prefix_name, :use_env_params)
             my_str *= """
-                import $(dut_name)_params_pkg::*;
+                import $(dut_name)_env_params_pkg::*;
                 
             """
         else
@@ -68,7 +68,7 @@ gen_pkg(prefix_name, type::uvc_class_type) = begin
     if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
         if get_uvc_cfg_fld(prefix_name, :use_env_params)
             my_str *= """
-                import $(dut_name)_params_pkg::*;
+                import $(dut_name)_env_params_pkg::*;
                 
             """
         else

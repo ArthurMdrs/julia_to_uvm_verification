@@ -59,7 +59,7 @@ gen_top_base() = begin
     
     if env_has_params
         my_str *= """
-            import $(dut_name)_params_pkg::*;
+            import $(dut_name)_env_params_pkg::*;
         """
     end
         
@@ -151,7 +151,7 @@ gen_tb_pkg() = begin
         `include "uvm_macros.svh"
         
     """
-    my_str *= env_has_params ? gen_line_import("$(dut_name)_params", "    ") : ""
+    my_str *= env_has_params ? gen_line_import("$(dut_name)_env_params", "    ") : ""
     for uvc_name in uvc_names
         if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
             my_str *= gen_line_import("$(uvc_name)_params", "    ")
