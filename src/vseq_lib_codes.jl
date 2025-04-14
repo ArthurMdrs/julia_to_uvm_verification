@@ -39,7 +39,6 @@ gen_vseq_base() = begin
     vsqr_name = class_names["vsequencer"]
     sqr_name  = class_names["sequencer" ]
     cfg_name = class_names["config"]
-    gen_lines_tdefs_w_param_env(name, tabs) = gen_lines_tdefs_w_param(dut_name, name, tabs)
     my_str = """
     class $(dut_name)_base_vsequence $(get_vsqr_param_declaration("    "))extends uvm_sequence;
         
@@ -58,7 +57,7 @@ gen_vseq_base() = begin
     my_str *= """
     
         // Typedefs - begin
-    $( gen_lines_tdefs_w_param_env("$(dut_name)_env_$(cfg_name)", "    ")[1:end-1] )
+    $( gen_lines_tdefs_w_param_env(dut_name, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1] )
     """
     
     seq_list = []
@@ -69,14 +68,14 @@ gen_vseq_base() = begin
         push!(seq_list, "$(clknrst_name)_reset_and_start_clk_seq")
     end
     for x in seq_list
-        my_str *= gen_lines_tdefs_w_param_w_seq_item(x, clknrst_name, "    ")
+        my_str *= gen_lines_tdefs_w_param_w_seq_item_env(x, clknrst_name, "    ")
     end
     for uvc_name in uvc_names
         if uvc_name == clknrst_name && using_this_clknrst == true
             continue
         end
         push!(seq_list, "$(uvc_name)_random_seq")
-        my_str *= gen_lines_tdefs_w_param_w_seq_item("$(uvc_name)_random_seq", uvc_name, "    ")[1:end-1]
+        my_str *= gen_lines_tdefs_w_param_w_seq_item_env("$(uvc_name)_random_seq", uvc_name, "    ")[1:end-1]
     end
     
     my_str *= """ 

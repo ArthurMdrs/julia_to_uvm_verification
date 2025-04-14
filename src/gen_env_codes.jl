@@ -213,8 +213,6 @@ gen_env_base() = begin
         end
     end
     
-    gen_lines_tdefs_w_param_env(name, tabs) = gen_lines_tdefs_w_param(dut_name, name, tabs)
-    
     my_str = """
     class $(dut_name)_env $(get_param_declaration(dut_name, "    "))extends uvm_env;
         
@@ -243,9 +241,9 @@ gen_env_base() = begin
         cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
         tr_name    = get_uvc_cfg_fld(uvc_name, :class_names)["transaction"]
         my_str *= """
-        $( gen_lines_tdefs_w_param(params_prefix, "$(uvc_name)_$(agent_name)", "    ")[1:end-1] )
-        $( gen_lines_tdefs_w_param(params_prefix, "$(uvc_name)_$(cfg_name)", "    ")[1:end-1] )
-        $( gen_lines_tdefs_w_param(params_prefix, "$(uvc_name)_$(tr_name)", "    ")[1:end-1] )
+        $( gen_lines_tdefs_w_param_env(params_prefix, "$(uvc_name)_$(agent_name)", "    ")[1:end-1] )
+        $( gen_lines_tdefs_w_param_env(params_prefix, "$(uvc_name)_$(cfg_name)", "    ")[1:end-1] )
+        $( gen_lines_tdefs_w_param_env(params_prefix, "$(uvc_name)_$(tr_name)", "    ")[1:end-1] )
         """
     end
     cfg_name = class_names["config"]
@@ -459,18 +457,13 @@ gen_env_pkg() = begin
     cov_name  = class_names["coverage"    ]
     my_str = """
     package $(dut_name)_env_pkg;
-
+        
         import uvm_pkg::*;
         `include "uvm_macros.svh"
         
     """
     my_str *= env_has_params ? gen_line_import("$(dut_name)_env_params", "    ") : ""
-    for uvc_name in uvc_names
-        if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
-            my_str *= gen_line_import("$(uvc_name)_params", "    ")
-        end
-    end
-    my_str *= env_has_params ? "    \n" : ""
+    my_str *= env_has_params ? "    " : ""
     my_str *= """
     $( gen_long_str(uvc_names, "    ", gen_line_import_tdefs)[1:end-1] )
     $( gen_long_str(uvc_names, "    ", gen_line_import)[1:end-1] )
@@ -492,7 +485,7 @@ gen_env_pkg() = begin
         
         `include "$(dut_name)_base_vsequence.sv"
         `include "$(dut_name)_random_vseq.sv"
-                
+        
     endpackage: $(dut_name)_env_pkg
     """
     return my_str
@@ -570,8 +563,6 @@ gen_env_cfg() = begin
     
     cfg_name = class_names["config"]
     
-    gen_lines_tdefs_w_param_env(name, tabs) = gen_lines_tdefs_w_param(dut_name, name, tabs)
-    
     my_str = """
     class $(dut_name)_env_$(cfg_name) $(get_param_declaration(dut_name, "    "))extends uvm_object;
         
@@ -593,7 +584,7 @@ gen_env_cfg() = begin
         params_prefix = get_uvc_params_prefix(uvc_name)
         cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
         my_str *= """
-        $( gen_lines_tdefs_w_param(params_prefix, "$(uvc_name)_$(cfg_name)", "    ")[1:end-1] )
+        $( gen_lines_tdefs_w_param_env(params_prefix, "$(uvc_name)_$(cfg_name)", "    ")[1:end-1] )
         """
     end
     
