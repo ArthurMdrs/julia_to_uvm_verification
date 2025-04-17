@@ -26,12 +26,13 @@ user_config.class_names = short_names_dict
 user_config.gen_tdefs_pkg = false
 user_config.vif_in_config = true
 user_config.pass_config_thru_db = false
-user_config.reset_mechanism = reset_phase_reset
+user_config.class_files_extension = "svh"
 
 # Clock and reset info
 user_config.clock_name = "clk"
 user_config.reset_name = "rst_n"
 user_config.rst_is_negedge_sensitive = true
+user_config.reset_mechanism = reset_phase_reset
 
 # Control what files to generate
 user_config.run_uvc_gen = true

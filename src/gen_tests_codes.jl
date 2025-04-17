@@ -75,8 +75,8 @@ end
 test_gen() = begin
     if run_test_gen == true
         output_file_setup("$(tests_dir)")
-        write_file("$(tests_dir)/$(dut_name)_test_base.sv", gen_test_base())
-        write_file("$(tests_dir)/$(dut_name)_test_random.sv", gen_test_random())
+        write_file("$(tests_dir)/$(dut_name)_test_base.$(class_files_extension)", gen_test_base())
+        write_file("$(tests_dir)/$(dut_name)_test_random.$(class_files_extension)", gen_test_random())
     end
 end
 

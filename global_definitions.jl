@@ -100,6 +100,7 @@ mutable struct config_t
     gen_tdefs_pkg::Union{Bool, Nothing}
     vif_in_config::Union{Bool, Nothing}
     pass_config_thru_db::Union{Bool, Nothing}
+    class_files_extension::String
     # Clock and reset info
     clock_name::String
     reset_name::String
@@ -150,6 +151,7 @@ global_config.class_names = short_names_dict
 global_config.gen_tdefs_pkg = false
 global_config.vif_in_config = true
 global_config.pass_config_thru_db = true
+global_config.class_files_extension = "svh"
 
 # Clock and reset info
 global_config.clock_name = "clk"

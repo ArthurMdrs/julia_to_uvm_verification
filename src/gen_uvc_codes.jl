@@ -31,10 +31,16 @@ clknrst_function_dict["agent"       ] = gen_clknrst_agent
 clknrst_function_dict["coverage"    ] = gen_clknrst_coverage    
 clknrst_function_dict["config"      ] = gen_clknrst_config      
 
-gen_single_file(uvc_name, class_name, function_dict) = begin
+gen_single_file(uvc_name, class_name, function_dict, classes_vec) = begin
     gen_class_func = function_dict[class_name]
     class_name = get_uvc_cfg_fld(uvc_name, :class_names)[class_name]
-    write_file("$(agents_dir)/$(uvc_name)/$(uvc_name)_$(class_name).sv", gen_class_func(uvc_name))
+    if "$(uvc_name)_$(class_name)" in classes_vec
+        is_class = true
+    else
+        is_class = false
+    end
+    ext = is_class ? class_files_extension : "sv"
+    write_file("$(agents_dir)/$(uvc_name)/$(uvc_name)_$(class_name).$(ext)", gen_class_func(uvc_name))
 end
 
 gen_files(uvc_name) = begin
@@ -44,35 +50,42 @@ gen_files(uvc_name) = begin
         function_dict_ = function_dict
     end
     
+    classes_vec = vector_to_pattern(uvc_name)
+    
     # Generate components
     for class_symbol in fieldnames(typeof(gen_classes))
         class_name = String(class_symbol)
+        do_not_gen = true
         if class_name == "coverage"
             if get_uvc_cfg_fld(uvc_name, :agent_has_coverage) == true
-                gen_single_file(uvc_name, class_name, function_dict_)
+                do_not_gen = false
             end
         elseif class_name == "tdefs_pkg"
             if get_uvc_cfg_fld(uvc_name, :gen_tdefs_pkg) == true
-                gen_single_file(uvc_name, class_name, function_dict_)
+                do_not_gen = false
             end
         elseif getfield(gen_classes, class_symbol) == true
-            gen_single_file(uvc_name, class_name, function_dict_)
+            do_not_gen = false
+        end
+        if do_not_gen == false
+            gen_single_file(uvc_name, class_name, function_dict_, classes_vec)
         end
     end
     
+    # Generate parameters vector
     if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
         write_file("$(agents_dir)/$(uvc_name)/$(uvc_name)_params_pkg.sv", gen_uvc_params_pkg(uvc_name))
     end
     
     # Generate sequences
-    write_file("$(sequences_dir)/$(uvc_name)/$(uvc_name)_base_sequence.sv", gen_base_seq(uvc_name))
+    write_file("$(sequences_dir)/$(uvc_name)/$(uvc_name)_base_sequence.$(class_files_extension)", gen_base_seq(uvc_name))
     if using_this_clknrst == true && uvc_name == clknrst_name
         for action in clknrst_actions_vec
-            write_file("$(sequences_dir)/$(uvc_name)/$(uvc_name)_$(action)_seq.sv", gen_clknrst_action_seq(action, uvc_name))
+            write_file("$(sequences_dir)/$(uvc_name)/$(uvc_name)_$(action)_seq.$(class_files_extension)", gen_clknrst_action_seq(action, uvc_name))
         end
-        write_file("$(sequences_dir)/$(uvc_name)/$(uvc_name)_reset_and_start_clk_seq.sv", gen_clknrst_rst_and_start_clk_seq(uvc_name))
+        write_file("$(sequences_dir)/$(uvc_name)/$(uvc_name)_reset_and_start_clk_seq.$(class_files_extension)", gen_clknrst_rst_and_start_clk_seq(uvc_name))
     else
-        write_file("$(sequences_dir)/$(uvc_name)/$(uvc_name)_random_seq.sv", gen_random_seq(uvc_name))
+        write_file("$(sequences_dir)/$(uvc_name)/$(uvc_name)_random_seq.$(class_files_extension)", gen_random_seq(uvc_name))
     end
 end
 

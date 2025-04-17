@@ -50,6 +50,23 @@ get_uvc_cfg_fld(uvc_name::String, field::Symbol) = begin
     end
 end
 
+vector_to_pattern(prefix_name) = begin
+    vec_out = []
+    for class_symbol in fieldnames(typeof(pkg_classes))
+        class_name = String(class_symbol)
+        if String(class_symbol) == "coverage"
+            if get_uvc_cfg_fld(prefix_name, :agent_has_coverage) == true
+                class_name = get_uvc_cfg_fld(prefix_name, :class_names)[class_name]
+                push!(vec_out, prefix_name*"_"*class_name)
+            end
+        elseif getfield(pkg_classes, class_symbol) == true
+            class_name = get_uvc_cfg_fld(prefix_name, :class_names)[class_name]
+            push!(vec_out, prefix_name*"_"*class_name)
+        end
+    end
+    return vec_out
+end
+
 gen_line_import(uvc_name, tabs) = begin
     return """
     $(tabs)import $(uvc_name)_pkg::*;

@@ -167,8 +167,8 @@ gen_tb_pkg() = begin
         
     $( gen_line_import("$(dut_name)_env", "    ")[1:end-1] )
         
-        `include "$(dut_name)_test_base.sv"
-        `include "$(dut_name)_test_random.sv"
+        `include "$(dut_name)_test_base.$(class_files_extension)"
+        `include "$(dut_name)_test_random.$(class_files_extension)"
         
     endpackage: $(dut_name)_tb_pkg
     """

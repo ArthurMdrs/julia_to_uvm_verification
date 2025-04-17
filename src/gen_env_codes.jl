@@ -172,23 +172,23 @@ env_gen() = begin
         output_file_setup("$(env_dir)")
         output_file_setup("$(sequences_dir)"; reset_folder=false)
         
-        write_file("$(env_dir)/$(dut_name)_env.sv", gen_env_base())
+        write_file("$(env_dir)/$(dut_name)_env.$(class_files_extension)", gen_env_base())
         write_file("$(env_dir)/$(dut_name)_env_pkg.sv", gen_env_pkg())
-        write_file("$(env_dir)/$(dut_name)_env_$(cfg_name).sv", gen_env_cfg())
+        write_file("$(env_dir)/$(dut_name)_env_$(cfg_name).$(class_files_extension)", gen_env_cfg())
         if env_has_params 
             write_file("$(env_dir)/$(dut_name)_env_params_pkg.sv", gen_env_params_pkg())
         end
-        write_file("$(env_dir)/$(dut_name)_$(vsqr_name).sv", gen_vsequencer())
-        write_file("$(sequences_dir)/$(dut_name)_base_vsequence.sv", gen_vseq_base())
-        write_file("$(sequences_dir)/$(dut_name)_random_vseq.sv", gen_vseq_random())
+        write_file("$(env_dir)/$(dut_name)_$(vsqr_name).$(class_files_extension)", gen_vsequencer())
+        write_file("$(sequences_dir)/$(dut_name)_base_vsequence.$(class_files_extension)", gen_vseq_base())
+        write_file("$(sequences_dir)/$(dut_name)_random_vseq.$(class_files_extension)", gen_vseq_random())
         if gen_scoreboard 
-            write_file("$(env_dir)/$(dut_name)_$(sb_name).sv", gen_scoreboard_base())
+            write_file("$(env_dir)/$(dut_name)_$(sb_name).$(class_files_extension)", gen_scoreboard_base())
         end
         if gen_refmod
-            write_file("$(env_dir)/$(dut_name)_$(rm_name).sv", gen_refmod_base())
+            write_file("$(env_dir)/$(dut_name)_$(rm_name).$(class_files_extension)", gen_refmod_base())
         end
         if env_has_coverage
-            write_file("$(env_dir)/$(dut_name)_$(cov_name).sv", gen_env_coverage_base())
+            write_file("$(env_dir)/$(dut_name)_$(cov_name).$(class_files_extension)", gen_env_coverage_base())
         end
     end
 end
@@ -470,23 +470,23 @@ gen_env_pkg() = begin
     $( gen_long_str(uvc_names, "    ", gen_line_import_tdefs)[1:end-1] )
     $( gen_long_str(uvc_names, "    ", gen_line_import)[1:end-1] )
         
-        `include "$(dut_name)_env_$(cfg_name).sv"
-        `include "$(dut_name)_$(vsqr_name).sv"
+        `include "$(dut_name)_env_$(cfg_name).$(class_files_extension)"
+        `include "$(dut_name)_$(vsqr_name).$(class_files_extension)"
     """
     if gen_refmod
-        my_str *= "    `include \"$(dut_name)_$(rm_name).sv\"\n"
+        my_str *= "    `include \"$(dut_name)_$(rm_name).$(class_files_extension)\"\n"
     end
     if gen_scoreboard
-        my_str *= "    `include \"$(dut_name)_$(sb_name).sv\"\n"
+        my_str *= "    `include \"$(dut_name)_$(sb_name).$(class_files_extension)\"\n"
     end
     if env_has_coverage
-        my_str *= "    `include \"$(dut_name)_$(cov_name).sv\"\n"
+        my_str *= "    `include \"$(dut_name)_$(cov_name).$(class_files_extension)\"\n"
     end
     my_str *= """
-        `include "$(dut_name)_env.sv"
+        `include "$(dut_name)_env.$(class_files_extension)"
         
-        `include "$(dut_name)_base_vsequence.sv"
-        `include "$(dut_name)_random_vseq.sv"
+        `include "$(dut_name)_base_vsequence.$(class_files_extension)"
+        `include "$(dut_name)_random_vseq.$(class_files_extension)"
         
     endpackage: $(dut_name)_env_pkg
     """

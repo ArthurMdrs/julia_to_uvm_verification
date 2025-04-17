@@ -3,24 +3,7 @@
 # ***********************************
 # Creates the UVC package
 # ***********************************
-gen_line_include(file_name, tabs) = "$(tabs)`include \"$(file_name).sv\"\n"
-
-vector_to_pattern(prefix_name) = begin
-    vec_out = []
-    for class_symbol in fieldnames(typeof(pkg_classes))
-        class_name = String(class_symbol)
-        if String(class_symbol) == "coverage"
-            if get_uvc_cfg_fld(prefix_name, :agent_has_coverage) == true
-                class_name = get_uvc_cfg_fld(prefix_name, :class_names)[class_name]
-                push!(vec_out, prefix_name*"_"*class_name)
-            end
-        elseif getfield(pkg_classes, class_symbol) == true
-            class_name = get_uvc_cfg_fld(prefix_name, :class_names)[class_name]
-            push!(vec_out, prefix_name*"_"*class_name)
-        end
-    end
-    return vec_out
-end
+gen_line_include(file_name, tabs) = "$(tabs)`include \"$(file_name).$(class_files_extension)\"\n"
 
 gen_tdefs_base(prefix_name) = begin
     vec = params_vec
@@ -89,12 +72,12 @@ gen_pkg(prefix_name, type::uvc_class_type) = begin
     my_str *= """
     $( gen_long_str(vec, "    ", gen_line_include)[1:end-1] )
         
-        `include "$(prefix_name)_base_sequence.sv"
+        `include "$(prefix_name)_base_sequence.$(class_files_extension)"
     """
     
     if type == normal::uvc_class_type
         my_str *= """
-            `include "$(prefix_name)_random_seq.sv"
+            `include "$(prefix_name)_random_seq.$(class_files_extension)"
         """
     elseif type == clknrst::uvc_class_type
         seq_vec = []
@@ -103,7 +86,7 @@ gen_pkg(prefix_name, type::uvc_class_type) = begin
         end
         my_str *= """
         $( gen_long_str(seq_vec, "    ", gen_line_include)[1:end-1] )
-            `include "$(prefix_name)_reset_and_start_clk_seq.sv"
+            `include "$(prefix_name)_reset_and_start_clk_seq.$(class_files_extension)"
         """
     end
         

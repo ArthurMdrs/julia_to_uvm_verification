@@ -117,6 +117,7 @@ class_names = get_usr_cfg_fld(:class_names)
 gen_tdefs_pkg = get_usr_cfg_fld(:gen_tdefs_pkg)
 vif_in_config = get_usr_cfg_fld(:vif_in_config)
 pass_config_thru_db = get_usr_cfg_fld(:pass_config_thru_db)
+class_files_extension = get_usr_cfg_fld(:class_files_extension)
 
 # Clock and reset info
 clock_name = get_usr_cfg_fld(:clock_name)
