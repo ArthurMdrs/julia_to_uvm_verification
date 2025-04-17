@@ -47,6 +47,8 @@ end
 gen_top_base() = begin
     if_name = class_names["interface"]
     
+    params_prefix = get_uvc_params_prefix(dut_name)
+    
     my_str = """
     `default_nettype none
     
@@ -70,9 +72,9 @@ gen_top_base() = begin
     if env_has_params
         my_str *= """
             
-            typedef $(dut_name)_test_base $(get_param_conn(dut_name, "    "))$(dut_name)_test_base_rplc;
+            typedef $(dut_name)_test_base $(get_param_conn(params_prefix, "    "))$(dut_name)_test_base_rplc;
             
-            typedef $(dut_name)_test_random $(get_param_conn(dut_name, "    "))$(dut_name)_test_random_rplc;
+            typedef $(dut_name)_test_random $(get_param_conn(params_prefix, "    "))$(dut_name)_test_random_rplc;
             
         """
     end

@@ -39,6 +39,9 @@ gen_vseq_base() = begin
     vsqr_name = class_names["vsequencer"]
     sqr_name  = class_names["sequencer" ]
     cfg_name = class_names["config"]
+    
+    params_prefix = get_uvc_params_prefix(dut_name)
+    
     my_str = """
     class $(dut_name)_base_vsequence $(get_vsqr_param_declaration("    "))extends uvm_sequence;
         
@@ -57,7 +60,7 @@ gen_vseq_base() = begin
     my_str *= """
     
         // Typedefs - begin
-    $( gen_lines_tdefs_w_param_env(dut_name, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1] )
+    $( gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1] )
     """
     
     seq_list = []

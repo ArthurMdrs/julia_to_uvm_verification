@@ -98,19 +98,21 @@ check_for_params(prefix_name) = begin
                 hierarchical = true
             end
         end
-    elseif prefix_name == dut_name && env_has_params
+    elseif prefix_name == dut_name*"_env" && env_has_params
         do_flag = true
     end
     return do_flag, hierarchical
 end
 
 get_uvc_params_prefix(prefix_name) = begin
-    if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
+    if prefix_name in uvc_names && get_uvc_cfg_fld(prefix_name, :uvc_has_params)
         if get_uvc_cfg_fld(prefix_name, :use_env_params)
-            params_prefix = dut_name
+            params_prefix = dut_name*"_env"
         else
             params_prefix = prefix_name
         end
+    elseif prefix_name == dut_name
+        params_prefix = dut_name*"_env"
     else
         params_prefix = ""
     end
@@ -155,7 +157,7 @@ get_param_conn_env(prefix_name, tabs) = begin
     do_flag, hierarchical = check_for_params(prefix_name)
     if do_flag
         if hierarchical
-            my_str = "#(\n$(tabs)    .$(prefix_name)_params($(dut_name)_params.$(prefix_name)_params)\n$(tabs)) "
+            my_str = "#(\n$(tabs)    .$(prefix_name)_params($(dut_name)_env_params.$(prefix_name)_params)\n$(tabs)) "
         else
             my_str = "#(\n$(tabs)    .$(prefix_name)_params($(prefix_name)_params)\n$(tabs)) "
         end
@@ -192,7 +194,7 @@ get_param_conn_w_seq_item_env(prefix_name, tabs) = begin
         """
         if hierarchical
             my_str *= """
-            $(tabs)    .$(params_prefix)_params($(dut_name)_params.$(params_prefix)_params)
+            $(tabs)    .$(params_prefix)_params($(dut_name)_env_params.$(params_prefix)_params)
             """
         else
             my_str *= """
@@ -227,7 +229,7 @@ gen_vsqr_param_conn(tabs) = begin
         my_str = """
         #(
         $( gen_long_str(uvc_names, "$(tabs)    ", gen_line_seq_item_t_conn)[1:end-1] )
-        $(tabs)    .$(dut_name)_params($(dut_name)_params)
+        $(tabs)    .$(dut_name)_env_params($(dut_name)_env_params)
         $(tabs)) """
     else
         my_str = ""

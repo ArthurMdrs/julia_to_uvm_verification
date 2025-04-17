@@ -16,7 +16,7 @@ get_vsqr_param_declaration(tabs) = begin
         my_str *= """
         #(
         $( gen_long_str(uvc_names, tabs, gen_line_seq_item_t_decl)[1:end-1] )
-        $(tabs)parameter $(dut_name)_params_t $(dut_name)_params = '0
+        $(tabs)parameter $(dut_name)_env_params_t $(dut_name)_env_params = '0
         ) """
     end
     return my_str
@@ -26,7 +26,7 @@ get_vsqr_param_conn(tabs) = begin
         my_str = """
         #(
         $( gen_long_str(uvc_names, tabs*"    ", gen_line_seq_item_t_conn)[1:end-1] )
-        $(tabs)    .$(dut_name)_params($(dut_name)_params)
+        $(tabs)    .$(dut_name)_env_params($(dut_name)_env_params)
         $(tabs)) """
     else
         my_str = ""
@@ -51,6 +51,9 @@ gen_vsequencer() = begin
     vsqr_name = class_names["vsequencer"]
     sqr_name  = class_names["sequencer" ]
     cfg_name  = class_names["config"    ]
+    
+    params_prefix = get_uvc_params_prefix(dut_name)
+    
     my_str = """
     class $(dut_name)_$(vsqr_name) $(get_vsqr_param_declaration("    "))extends uvm_sequencer;
         
@@ -69,7 +72,7 @@ gen_vsequencer() = begin
     my_str *= """
         
         // Typedefs - begin
-    $(gen_lines_tdefs_w_param_env(dut_name, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1])
+    $(gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1])
     """
     
     for uvc_name in uvc_names

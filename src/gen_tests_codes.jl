@@ -90,17 +90,19 @@ gen_test_base() = begin
     
     env_cfg_name = config_inst_convention
     
-    gen_line0(name, tabs) = gen_lines_tdefs_w_param_env(dut_name, name, tabs)
+    params_prefix = get_uvc_params_prefix(dut_name)
+    
+    gen_line0(name, tabs) = gen_lines_tdefs_w_param_env(params_prefix, name, tabs)
     
     my_str = """
-    class $(dut_name)_test_base $(get_param_declaration(dut_name, "    "))extends uvm_test;
+    class $(dut_name)_test_base $(get_param_declaration(params_prefix, "    "))extends uvm_test;
         
     """
     
     if env_has_params
         my_str *= """
             `uvm_component_registry($(dut_name)_test_base #(
-                .$(dut_name)_params($(dut_name)_params)
+                .$(dut_name)_env_params($(dut_name)_env_params)
             ), "$(dut_name)_test_base")
             
         """
@@ -276,13 +278,15 @@ gen_test_base() = begin
 end
 
 gen_test_random() = begin 
+    params_prefix = get_uvc_params_prefix(dut_name)
+    
     my_str = """
-    class $(dut_name)_test_random $(get_param_declaration(dut_name, "    "))extends $(dut_name)_test_base $(get_param_conn(dut_name, ""));
+    class $(dut_name)_test_random $(get_param_declaration(params_prefix, "    "))extends $(dut_name)_test_base $(get_param_conn(params_prefix, ""));
     
     """
     if env_has_params
         my_str *= """
-            `uvm_component_registry($(dut_name)_test_random $(get_param_conn(dut_name, "    ")), "$(dut_name)_test_random")
+            `uvm_component_registry($(dut_name)_test_random $(get_param_conn(params_prefix, "    ")), "$(dut_name)_test_random")
             
         """
     else

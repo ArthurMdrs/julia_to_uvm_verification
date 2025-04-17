@@ -58,7 +58,7 @@ get_sb_param_conn(tabs) = begin
         my_str = """
         #(
         $(tabs)    .seq_item_t($(uvc_names[1])_$(tr_name)_t),
-        $(tabs)    .$(dut_name)_params($(dut_name)_params)
+        $(tabs)    .$(dut_name)_env_params($(dut_name)_env_params)
         $(tabs)) """
     else
         my_str = ""
@@ -213,14 +213,16 @@ gen_env_base() = begin
         end
     end
     
+    params_prefix = get_uvc_params_prefix(dut_name)
+    
     my_str = """
-    class $(dut_name)_env $(get_param_declaration(dut_name, "    "))extends uvm_env;
+    class $(dut_name)_env $(get_param_declaration(params_prefix, "    "))extends uvm_env;
         
     """
     
     if env_has_params
         my_str *= """
-            `uvm_component_param_utils($(dut_name)_env $(get_param_conn(dut_name, "    ")[1:end-1]))
+            `uvm_component_param_utils($(dut_name)_env $(get_param_conn(params_prefix, "    ")[1:end-1]))
         """
     else
         my_str *= """
@@ -231,7 +233,7 @@ gen_env_base() = begin
     my_str *= """
         
         // Typedefs - begin
-    $( gen_lines_tdefs_w_param(dut_name, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1] )
+    $( gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1] )
     """
     
     for uvc_name in uvc_names
@@ -258,7 +260,7 @@ gen_env_base() = begin
     
     if size(vif_list, 1) != 0
         my_str *= """
-        $( gen_long_str(vif_list, "    ", gen_line_vif_typedef)[1:end-1] )
+        $( gen_long_str(vif_list, "    ", gen_line_vif_typedef_env)[1:end-1] )
         """
     end
     
@@ -511,7 +513,7 @@ gen_param_inst(tabs) = begin
     $( gen_long_str(uvc_names, tabs*"    ", gen_line_default_uvc_param)[1:end-1] )
     """
     str = ""
-    str *= "$(tabs)localparam $(dut_name)_params_t $(dut_name)_params = '{\n"
+    str *= "$(tabs)localparam $(dut_name)_env_params_t $(dut_name)_env_params = '{\n"
     str *= aux_str[1:end-2]
     str *= "\n$(tabs)};\n"
     return str
@@ -538,7 +540,7 @@ gen_env_params_pkg() = begin
         end
     end
     my_str *= """
-        } $(dut_name)_params_t;
+        } $(dut_name)_env_params_t;
         
     """
     
@@ -563,14 +565,16 @@ gen_env_cfg() = begin
     
     cfg_name = class_names["config"]
     
+    params_prefix = get_uvc_params_prefix(dut_name)
+    
     my_str = """
-    class $(dut_name)_env_$(cfg_name) $(get_param_declaration(dut_name, "    "))extends uvm_object;
+    class $(dut_name)_env_$(cfg_name) $(get_param_declaration(params_prefix, "    "))extends uvm_object;
         
     """
     
     if env_has_params
         my_str *= """
-            `uvm_object_param_utils($(dut_name)_env_$(cfg_name) $(get_param_conn(dut_name, "    ")))
+            `uvm_object_param_utils($(dut_name)_env_$(cfg_name) $(get_param_conn(params_prefix, "    ")))
             
         """
     else

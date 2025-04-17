@@ -95,17 +95,16 @@ mutable struct config_t
     uvc_has_params::Union{Bool, Nothing}
     use_env_params::Union{Bool, Nothing}
     params_vec::Vector{sv_params_t}
-    # params_vec::Vector{Vector{String}}
     config_inst_convention::String
     class_names::Dict{String, String}
     gen_tdefs_pkg::Union{Bool, Nothing}
     vif_in_config::Union{Bool, Nothing}
     pass_config_thru_db::Union{Bool, Nothing}
-    reset_mechanism::reset_mechanism_t
     # Clock and reset info
     clock_name::String
     reset_name::String
     rst_is_negedge_sensitive::Union{Bool, Nothing}
+    reset_mechanism::reset_mechanism_t
     # Control what files to generate
     run_uvc_gen::Union{Bool, Nothing}
     run_stub_gen::Union{Bool, Nothing}
@@ -146,20 +145,17 @@ global_config.env_has_params = false
 global_config.uvc_has_params = false
 global_config.use_env_params = false
 global_config.params_vec = []
-param_len = 3
-# cfg_name = use_short_names ? short_names_dict["config"] : long_names_dict["config"]
-# config_inst_convention = "m_$(cfg_name)"
 global_config.config_inst_convention = "m_config"
 global_config.class_names = short_names_dict
 global_config.gen_tdefs_pkg = false
 global_config.vif_in_config = true
 global_config.pass_config_thru_db = true
-global_config.reset_mechanism = run_phase_reset
 
 # Clock and reset info
 global_config.clock_name = "clk"
 global_config.reset_name = "rst_n"
 global_config.rst_is_negedge_sensitive = true
+global_config.reset_mechanism = run_phase_reset
 
 # Control what files to generate
 global_config.run_uvc_gen = true

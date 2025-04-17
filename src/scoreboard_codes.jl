@@ -8,14 +8,17 @@
 gen_scoreboard_base() = begin
     sb_name = class_names["scoreboard"]
     rm_name = class_names["ref_model" ]
+    
+    params_prefix = get_uvc_params_prefix(dut_name)
+    
     my_str = """
-    class $(dut_name)_$(sb_name) $(get_param_declaration_w_seq_item(dut_name, "    "))extends uvm_scoreboard;
+    class $(dut_name)_$(sb_name) $(get_param_declaration_w_seq_item(params_prefix, "    "))extends uvm_scoreboard;
         
     """
     
     if env_has_params
         my_str *= """
-            `uvm_component_param_utils($(dut_name)_$(sb_name) $(get_param_conn_w_seq_item2(dut_name, "    ")[1:end-1]))
+            `uvm_component_param_utils($(dut_name)_$(sb_name) $(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
         """
     else
         @assert size(uvc_names, 1) >= 1
