@@ -13,8 +13,7 @@ end
 gen_line_uvc_creation(uvc_name, tabs, env_cfg_name) = begin
     agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
     my_str = """
-    $(tabs)if ($(env_cfg_name).has_$(uvc_name)_agent)
-    $(tabs)    m_$(uvc_name)_$(agent_name) = $(uvc_name)_$(agent_name)_t::type_id::create("m_$(uvc_name)_$(agent_name)", this);
+    $(tabs)m_$(uvc_name)_$(agent_name) = $(uvc_name)_$(agent_name)_t::type_id::create("m_$(uvc_name)_$(agent_name)", this);
     """
     return my_str
 end
@@ -131,8 +130,7 @@ gen_line_cfg_config_db(uvc_name, tabs, env_cfg_name) = begin
     agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
     cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
     my_str = """
-    $(tabs)if ($(env_cfg_name).has_$(uvc_name)_agent)
-    $(tabs)    uvm_config_db#($(uvc_name)_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(uvc_name)_$(agent_name)"), .field_name("$(config_inst_convention)"), .value(m_$(uvc_name)_$(cfg_name)));
+    $(tabs)uvm_config_db#($(uvc_name)_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(uvc_name)_$(agent_name)"), .field_name("$(config_inst_convention)"), .value(m_$(uvc_name)_$(cfg_name)));
     """
     return my_str
 end
@@ -140,8 +138,7 @@ gen_assign_config_to_agent(uvc_name, tabs, env_cfg_name) = begin
     agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
     cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
     my_str = """
-    $(tabs)if ($(env_cfg_name).has_$(uvc_name)_agent)
-    $(tabs)    m_$(uvc_name)_$(agent_name).$(config_inst_convention) = m_$(uvc_name)_$(cfg_name);
+    $(tabs)m_$(uvc_name)_$(agent_name).$(config_inst_convention) = m_$(uvc_name)_$(cfg_name);
     """
     return my_str
 end
@@ -154,6 +151,24 @@ end
 gen_line_has_agent_assign(uvc_name, tabs) = begin
     my_str = """
     $(tabs)has_$(uvc_name)_agent = 1;
+    """
+    return my_str
+end
+gen_lines_set_config_db_and_create_agents(uvc_name, tabs, env_cfg_name) = begin
+    my_str  = """
+    $(tabs)if ($(env_cfg_name).has_$(uvc_name)_agent) begin
+    $( gen_line_cfg_config_db(uvc_name, tabs*"    ", env_cfg_name)[1:end-1] )
+    $( gen_line_uvc_creation(uvc_name, tabs*"    ", env_cfg_name)[1:end-1] )
+    $(tabs)end
+    """
+    return my_str
+end
+gen_lines_create_agents_and_assign_config(uvc_name, tabs, env_cfg_name) = begin
+    my_str  = """
+    $(tabs)if ($(env_cfg_name).has_$(uvc_name)_agent) begin
+    $( gen_line_uvc_creation(uvc_name, tabs*"    ", env_cfg_name)[1:end-1] )
+    $( gen_assign_config_to_agent(uvc_name, tabs*"    ", env_cfg_name)[1:end-1] )
+    $(tabs)end
     """
     return my_str
 end
@@ -357,51 +372,50 @@ gen_env_base() = begin
     $( gen_long_str(uvc_names, "        ", gen_line2)[1:end-1] )
             
     """
-    gen_line3(uvc_name, tabs) = gen_line_uvc_creation(uvc_name, tabs, env_cfg_name)
     if pass_config_thru_db
-        gen_line4(uvc_name, tabs) = gen_line_cfg_config_db(uvc_name, tabs, env_cfg_name)
+        gen_line3(uvc_name, tabs) = gen_lines_set_config_db_and_create_agents(uvc_name, tabs, env_cfg_name)
         my_str *= """
-                // Set UVC config objects to the database
-        $( gen_long_str(uvc_names, "        ", gen_line4)[1:end-1] )
-                
-                // Create UVCs
+                // Set UVC config objects to the database and create UVCs
         $( gen_long_str(uvc_names, "        ", gen_line3)[1:end-1] )
                 
         """
     else
-        gen_line5(uvc_name, tabs) = gen_assign_config_to_agent(uvc_name, tabs, env_cfg_name)
+        gen_line4(uvc_name, tabs) = gen_lines_create_agents_and_assign_config(uvc_name, tabs, env_cfg_name)
         my_str *= """
-                // Create UVCs
-        $( gen_long_str(uvc_names, "        ", gen_line3)[1:end-1] )
-                
-                // Assign UVC config objects
-        $( gen_long_str(uvc_names, "        ", gen_line5)[1:end-1] )
+                // Create UVCs and assign UVC config objects
+        $( gen_long_str(uvc_names, "        ", gen_line4)[1:end-1] )
                 
         """
     end
     my_str *= """
             // Create virtual sequencer
-            if ($(env_cfg_name).has_virtual_sequencer)
+            if ($(env_cfg_name).has_virtual_sequencer) begin
                 m_$(dut_name)_$(vsqr_name) = $(dut_name)_$(vsqr_name)_t::type_id::create("m_$(dut_name)_$(vsqr_name)", this);
-            m_$(dut_name)_$(vsqr_name).$(config_inst_convention) = $(env_cfg_name);
+                m_$(dut_name)_$(vsqr_name).$(config_inst_convention) = $(env_cfg_name);
+            end
             
     """
     my_str *= gen_refmod ? """
             // Create reference model
-            if ($(env_cfg_name).has_refmod)
+            if ($(env_cfg_name).has_refmod) begin
                 m_$(dut_name)_$(rm_name) = $(dut_name)_$(rm_name)_t::type_id::create("m_$(dut_name)_$(rm_name)", this);
+                m_$(dut_name)_$(rm_name).$(config_inst_convention) = $(env_cfg_name);
+            end
             
     """ : ""
     my_str *= gen_scoreboard ? """
             // Create scoreboard
-            if ($(env_cfg_name).has_scoreboard)
+            if ($(env_cfg_name).has_scoreboard) begin
                 m_$(dut_name)_$(sb_name) = $(dut_name)_$(sb_name)_t::type_id::create("m_$(dut_name)_$(sb_name)", this);
+                m_$(dut_name)_$(sb_name).$(config_inst_convention) = $(env_cfg_name);
+            end
             
     """ : ""
     my_str *= env_has_coverage ? """
             // Create coverage collector
             if ($(env_cfg_name).has_coverage) begin
                 m_$(dut_name)_$(cov_name) = $(dut_name)_$(cov_name)_t::type_id::create("m_$(dut_name)_$(cov_name)", this);
+                m_$(dut_name)_$(cov_name).$(config_inst_convention) = $(env_cfg_name);
                 `uvm_info("$(uppercase(dut_name)) ENV", "Coverage is enabled." , UVM_MEDIUM)
             end else begin
                 `uvm_info("$(uppercase(dut_name)) ENV", "Coverage is disabled." , UVM_MEDIUM)

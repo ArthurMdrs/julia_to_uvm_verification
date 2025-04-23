@@ -6,8 +6,9 @@
 
 
 gen_scoreboard_base() = begin
-    sb_name = class_names["scoreboard"]
-    rm_name = class_names["ref_model" ]
+    sb_name  = class_names["scoreboard"]
+    rm_name  = class_names["ref_model" ]
+    cfg_name = class_names["config"    ]
     
     params_prefix = get_uvc_params_prefix(dut_name)
     
@@ -29,6 +30,13 @@ gen_scoreboard_base() = begin
             typedef $(uvc_names[1])_$(tr_name) seq_item_t;
         """
     end
+    
+    my_str *= """
+        
+    $(gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1])
+        
+        $(dut_name)_env_$(cfg_name)_t $(config_inst_convention);
+    """
     
     my_str *= """
         
@@ -57,6 +65,13 @@ gen_scoreboard_base() = begin
     end
     my_str *= """
         endfunction : new
+        
+        function void build_phase (uvm_phase phase);
+            super.build_phase(phase);
+            
+            if ($(config_inst_convention) == null)
+                `uvm_fatal("$(uppercase(dut_name)) SCOREBOARD", "No configuration object was set!")
+        endfunction : build_phase
         
         task post_reset_phase(uvm_phase phase);
             item_from_monitor_fifo.flush();
@@ -89,17 +104,6 @@ gen_scoreboard_base() = begin
                 n_compared++;
                 
     """
-    # if gen_refmod
-    #     my_str *= """
-    #                 item_from_monitor = null;
-    #                 item_from_refmod = null;
-    #     """
-    # else
-    #     my_str *= """
-    #                 item_from_monitor = null;
-    #                 //other_item = null;
-    #     """
-    # end
     my_str *= """
             end
         endtask : main_phase

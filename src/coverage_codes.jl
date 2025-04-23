@@ -138,10 +138,12 @@ gen_env_coverage_base() = begin
         """
     end
     
-    # my_str *= """
-    # $( gen_long_str(["_$(cfg_name)"], "    ", gen_lines_tdefs_w_param) )
-    #     $(dut_name)_$(cfg_name)_t $(config_inst_convention);
-    # """
+    my_str *= """
+        
+    $(gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1])
+        
+        $(dut_name)_env_$(cfg_name)_t $(config_inst_convention);
+    """
     
     my_str *= """
         
@@ -168,16 +170,15 @@ gen_env_coverage_base() = begin
         endfunction : new
         
     """
-    # my_str *= """
-    #     function void build_phase (uvm_phase phase);
-    #         super.build_phase(phase);
-    #         if(uvm_config_db#(_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(config_inst_convention)"), .value($(config_inst_convention))))
-    #             `uvm_info("$(uppercase(dut_name)) COVERAGE", "Configuration object was successfully set!", UVM_MEDIUM)
-    #         else
-    #             `uvm_fatal("$(uppercase(dut_name)) COVERAGE", "No configuration object was set!")
-    #     endfunction : build_phase
+    my_str *= """
+        function void build_phase (uvm_phase phase);
+            super.build_phase(phase);
+            
+            if ($(config_inst_convention) == null)
+                `uvm_fatal("$(uppercase(dut_name)) COVERAGE", "No configuration object was set!")
+        endfunction : build_phase
         
-    # """
+    """
     my_str *= """
         function void report_phase (uvm_phase phase);
             string msg;
