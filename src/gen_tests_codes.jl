@@ -4,9 +4,6 @@
 # Creates an example test library
 # ***********************************
 
-# gen_line_sequences_config(uvc_name, tabs) = begin
-#     return "$(tabs)uvm_config_wrapper::set(this, \"env.agent_$(uvc_name).sequencer.run_phase\", \"default_sequence\", $(uvc_name)_random_seq::get_type());\n"
-# end
 gen_vif_config_db_tests(uvc_name, tabs) = begin
     my_str = """
     $(tabs)if(uvm_config_db#($(uvc_name)_vif_t)::get(.cntxt(this), .inst_name(""), .field_name("$(uvc_name)_vif"), .value($(uvc_name)_vif)))
@@ -28,13 +25,6 @@ gen_line_cfg_create(uvc_name, tabs) = begin
     cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
     my_str = """
     $(tabs)m_$(uvc_name)_$(cfg_name) = $(uvc_name)_$(cfg_name)_t::type_id::create("m_$(uvc_name)_$(cfg_name)");
-    """
-    return my_str
-end
-gen_line_cfg_set(uvc_name, tabs) = begin
-    cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
-    my_str = """
-    $(tabs)uvm_config_db#($(uvc_name)_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(dut_name)_env"), .field_name("m_$(uvc_name)_$(cfg_name)"), .value(m_$(uvc_name)_$(cfg_name)));
     """
     return my_str
 end
@@ -243,14 +233,6 @@ gen_test_base() = begin
         endfunction : check_phase
         
     """
-    # my_str *= """
-    #     task run_phase(uvm_phase phase);
-    #         super.run_phase(phase);
-    #         obj = phase.get_objection();
-    #         obj.set_drain_time(this, 200ns);
-    #     endtask : run_phase
-        
-    # """
     my_str *= """
         task pre_reset_phase(uvm_phase phase);
             $(vseq_inst_name).kill();
@@ -264,6 +246,10 @@ gen_test_base() = begin
     my_str *= """
         task main_phase(uvm_phase phase);
             obj = phase.get_objection();
+            `ifdef UVM_POST_VERSION_1_1
+                `uvm_info("$(uppercase(dut_name)) BASE TEST", "UVM version is newer than 1.1.", UVM_NONE)
+                obj.set_propagate_mode(0);
+            `endif
             obj.set_drain_time(this, 200ns);
             
             $(vseq_inst_name).set_starting_phase(phase);

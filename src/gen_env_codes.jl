@@ -17,9 +17,6 @@ gen_line_uvc_creation(uvc_name, tabs, env_cfg_name) = begin
     """
     return my_str
 end
-# gen_line_cfg_utils(uvc_name, tabs) = begin
-#     return "$(tabs)`uvm_field_object(cfg_$(uvc_name), UVM_ALL_ON)\n"
-# end
 gen_line_connect_sequencers(uvc_name, tabs, env_cfg_name) = begin
     vsqr_name = class_names["vsequencer"]
     sqr_name   = get_uvc_cfg_fld(uvc_name, :class_names)["sequencer"]

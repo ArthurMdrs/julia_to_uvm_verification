@@ -93,52 +93,49 @@ gen_vseq_base() = begin
     $( gen_long_str(seq_list, "    ", gen_line_seq_instance)[1:end-1] )
         // Sequence instances - end
         
-        function new(string name="$(dut_name)_base_vsequence");
+        function new (string name="$(dut_name)_base_vsequence");
             super.new(name);
         endfunction : new
         
     """
     
     my_str *= """
-        task pre_start();
+        task pre_start ();
             uvm_phase phase = get_starting_phase();
             if (phase != null) begin
                 phase.raise_objection(this, get_type_name());
-                `uvm_info("$(uppercase(dut_name)) vSEQ", "Raising objection.", UVM_HIGH)
+                `uvm_info("$(uppercase(dut_name)) VSEQ", "Raising objection.", UVM_HIGH)
             end
             else begin
-                `uvm_info("$(uppercase(dut_name)) vSEQ", "Phase is null, so could not raise objection.", UVM_LOW)
+                `uvm_info("$(uppercase(dut_name)) VSEQ", "Phase is null, so could not raise objection.", UVM_LOW)
             end
         
             $(config_inst_convention) = p_sequencer.$(config_inst_convention);
         endtask : pre_start
         
-        task post_start();
+        task post_start ();
             uvm_phase phase = get_starting_phase();
             if (phase != null) begin
                 phase.drop_objection(this, get_type_name());
-                `uvm_info("$(uppercase(dut_name)) vSEQ", "Dropping objection.", UVM_HIGH)
+                `uvm_info("$(uppercase(dut_name)) VSEQ", "Dropping objection.", UVM_HIGH)
             end
             else begin
-                `uvm_info("$(uppercase(dut_name)) vSEQ", "Phase is null, so could not drop objection.", UVM_LOW)
+                `uvm_info("$(uppercase(dut_name)) VSEQ", "Phase is null, so could not drop objection.", UVM_LOW)
             end
         endtask : post_start
         
     """
-    # my_str *= """ 
-    #     task pre_body();
-    #         uvm_phase phase = get_starting_phase();
-    #         phase.raise_objection(this, get_type_name());
-    #         `uvm_info("$(dut_name Sequence", "phase.raise_objection", UVM_HIGH)
-    #     endtask : pre_body
+    
+    my_str *= """
+        function void do_kill ();
+            uvm_phase phase = get_starting_phase();
+            if (phase != null) begin
+                phase.drop_objection(this, get_type_name());
+                `uvm_info("$(uppercase(dut_name)) VSEQ", "Sequence killed.", UVM_HIGH)
+            end
+        endfunction : do_kill
         
-    #     task post_body();
-    #         uvm_phase phase = get_starting_phase();
-    #         phase.drop_objection(this, get_type_name());
-    #         `uvm_info("$(dut_name Sequence", "phase.drop_objection", UVM_HIGH)
-    #     endtask : post_body
-        
-    # """
+    """
     
     my_str *= """ 
     endclass : $(dut_name)_base_vsequence

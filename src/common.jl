@@ -279,11 +279,6 @@ gen_lines_tdefs_w_param_w_seq_item2(params_prefix, name, tabs) = begin
     return my_str
 end
 
-gen_lines_tdefs_wo_param(name, tabs) = begin
-    my_str  = "$(tabs)typedef $(name) $(name)_t;\n\n"
-    return my_str
-end
-
 gen_line_seq_item_t_conn(uvc_name, tabs) = begin
     tr_name = get_uvc_cfg_fld(uvc_name, :class_names)["transaction"]
     my_str = "$(tabs).$(uvc_name)_$(tr_name)_t($(uvc_name)_$(tr_name)_t),\n"
@@ -307,6 +302,32 @@ end
 
 gen_line_param_assign(param_vec::sv_params_t, tabs) = begin
     my_str = "$(tabs)$(param_vec.name): $(param_vec.default_val),\n"
+    return my_str
+end
+
+get_vsqr_param_declaration(tabs) = begin
+    my_str = ""
+    if env_has_params
+        gen_line(param_vec, tabs) = "$(tabs)$(param_vec.name): $(param_vec.default_val),\n"
+        my_str *= """
+        #(
+        $( gen_long_str(uvc_names, tabs, gen_line_seq_item_t_decl)[1:end-1] )
+        $(tabs)parameter $(dut_name)_env_params_t $(dut_name)_env_params = '0
+        ) """
+    end
+    return my_str
+end
+
+get_vsqr_param_conn(tabs) = begin
+    if env_has_params
+        my_str = """
+        #(
+        $( gen_long_str(uvc_names, tabs*"    ", gen_line_seq_item_t_conn)[1:end-1] )
+        $(tabs)    .$(dut_name)_env_params($(dut_name)_env_params)
+        $(tabs)) """
+    else
+        my_str = ""
+    end
     return my_str
 end
 

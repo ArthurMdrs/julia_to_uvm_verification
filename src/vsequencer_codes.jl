@@ -9,30 +9,6 @@ gen_line_seq_item_t_decl(uvc_name, tabs) = begin
     my_str = "$(tabs)parameter type $(uvc_name)_$(tr_name)_t = uvm_sequence_item,\n"
     return my_str
 end
-get_vsqr_param_declaration(tabs) = begin
-    my_str = ""
-    if env_has_params
-        gen_line(param_vec, tabs) = "$(tabs)$(param_vec.name): $(param_vec.default_val),\n"
-        my_str *= """
-        #(
-        $( gen_long_str(uvc_names, tabs, gen_line_seq_item_t_decl)[1:end-1] )
-        $(tabs)parameter $(dut_name)_env_params_t $(dut_name)_env_params = '0
-        ) """
-    end
-    return my_str
-end
-get_vsqr_param_conn(tabs) = begin
-    if env_has_params
-        my_str = """
-        #(
-        $( gen_long_str(uvc_names, tabs*"    ", gen_line_seq_item_t_conn)[1:end-1] )
-        $(tabs)    .$(dut_name)_env_params($(dut_name)_env_params)
-        $(tabs)) """
-    else
-        my_str = ""
-    end
-    return my_str
-end
 gen_line_sqr_instance(uvc_name, tabs) = begin
     sqr_name = get_uvc_cfg_fld(uvc_name, :class_names)["sequencer"]
     my_str = "$(tabs)$(uvc_name)_$(sqr_name)_t m_$(uvc_name)_$(sqr_name);\n"
