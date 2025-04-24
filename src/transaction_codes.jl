@@ -3,13 +3,44 @@
 # ***********************************
 # Creates an transaction class (a.k.a. sequence item)
 # ***********************************
-gen_line_convert_to_string(vec::tr_field_t, tabs) = 
-    "$(tabs)string_aux = {string_aux, \$sformatf(\"** $(vec.field_name) value: %h\\n\", $(vec.field_name))};\n"
-# gen_line_object_utils(vec::tr_field_t, tabs) = 
-#     "$(tabs)`uvm_field_int($(vec.field_name), UVM_ALL_ON)\n"
-gen_line_instanciate_obj(vec::tr_field_t, tabs) = 
-    "$(tabs)$((vec.is_rand) ? "rand" : "    ") $(vec.type) $(vec.range) $(vec.field_name);\n"
-
+gen_line_convert_to_string(vec::tr_field_t, tabs) = begin
+    if vec.radix == "dec"
+        fmt = "%0d"
+    elseif vec.radix == "bin"
+        fmt = "%b"
+    elseif vec.radix == "hex"
+        fmt = "%h"
+    end
+    if vec.type in packed_types
+        if size(vec.size)[1] == 1
+            my_str = "$(tabs)string_aux = {string_aux, \$sformatf(\"** $(vec.field_name) value: $(fmt)\\n\", $(vec.field_name))};\n"
+        else
+            my_str  = "$(tabs)foreach ($(vec.field_name)[i])\n"
+            my_str *= "$(tabs)    string_aux = {string_aux, \$sformatf(\"** $(vec.field_name)[%0d] value: $(fmt)\\n\", i, $(vec.field_name)[i])};\n"
+        end
+    elseif vec.type in integer_types
+        if size(vec.size)[1] == 1 && vec.size == 1
+            my_str = "$(tabs)string_aux = {string_aux, \$sformatf(\"** $(vec.field_name) value: $(fmt)\\n\", $(vec.field_name))};\n"
+        else
+            my_str  = "$(tabs)foreach ($(vec.field_name)[i])\n"
+            my_str *= "$(tabs)    string_aux = {string_aux, \$sformatf(\"** $(vec.field_name)[%0d] value: $(fmt)\\n\", i, $(vec.field_name)[i])};\n"
+        end
+    elseif vec.type == "string"
+        my_str = "$(tabs)string_aux = {string_aux, \$sformatf(\"** $(vec.field_name) value: %s\\n\", $(vec.field_name))};\n"
+    elseif vec.type in real_types
+        my_str = "$(tabs)string_aux = {string_aux, \$sformatf(\"** $(vec.field_name) value: %.2f\\n\", $(vec.field_name))};\n"
+    else
+        my_str = ""
+    end
+    return my_str
+end
+gen_line_instanciate_obj(vec::tr_field_t, tabs) = begin
+    if vec.type in packed_types
+        return "$(tabs)$((vec.is_rand) ? "rand" : "    ") $(vec.type) $(get_signal_range(vec))$(vec.field_name);\n"
+    else
+        return "$(tabs)$((vec.is_rand) ? "rand" : "    ") $(vec.type) $(vec.field_name)$(get_signal_dim(vec));\n"
+    end
+end
 gen_line_attribute_copy(vec::tr_field_t, tabs) = begin
     my_str = "$(tabs)$(vec.field_name) = _rhs.$(vec.field_name);\n"
     return my_str
@@ -33,7 +64,11 @@ gen_do_copy(prefix_name, vec::Vector{tr_field_t}) = begin
     return my_str
 end
 gen_line_attribute_comp(vec::tr_field_t, tabs) = begin
-    my_str = "$(tabs)res = res && ($(vec.field_name) === _rhs.$(vec.field_name));\n"
+    if vec.type in integer_types
+        my_str = "$(tabs)res = res && ($(vec.field_name) === _rhs.$(vec.field_name));\n"
+    else
+        my_str = "$(tabs)res = res && ($(vec.field_name) == _rhs.$(vec.field_name));\n"
+    end
     return my_str
 end
 gen_do_compare(prefix_name, vec::Vector{tr_field_t}) = begin
@@ -68,9 +103,46 @@ gen_do_print(prefix_name, vec::Vector{tr_field_t}) = begin
     """
     return my_str
 end
-gen_line_attribute_record(vec::tr_field_t, tabs) = begin
+gen_line_attribute_record_field(vec::tr_field_t, tabs) = begin
     my_str = "$(tabs)`uvm_record_field(\"$(vec.field_name)\", $(vec.field_name))\n"
     return my_str
+end
+gen_line_attribute_record_int(vec::tr_field_t, tabs) = begin
+    if vec.type in packed_types
+        if size(vec.size)[1] == 1
+            my_str = "$(tabs)`uvm_record_int(\"$(vec.field_name)\", $(vec.field_name), $(vec.size[1]), UVM_$(uppercase(vec.radix)))\n"
+        else
+            my_str  = "$(tabs)foreach ($(vec.field_name)[i])\n"
+            my_str *= "$(tabs)    `uvm_record_int(\$sformatf(\"$(vec.field_name)[%0d]\", i), $(vec.field_name)[i], $(vec.size[2]), UVM_$(uppercase(vec.radix)))\n"
+        end
+    else
+        if size(vec.size)[1] == 1 && vec.size == 1
+            my_str = "$(tabs)`uvm_record_int(\"$(vec.field_name)\", $(vec.field_name), $(vec.size[1]), UVM_$(uppercase(vec.radix)))\n"
+        else
+            my_str  = "$(tabs)foreach ($(vec.field_name)[i])\n"
+            my_str *= "$(tabs)    `uvm_record_int(\$sformatf(\"$(vec.field_name)[%0d]\", i), $(vec.field_name)[i], $(vec.size[1]), UVM_$(uppercase(vec.radix)))\n"
+        end
+    end
+    return my_str
+end
+gen_line_attribute_record_string(vec::tr_field_t, tabs) = begin
+    my_str = "$(tabs)`uvm_record_string(\"$(vec.field_name)\", $(vec.field_name))\n"
+    return my_str
+end
+gen_line_attribute_record_real(vec::tr_field_t, tabs) = begin
+    my_str = "$(tabs)`uvm_record_real(\"$(vec.field_name)\", $(vec.field_name))\n"
+    return my_str
+end
+gen_line_attribute_record(vec::tr_field_t, tabs) = begin
+    if vec.type in integer_types
+        return gen_line_attribute_record_int(vec, tabs)
+    elseif vec.type in real_types
+        return gen_line_attribute_record_real(vec, tabs)
+    elseif vec.type == "string"
+        return gen_line_attribute_record_string(vec, tabs)
+    else
+        return gen_line_attribute_record_field(vec, tabs)
+    end
 end
 gen_do_record(prefix_name, vec::Vector{tr_field_t}) = begin
     my_str = """
@@ -85,24 +157,45 @@ gen_do_record(prefix_name, vec::Vector{tr_field_t}) = begin
     """
     return my_str
 end
-gen_line_attribute_pack(vec::tr_field_t, tabs) = begin
-    my_str = "$(tabs)`uvm_pack_int($(vec.field_name))\n"
+gen_line_attribute_pack_unpack(vec::tr_field_t, tabs, un) = begin
+    if vec.type in packed_types
+        if size(vec.size)[1] == 1
+            my_str = "$(tabs)`uvm_$(un)pack_int($(vec.field_name))\n"
+        else
+            my_str  = "$(tabs)foreach ($(vec.field_name)[i])\n"
+            my_str *= "$(tabs)    `uvm_$(un)pack_int($(vec.field_name)[i])\n"
+        end
+    elseif vec.type in integer_types
+        if size(vec.size)[1] == 1 && vec.size == 1
+            my_str = "$(tabs)`uvm_$(un)pack_int($(vec.field_name))\n"
+        else
+            my_str  = "$(tabs)foreach ($(vec.field_name)[i])\n"
+            my_str *= "$(tabs)    `uvm_$(un)pack_int($(vec.field_name)[i])\n"
+        end
+    elseif vec.type == "string"
+        my_str = "$(tabs)`uvm_$(un)pack_string($(vec.field_name))\n"
+    elseif vec.type in real_types
+        my_str = "$(tabs)`uvm_$(un)pack_real($(vec.field_name))\n"
+    else
+        my_str = ""
+    end
     return my_str
+end
+gen_line_attribute_pack(vec::tr_field_t, tabs) = begin
+    return gen_line_attribute_pack_unpack(vec, tabs, "")
 end
 gen_do_pack(prefix_name, vec::Vector{tr_field_t}) = begin
     my_str = """
         function void do_pack (uvm_packer packer);
             super.do_pack(packer);
             
-            // `uvm_pack_array needs packer.use_metadata==1
     $( gen_long_str(vec, "        ", gen_line_attribute_pack)[1:end-1] )
         endfunction : do_pack
     """
     return my_str
 end
 gen_line_attribute_unpack(vec::tr_field_t, tabs) = begin
-    my_str = "$(tabs)`uvm_unpack_int($(vec.field_name))\n"
-    return my_str
+    return gen_line_attribute_pack_unpack(vec, tabs, "")
 end
 gen_do_unpack(prefix_name, vec::Vector{tr_field_t}) = begin
     my_str = """
@@ -110,7 +203,6 @@ gen_do_unpack(prefix_name, vec::Vector{tr_field_t}) = begin
             super.do_unpack(packer);
             
             // `uvm_unpack_enum(some_enum_var, some_enum_type)
-            // `uvm_unpack_array needs packer.use_metadata==1
     $( gen_long_str(vec, "        ", gen_line_attribute_unpack)[1:end-1] )
         endfunction : do_unpack
     """

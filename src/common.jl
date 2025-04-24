@@ -101,8 +101,28 @@ gen_vif_config_db_component(uvc_name, tabs, class_name) = begin
         """
 end
 
+get_signal_range(vec::Union{if_field_t, tr_field_t}) = begin
+    my_str = ""
+    for i in vec.size
+        my_str *= (i > 1) ? ("[$(i-1):0] ") : ("")
+    end
+    return my_str
+end
+
+get_signal_dim(vec::Union{if_field_t, tr_field_t}) = begin
+    my_str = ""
+    for i in vec.size
+        my_str *= (i > 1) ? (" [$(i)]") : ("")
+    end
+    return my_str
+end
+
 gen_line_if_signal(vec::if_field_t, tabs; end_of_line=";") = begin
-    return "$(tabs)$(vec.type) $(vec.range) $(vec.field_name)$(end_of_line)\n"
+    if vec.type in packed_types
+        return "$(tabs)$(vec.type) $(get_signal_range(vec))$(vec.field_name)$(end_of_line)\n"
+    else
+        return "$(tabs)$(vec.type) $(vec.field_name)$(get_signal_dim(vec))$(end_of_line)\n"
+    end
 end
 
 check_for_params(prefix_name) = begin
@@ -329,5 +349,22 @@ get_vsqr_param_conn(tabs) = begin
         my_str = ""
     end
     return my_str
+end
+
+gen_if_signals(tabs, func) = begin
+    str = ""
+    uvc_names_ = uvc_names
+    if using_this_clknrst
+        uvc_names_ = filter(x -> x!= clknrst_name, uvc_names)
+    end
+    for uvc_name in uvc_names_
+        if_sigs_vec = get_uvc_cfg_fld(uvc_name, :if_sigs_vec)
+        str *= "\n$(tabs)// Signals from $(uvc_name)'s interface - begin\n"
+        gen_line(signal_vec, tabs) = func(signal_vec, uvc_name, tabs)
+        str *= gen_long_str(if_sigs_vec, tabs*"    ", gen_line)
+        str = (uvc_name == uvc_names_[end]) ? str[1:end-2]*"\n" : str
+        str *= "$(tabs)// Signals from $(uvc_name)'s interface - end\n"
+    end
+    return str
 end
 

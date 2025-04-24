@@ -179,20 +179,26 @@ supported_simulators = ["xrun", "dsim"]
 mutable struct tr_field_t
     field_name::String
     type::String
-    range::String
+    size::Union{Vector{Int}, Nothing}
     is_rand::Union{Bool, Nothing}
-    tr_field_t() = new()
+    radix::String
+    tr_field_t() = new("name", "", [0], false, "")
 end
 StructTypes.StructType(::Type{tr_field_t}) = StructTypes.Mutable()
 
 mutable struct if_field_t
     field_name::String
     type::String
-    range::String
+    size::Union{Vector{Int}, Nothing}
     is_output::Union{Bool, Nothing}
     if_field_t() = new()
 end
 StructTypes.StructType(::Type{if_field_t}) = StructTypes.Mutable()
+
+packed_types = ["logic", "bit", "wire", "reg"]
+integer_types = [packed_types; ["int", "integer", "byte", "shortint", "longint"]]
+real_types = ["real", "shortreal"]
+allowed_radix = ["dec", "bin", "hex"]
 
 mutable struct uvc_config_t
     uvc::String

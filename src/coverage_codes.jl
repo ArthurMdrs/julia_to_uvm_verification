@@ -5,17 +5,31 @@
 # ***********************************
 
 gen_line_coverpoint(vec::tr_field_t, tabs) = begin
-    return """
-    $(tabs)$(vec.field_name)_cp: coverpoint cov_transaction.$(vec.field_name) {
-    $(tabs)    option.at_least = 2;
-    $(tabs)    bins $(vec.field_name)_bin [] = {[0:\$]};
-    $(tabs)}
-    """
+    my_str = ""
+    aux = false
+    aux = aux || (vec.type in packed_types && size(vec.size)[1] == 1)
+    aux = aux || (vec.type in integer_types && size(vec.size)[1] == 1 && vec.size == 1)
+    if aux
+        my_str = """
+        $(tabs)$(vec.field_name)_cp: coverpoint cov_transaction.$(vec.field_name) {
+        $(tabs)    option.at_least = 2;
+        $(tabs)    bins $(vec.field_name)_bin [] = {[0:\$]};
+        $(tabs)}
+        """
+    end
+    return my_str
 end
 gen_line_report_coverage(vec::tr_field_t, tabs, prefix_name) = begin
-    return """
-    $(tabs)\$sformat(msg, "%s \\t\\t- $(vec.field_name)_cp: %.2f%% \\n", msg, $(prefix_name)_covergroup.$(vec.field_name)_cp.get_inst_coverage());
-    """
+    my_str = ""
+    aux = false
+    aux = aux || (vec.type in packed_types && size(vec.size)[1] == 1)
+    aux = aux || (vec.type in integer_types && size(vec.size)[1] == 1 && vec.size == 1)
+    if aux
+        my_str = """
+        $(tabs)\$sformat(msg, "%s \\t\\t- $(vec.field_name)_cp: %.2f%% \\n", msg, $(prefix_name)_covergroup.$(vec.field_name)_cp.get_inst_coverage());
+        """
+    end
+    return my_str
 end
 
 gen_coverage_base(prefix_name) = begin

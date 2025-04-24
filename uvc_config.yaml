@@ -13,29 +13,41 @@
   tr_props_vec:
     - field_name: data_to_send
       type: bit
-      range: "[7:0]"
+      size: 8
       is_rand: true
+      radix: HEX
     - field_name: data_received
       type: bit
-      range: "[7:0]"
+      size: 8
       is_rand: false
+      radix: hex
+    - field_name: some_int_val
+      type: int
+      size: 2
+      is_rand: false
+      radix: dec
+    - field_name: some_string_val
+      type: string
+      size: 1
+      is_rand: false
+      radix: hex
   
   if_sigs_vec:
     - field_name: ready_o
       type: logic
-      range: ""
+      size: 1
       is_output: true
     - field_name: valid_i
       type: logic
-      range: ""
+      size: 1
       is_output: false
     - field_name: data_o
       type: logic
-      range: "[7:0]"
+      size: [8, 2]
       is_output: true
     - field_name: data_i
       type: logic
-      range: "[7:0]"
+      size: 8
       is_output: false
   
   uvc_has_params: true
@@ -63,29 +75,31 @@
   tr_props_vec:
     - field_name: random_data
       type: logic
-      range: "[15:0]"
+      size: 16
       is_rand: true
+      radix: hex
     - field_name: data_received
       type: bit
-      range: "[7:0]"
+      size: 8
       is_rand: false
+      radix: bin
   
   if_sigs_vec:
     - field_name: another_ready_o
       type: logic
-      range: ""
+      size: 1
       is_output: true
     - field_name: another_valid_i
       type: logic
-      range: ""
+      size: 1
       is_output: false
     - field_name: another_data_o
       type: logic
-      range: "[7:0]"
+      size: 8
       is_output: true
     - field_name: another_data_i
       type: logic
-      range: "[7:0]"
+      size: 8
       is_output: false
   
   class_names:
@@ -118,29 +132,31 @@
   tr_props_vec:
     - field_name: random_data
       type: logic
-      range: "[15:0]"
+      size: [3, 4]
       is_rand: true
+      radix: hex
     - field_name: data_received
       type: bit
-      range: "[7:0]"
+      size: 8
       is_rand: false
+      radix: bin
   
   if_sigs_vec:
     - field_name: too_many_ready_o
       type: logic
-      range: ""
+      size: 1
       is_output: true
     - field_name: too_many_valid_i
       type: logic
-      range: ""
+      size: 1
       is_output: false
     - field_name: too_many_data_o
       type: logic
-      range: "[7:0]"
+      size: 8
       is_output: true
     - field_name: too_many_data_i
       type: logic
-      range: "[7:0]"
+      size: 8
       is_output: false
   
   uvc_has_params: false

@@ -194,6 +194,24 @@ for x in uvc_yaml_obj
                     end
                 end
             end
+        elseif y == :tr_props_vec
+            if !(isdefined(uvc_config_dict[x[:uvc]], y))
+                @warn "Field $(y) of UVC $(x[:uvc]) is undefined."
+                uvc_config_dict[x[:uvc]].tr_props_vec = [tr_field_t()]
+            else
+                for prop in uvc_config_dict[x[:uvc]].tr_props_vec
+                    if lowercase(prop.radix) in allowed_radix
+                        prop.radix = lowercase(prop.radix)
+                    else
+                        @warn """Radix $(prop.radix) in property $(prop.field_name) of UVC $(x[:uvc]) is not supported.
+                        Use one of: $(allowed_radix)
+                        Radix will be defaulted to dec.
+                        """
+                        prop.radix = "dec"
+                    end
+                end
+            end
+            # println(uvc_config_dict[x[:uvc]].tr_props_vec)
         elseif !(isdefined(uvc_config_dict[x[:uvc]], y))
             @warn "Field $(y) of UVC $(x[:uvc]) is undefined."
         end

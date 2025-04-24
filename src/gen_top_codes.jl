@@ -15,24 +15,8 @@ gen_line_send_if_to_uvc(uvc_name, tabs) = begin
     if_name = get_uvc_cfg_fld(uvc_name, :class_names)["interface"]
     return """$(tabs)uvm_config_db#($(uvc_name)_vif_t)::set(.cntxt(null), .inst_name("uvm_test_top"), .field_name("$(uvc_name)_vif"), .value($(uvc_name)_if));\n"""
 end
-gen_line_if_connection(signal_name, uvc_name, tabs) = begin
-    return """$(tabs).$(signal_name)($(uvc_name)_if.$(signal_name)),\n"""
-end
-gen_top_if_connection_signals(tabs) = begin
-    str = ""
-    uvc_names_ = uvc_names
-    if using_this_clknrst
-        uvc_names_ = filter(x -> x!= clknrst_name, uvc_names)
-    end
-    for uvc_name in uvc_names_
-        if_sigs_vec = get_uvc_cfg_fld(uvc_name, :if_sigs_vec)
-        str *= "\n$(tabs)// Signals from $(uvc_name)'s interface - begin\n"
-        gen_line(signal_vec, tabs) = gen_line_if_connection(signal_vec.field_name, uvc_name, tabs)
-        str *= gen_long_str(if_sigs_vec, tabs*"    ", gen_line)
-        str = (uvc_name == uvc_names_[end]) ? str[1:end-2]*"\n" : str
-        str *= "$(tabs)// Signals from $(uvc_name)'s interface - end\n"
-    end
-    return str
+gen_line_if_connection(vec::if_field_t, uvc_name, tabs) = begin
+    return """$(tabs).$(vec.field_name)($(uvc_name)_if.$(vec.field_name)),\n"""
 end
 
 
@@ -100,7 +84,7 @@ gen_top_base() = begin
         
         $(dut_name) $(get_param_conn(dut_name, "    "))dut (
             .$(clock_name)($(clock_name)),
-            .$(reset_name)($(reset_name)),$( gen_top_if_connection_signals("        ")[1:end-1] )
+            .$(reset_name)($(reset_name)),$( gen_if_signals("        ", gen_line_if_connection)[1:end-1] )
         );
         
     """

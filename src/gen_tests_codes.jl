@@ -247,7 +247,6 @@ gen_test_base() = begin
         task main_phase(uvm_phase phase);
             obj = phase.get_objection();
             `ifdef UVM_POST_VERSION_1_1
-                `uvm_info("$(uppercase(dut_name)) BASE TEST", "UVM version is newer than 1.1.", UVM_NONE)
                 obj.set_propagate_mode(0);
             `endif
             obj.set_drain_time(this, 200ns);

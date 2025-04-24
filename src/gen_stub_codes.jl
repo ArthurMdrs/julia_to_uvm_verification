@@ -5,27 +5,12 @@
 # ***********************************
 
 
-gen_line_stub_if_signal(vec::if_field_t, tabs) = begin
+gen_line_stub_if_signal(vec::if_field_t, uvc_name, tabs) = begin
     if vec.is_output == true
-        return "$(tabs)output reg $(vec.range) $(vec.field_name),\n"
+        return "$(tabs)output reg $(get_signal_range(vec))$(vec.field_name),\n"
     else
-        return "$(tabs)input      $(vec.range) $(vec.field_name),\n"
+        return "$(tabs)input      $(get_signal_range(vec))$(vec.field_name),\n"
     end
-end
-gen_stub_if_signals(tabs) = begin
-    str = ""
-    uvc_names_ = uvc_names
-    if using_this_clknrst == true
-        uvc_names_ = filter(x -> x!= clknrst_name, uvc_names)
-    end
-    for uvc_name in uvc_names_
-        if_sigs_vec = get_uvc_cfg_fld(uvc_name, :if_sigs_vec)
-        str *= "$(tabs)// Signals from $(uvc_name)'s interface - begin\n"
-        str *= gen_long_str(if_sigs_vec, tabs*"    ", gen_line_stub_if_signal)
-        str = (uvc_name == uvc_names_[end]) ? str[1:end-2]*"\n" : str
-        str *= "$(tabs)// Signals from $(uvc_name)'s interface - end\n"
-    end
-    return str
 end
 # gen_stub_parameters_str_file(if_vector) = 
 #     "if_vector = $(if_vector)\nuvc_names = $(uvc_names)\nclk_rst_vec = $([clock_name, reset_name, rst_is_negedge_sensitive])"
@@ -55,7 +40,7 @@ gen_stub_base() = begin
     module $(dut_name) $(param_str)$(get_param_declaration(dut_name, "    "))(
         input $(clock_name), 
         input $(reset_name), 
-    $( gen_stub_if_signals("    ")[1:end-1] )
+    $( gen_if_signals("    ", gen_line_stub_if_signal)[1:end-1] )
     );
 
         always @(posedge $(clock_name) or $( (rst_is_negedge_sensitive) ? "negedge" : "posedge" ) $(reset_name)) begin
