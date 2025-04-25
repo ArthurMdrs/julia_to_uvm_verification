@@ -161,7 +161,7 @@ get_param_declaration(prefix_name, tabs) = begin
     my_str = ""
     if do_flag
         my_str *= "#(\n"
-        my_str *= "$(tabs)parameter $(prefix_name)_params_t $(prefix_name)_params = '0\n"
+        my_str *= "$(tabs)parameter $(prefix_name)_params_t $(uppercase(prefix_name))_PARAMS = '0\n"
         my_str *= ") "
     end
     return my_str
@@ -174,7 +174,7 @@ get_param_declaration_w_seq_item(prefix_name, tabs) = begin
         my_str *= """
         #(
         $(tabs)parameter type seq_item_t = uvm_sequence_item,
-        $(tabs)parameter $(prefix_name)_params_t $(prefix_name)_params = '0
+        $(tabs)parameter $(prefix_name)_params_t $(uppercase(prefix_name))_PARAMS = '0
         ) """
     end
     return my_str
@@ -183,7 +183,7 @@ end
 get_param_conn(prefix_name, tabs) = begin
     do_flag, hierarchical = check_for_params(prefix_name)
     if do_flag
-        my_str = "#(\n$(tabs)    .$(prefix_name)_params($(prefix_name)_params)\n$(tabs)) "
+        my_str = "#(\n$(tabs)    .$(uppercase(prefix_name))_PARAMS($(uppercase(prefix_name))_PARAMS)\n$(tabs)) "
     else
         my_str = ""
     end
@@ -194,9 +194,9 @@ get_param_conn_env(prefix_name, tabs) = begin
     do_flag, hierarchical = check_for_params(prefix_name)
     if do_flag
         if hierarchical
-            my_str = "#(\n$(tabs)    .$(prefix_name)_params($(dut_name)_env_params.$(prefix_name)_params)\n$(tabs)) "
+            my_str = "#(\n$(tabs)    .$(uppercase(prefix_name))_PARAMS($(uppercase(dut_name))_ENV_PARAMS.$(uppercase(prefix_name))_PARAMS)\n$(tabs)) "
         else
-            my_str = "#(\n$(tabs)    .$(prefix_name)_params($(prefix_name)_params)\n$(tabs)) "
+            my_str = "#(\n$(tabs)    .$(uppercase(prefix_name))_PARAMS($(uppercase(prefix_name))_PARAMS)\n$(tabs)) "
         end
     else
         my_str = ""
@@ -212,7 +212,7 @@ get_param_conn_w_seq_item(prefix_name, tabs) = begin
         my_str = """
         #(
         $(tabs)    .seq_item_t($(prefix_name)_$(tr_name)_t),
-        $(tabs)    .$(params_prefix)_params($(params_prefix)_params)
+        $(tabs)    .$(uppercase(params_prefix))_PARAMS($(uppercase(params_prefix))_PARAMS)
         $(tabs)) """
     else
         my_str = ""
@@ -231,11 +231,11 @@ get_param_conn_w_seq_item_env(prefix_name, tabs) = begin
         """
         if hierarchical
             my_str *= """
-            $(tabs)    .$(params_prefix)_params($(dut_name)_env_params.$(params_prefix)_params)
+            $(tabs)    .$(uppercase(params_prefix))_PARAMS($(uppercase(dut_name))_ENV_PARAMS.$(uppercase(params_prefix))_PARAMS)
             """
         else
             my_str *= """
-            $(tabs)    .$(params_prefix)_params($(params_prefix)_params)
+            $(tabs)    .$(uppercase(params_prefix))_PARAMS($(uppercase(params_prefix))_PARAMS)
             """
         end
         my_str *= """
@@ -252,7 +252,7 @@ get_param_conn_w_seq_item2(prefix_name, tabs) = begin
         my_str = """
         #(
         $(tabs)    .seq_item_t(seq_item_t),
-        $(tabs)    .$(prefix_name)_params($(prefix_name)_params)
+        $(tabs)    .$(uppercase(prefix_name))_PARAMS($(uppercase(prefix_name))_PARAMS)
         $(tabs)) """
     else
         my_str = ""
@@ -266,7 +266,7 @@ gen_vsqr_param_conn(tabs) = begin
         my_str = """
         #(
         $( gen_long_str(uvc_names, "$(tabs)    ", gen_line_seq_item_t_conn)[1:end-1] )
-        $(tabs)    .$(dut_name)_env_params($(dut_name)_env_params)
+        $(tabs)    .$(uppercase(dut_name))_ENV_PARAMS($(uppercase(dut_name))_ENV_PARAMS)
         $(tabs)) """
     else
         my_str = ""
@@ -332,7 +332,7 @@ get_vsqr_param_declaration(tabs) = begin
         my_str *= """
         #(
         $( gen_long_str(uvc_names, tabs, gen_line_seq_item_t_decl)[1:end-1] )
-        $(tabs)parameter $(dut_name)_env_params_t $(dut_name)_env_params = '0
+        $(tabs)parameter $(dut_name)_env_params_t $(uppercase(dut_name))_ENV_PARAMS = '0
         ) """
     end
     return my_str
@@ -343,7 +343,7 @@ get_vsqr_param_conn(tabs) = begin
         my_str = """
         #(
         $( gen_long_str(uvc_names, tabs*"    ", gen_line_seq_item_t_conn)[1:end-1] )
-        $(tabs)    .$(dut_name)_env_params($(dut_name)_env_params)
+        $(tabs)    .$(uppercase(dut_name))_ENV_PARAMS($(uppercase(dut_name))_ENV_PARAMS)
         $(tabs)) """
     else
         my_str = ""

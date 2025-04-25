@@ -54,7 +54,7 @@ get_sb_param_conn(tabs) = begin
         my_str = """
         #(
         $(tabs)    .seq_item_t($(uvc_names[1])_$(tr_name)_t),
-        $(tabs)    .$(dut_name)_env_params($(dut_name)_env_params)
+        $(tabs)    .$(uppercase(dut_name))_ENV_PARAMS($(uppercase(dut_name))_ENV_PARAMS)
         $(tabs)) """
     else
         my_str = ""
@@ -512,7 +512,7 @@ gen_line_param(param_vec::sv_params_t, tabs) = begin
 end
 gen_line_default_uvc_param(uvc_name, tabs) = begin
     if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
-        my_str = "$(tabs)$(uvc_name)_params: $(uvc_name)_params_pkg::$(uvc_name)_params,\n"
+        my_str = "$(tabs)$(uppercase(uvc_name))_PARAMS: $(uvc_name)_params_pkg::$(uppercase(uvc_name))_PARAMS,\n"
     else
         my_str = ""
     end
@@ -524,7 +524,7 @@ gen_param_inst(tabs) = begin
     $( gen_long_str(uvc_names, tabs*"    ", gen_line_default_uvc_param)[1:end-1] )
     """
     str = ""
-    str *= "$(tabs)localparam $(dut_name)_env_params_t $(dut_name)_env_params = '{\n"
+    str *= "$(tabs)localparam $(dut_name)_env_params_t $(uppercase(dut_name))_ENV_PARAMS = '{\n"
     str *= aux_str[1:end-2]
     str *= "\n$(tabs)};\n"
     return str
@@ -547,7 +547,7 @@ gen_env_params_pkg() = begin
     """
     for uvc_name in uvc_names
         if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
-            my_str *= "        $(uvc_name)_params_t $(uvc_name)_params;\n"
+            my_str *= "        $(uvc_name)_params_t $(uppercase(uvc_name))_PARAMS;\n"
         end
     end
     my_str *= """

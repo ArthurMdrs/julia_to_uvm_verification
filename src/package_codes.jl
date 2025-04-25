@@ -139,7 +139,7 @@ gen_uvc_params_pkg(prefix_name) = begin
     """
     
     my_str *= """
-        localparam $(prefix_name)_params_t $(prefix_name)_params = '{
+        localparam $(prefix_name)_params_t $(uppercase(prefix_name))_PARAMS = '{
     $( gen_long_str(params_vec, "        ", gen_line_param_assign)[1:end-2] )
         };
         

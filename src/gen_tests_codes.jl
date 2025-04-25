@@ -92,7 +92,7 @@ gen_test_base() = begin
     if env_has_params
         my_str *= """
             `uvm_component_registry($(dut_name)_test_base #(
-                .$(dut_name)_env_params($(dut_name)_env_params)
+                .$(uppercase(dut_name))_ENV_PARAMS($(uppercase(dut_name))_ENV_PARAMS)
             ), "$(dut_name)_test_base")
             
         """
