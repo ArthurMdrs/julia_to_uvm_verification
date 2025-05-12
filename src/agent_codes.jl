@@ -15,6 +15,7 @@ gen_agent_base(prefix_name) = begin
     cov_name   = get_uvc_cfg_fld(prefix_name, :class_names)["coverage"   ]
     tr_name    = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     agent_has_coverage = get_uvc_cfg_fld(prefix_name, :agent_has_coverage)
+    verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
     
     params_prefix = get_uvc_params_prefix(prefix_name)
     
@@ -97,7 +98,7 @@ gen_agent_base(prefix_name) = begin
     if pass_config_thru_db
         my_str *= """
                 if(uvm_config_db#($(prefix_name)_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(config_inst_convention)"), .value($(config_inst_convention))))
-                    `uvm_info("$(uppercase(prefix_name)) AGENT", "Configuration object was successfully set!", UVM_MEDIUM)
+                    `uvm_info("$(uppercase(prefix_name)) AGENT", "Configuration object was successfully set!", $(verb_dict["config_set_uvc"]))
                 else
                     `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No configuration object was set!")
                 
@@ -113,7 +114,7 @@ gen_agent_base(prefix_name) = begin
     if get_uvc_cfg_fld(prefix_name, :vif_in_config) == false
         my_str *= """
                 if(uvm_config_db#($(prefix_name)_vif_t)::get(.cntxt(this), .inst_name(""), .field_name("vif"), .value(vif)))
-                    `uvm_info("$(uppercase(prefix_name)) AGENT", "Virtual interface was successfully set!", UVM_MEDIUM)
+                    `uvm_info("$(uppercase(prefix_name)) AGENT", "Virtual interface was successfully set!", $(verb_dict["vif_set_uvc"]))
                 else
                     `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No interface was set!")
                 uvm_config_db#($(prefix_name)_vif_t)::set(.cntxt(this), .inst_name("*"), .field_name("vif"), .value(vif));
@@ -137,9 +138,9 @@ gen_agent_base(prefix_name) = begin
                 m_sequencer.$(config_inst_convention) = $(config_inst_convention);
                 m_driver = $(prefix_name)_$(drv_name)_t::type_id::create("m_driver", this);
                 m_driver.$(config_inst_convention) = $(config_inst_convention);
-                `uvm_info("$(uppercase(prefix_name)) AGENT", "Agent is active." , UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) AGENT", "Agent is active." , $(verb_dict["agent_active"]))
             end else begin
-                `uvm_info("$(uppercase(prefix_name)) AGENT", "Agent is not active." , UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) AGENT", "Agent is not active." , $(verb_dict["agent_active"]))
             end
             
     """
@@ -147,9 +148,9 @@ gen_agent_base(prefix_name) = begin
             if ($(config_inst_convention).has_coverage == 1'b1) begin
                 m_$(prefix_name)_$(cov_name) = $(prefix_name)_$(cov_name)_t::type_id::create("m_$(prefix_name)_$(cov_name)", this);
                 m_$(prefix_name)_$(cov_name).$(config_inst_convention) = $(config_inst_convention);
-                `uvm_info("$(uppercase(prefix_name)) AGENT", "Coverage is enabled." , UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) AGENT", "Coverage is enabled.", $(verb_dict["cov_enabled"]))
             end else begin
-                `uvm_info("$(uppercase(prefix_name)) AGENT", "Coverage is disabled." , UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) AGENT", "Coverage is disabled.", $(verb_dict["cov_enabled"]))
             end
     """ : ""
     my_str *= """
@@ -177,7 +178,7 @@ gen_agent_base(prefix_name) = begin
         
         function void start_of_simulation_phase (uvm_phase phase);
             super.start_of_simulation_phase(phase);
-            `uvm_info("$(uppercase(prefix_name)) AGENT", "Simulation initialized", UVM_HIGH)
+            `uvm_info("$(uppercase(prefix_name)) AGENT", "Simulation initialized", $(verb_dict["sim_init"]))
         endfunction : start_of_simulation_phase
         
     endclass : $(prefix_name)_$(agent_name)

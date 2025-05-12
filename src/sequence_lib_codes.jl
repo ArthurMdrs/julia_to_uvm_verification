@@ -9,6 +9,7 @@ gen_base_seq(prefix_name) = begin
     cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
     
     params_prefix = get_uvc_params_prefix(prefix_name)
     
@@ -50,10 +51,10 @@ gen_base_seq(prefix_name) = begin
             uvm_phase phase = get_starting_phase();
             if (phase != null) begin
                 phase.raise_objection(this, get_type_name());
-                `uvm_info("$(uppercase(prefix_name)) SEQ", "Raising objection.", UVM_HIGH)
+                `uvm_info("$(uppercase(prefix_name)) SEQ", "Raising objection.", $(verb_dict["raise_objection_seq"]))
             end
             else begin
-                `uvm_info("$(uppercase(prefix_name)) SEQ", "Phase is null, so could not raise objection.", UVM_LOW)
+                `uvm_info("$(uppercase(prefix_name)) SEQ", "Phase is null, so could not raise objection.", $(verb_dict["phase_null_seq"]))
             end
         
             $(config_inst_convention) = p_sequencer.$(config_inst_convention);
@@ -63,10 +64,10 @@ gen_base_seq(prefix_name) = begin
             uvm_phase phase = get_starting_phase();
             if (phase != null) begin
                 phase.drop_objection(this, get_type_name());
-                `uvm_info("$(uppercase(prefix_name)) SEQ", "Dropping objection.", UVM_HIGH)
+                `uvm_info("$(uppercase(prefix_name)) SEQ", "Dropping objection.", $(verb_dict["drop_objection_seq"]))
             end
             else begin
-                `uvm_info("$(uppercase(prefix_name)) SEQ", "Phase is null, so could not drop objection.", UVM_LOW)
+                `uvm_info("$(uppercase(prefix_name)) SEQ", "Phase is null, so could not drop objection.", $(verb_dict["phase_null_seq"]))
             end
         endtask : post_start
         
@@ -81,6 +82,7 @@ end
 gen_random_seq(prefix_name) = begin
     tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
     
     params_prefix = get_uvc_params_prefix(prefix_name)
     
@@ -94,7 +96,7 @@ gen_random_seq(prefix_name) = begin
         endfunction : new
         
         task body();
-            `uvm_info("$(uppercase(prefix_name)) SEQ", "Executing random sequence.", UVM_LOW)
+            `uvm_info("$(uppercase(prefix_name)) SEQ", "Executing random sequence.", $(verb_dict["executing_seq"]))
             req = $(tr_type)::type_id::create("req");
             repeat(3) begin
                 start_item(req);
@@ -114,6 +116,7 @@ end
 gen_clknrst_action_seq(clknrst_action, prefix_name) = begin
     tr_name = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
     
     params_prefix = get_uvc_params_prefix(prefix_name)
     
@@ -127,7 +130,7 @@ gen_clknrst_action_seq(clknrst_action, prefix_name) = begin
         endfunction : new
         
         task body();
-            `uvm_info("$(uppercase(prefix_name)) SEQ", "Executing $(clknrst_action) sequence.", UVM_LOW)
+            `uvm_info("$(uppercase(prefix_name)) SEQ", "Executing $(clknrst_action) sequence.", $(verb_dict["executing_seq"]))
             req = $(tr_type)::type_id::create("req");
             start_item(req);
             if (!req.randomize())
@@ -142,6 +145,7 @@ gen_clknrst_action_seq(clknrst_action, prefix_name) = begin
 end
 
 gen_clknrst_rst_and_start_clk_seq(prefix_name) = begin 
+    verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
     
     params_prefix = get_uvc_params_prefix(prefix_name)
     
@@ -167,7 +171,7 @@ gen_clknrst_rst_and_start_clk_seq(prefix_name) = begin
         endfunction : new
         
         task body();
-            `uvm_info("$(uppercase(prefix_name)) SEQ", "Executing reset_and_start_clk sequence.", UVM_LOW)
+            `uvm_info("$(uppercase(prefix_name)) SEQ", "Executing reset_and_start_clk sequence.", $(verb_dict["executing_seq"]))
             m_start_clk_seq = $(prefix_name)_start_clk_seq_t::type_id::create("m_start_clk_seq");
             m_start_clk_seq.set_starting_phase(get_starting_phase());
             m_start_clk_seq.start(.sequencer(p_sequencer));

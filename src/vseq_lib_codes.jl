@@ -104,10 +104,10 @@ gen_vseq_base() = begin
             uvm_phase phase = get_starting_phase();
             if (phase != null) begin
                 phase.raise_objection(this, get_type_name());
-                `uvm_info("$(uppercase(dut_name)) VSEQ", "Raising objection.", UVM_HIGH)
+                `uvm_info("$(uppercase(dut_name)) VSEQ", "Raising objection.", $(verbosities["raise_objection_vseq"]))
             end
             else begin
-                `uvm_info("$(uppercase(dut_name)) VSEQ", "Phase is null, so could not raise objection.", UVM_LOW)
+                `uvm_info("$(uppercase(dut_name)) VSEQ", "Phase is null, so could not raise objection.", $(verbosities["phase_null_vseq"]))
             end
         
             $(config_inst_convention) = p_sequencer.$(config_inst_convention);
@@ -117,10 +117,10 @@ gen_vseq_base() = begin
             uvm_phase phase = get_starting_phase();
             if (phase != null) begin
                 phase.drop_objection(this, get_type_name());
-                `uvm_info("$(uppercase(dut_name)) VSEQ", "Dropping objection.", UVM_HIGH)
+                `uvm_info("$(uppercase(dut_name)) VSEQ", "Dropping objection.", $(verbosities["drop_objection_vseq"]))
             end
             else begin
-                `uvm_info("$(uppercase(dut_name)) VSEQ", "Phase is null, so could not drop objection.", UVM_LOW)
+                `uvm_info("$(uppercase(dut_name)) VSEQ", "Phase is null, so could not drop objection.", $(verbosities["phase_null_vseq"]))
             end
         endtask : post_start
         
@@ -131,7 +131,7 @@ gen_vseq_base() = begin
             uvm_phase phase = get_starting_phase();
             if (phase != null) begin
                 phase.drop_objection(this, get_type_name());
-                `uvm_info("$(uppercase(dut_name)) VSEQ", "Sequence killed.", UVM_HIGH)
+                `uvm_info("$(uppercase(dut_name)) VSEQ", "Sequence killed.", $(verbosities["kill_vseq"]))
             end
         endfunction : do_kill
         
@@ -173,6 +173,7 @@ gen_vseq_random() = begin
         endfunction : new
         
         task body();
+            `uvm_info("$(uppercase(dut_name)) VSEQ", "Executing random sequence.", $(verbosities["executing_vseq"]))
     """
     
     if using_this_clknrst == true

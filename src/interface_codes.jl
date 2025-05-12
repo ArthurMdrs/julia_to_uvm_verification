@@ -109,6 +109,7 @@ gen_clknrst_if(prefix_name) = begin
     if_name = get_uvc_cfg_fld(prefix_name, :class_names)["interface"]
     clock_name = get_uvc_cfg_fld(prefix_name, :clock_name)
     reset_name = get_uvc_cfg_fld(prefix_name, :reset_name)
+    verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
     
     params_prefix = get_uvc_params_prefix(prefix_name)
     param_str = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "import $(params_prefix)_params_pkg::$(params_prefix)_params_t;\n$(get_param_declaration(params_prefix, "    "))" : ""
@@ -145,37 +146,37 @@ gen_clknrst_if(prefix_name) = begin
         end
         
         function void set_period (realtime new_clk_period);
-            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Changing clock period to %0t", new_clk_period), UVM_LOW)
+            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Changing clock period to %0t", new_clk_period), $(verb_dict["clknrst_interface"]))
             clk_period = new_clk_period;
         endfunction : set_period
         
         function void start_clk ();
-            `uvm_info("$(uppercase(prefix_name)) INTERFACE", "Starting clock generation", UVM_HIGH)
+            `uvm_info("$(uppercase(prefix_name)) INTERFACE", "Starting clock generation", $(verb_dict["clknrst_interface"]))
             if (clk_period != 0ns)
                 clk_active = 1;
         endfunction : start_clk
         
         task stop_clk ();
-            `uvm_info("$(uppercase(prefix_name)) INTERFACE", "Stopping clock generation", UVM_HIGH)
+            `uvm_info("$(uppercase(prefix_name)) INTERFACE", "Stopping clock generation", $(verb_dict["clknrst_interface"]))
             wait ($(clock_name) == 1'b0);
             clk_active = 0;
         endtask : stop_clk
         
         function void set_clk_val (logic new_clk_val);
-            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Changing clock value to %b", new_clk_val), UVM_HIGH)
+            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Changing clock value to %b", new_clk_val), $(verb_dict["clknrst_interface"]))
             $(clock_name) = new_clk_val;
         endfunction : set_clk_val
         
         function void set_rst_val (logic new_rst_val);
-            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Changing reset value to %b", new_rst_val), UVM_HIGH)
+            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Changing reset value to %b", new_rst_val), $(verb_dict["clknrst_interface"]))
             $(reset_name) = new_rst_val;
         endfunction : set_rst_val
         
         task assert_rst (int unsigned rst_assert_duration);
-            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Asserting reset for %0t", (rst_assert_duration * 1ps)), UVM_MEDIUM)
+            `uvm_info("$(uppercase(prefix_name)) INTERFACE", \$sformatf("Asserting reset for %0t", (rst_assert_duration * 1ps)), $(verb_dict["clknrst_interface"]))
             $(reset_name) = 1'b0;
             #(rst_assert_duration * 1ps);
-            `uvm_info("$(uppercase(prefix_name)) INTERFACE", "De-asserting reset", UVM_MEDIUM)
+            `uvm_info("$(uppercase(prefix_name)) INTERFACE", "De-asserting reset", $(verb_dict["clknrst_interface"]))
             $(reset_name) = 1'b1;
         endtask : assert_rst
         

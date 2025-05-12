@@ -38,6 +38,7 @@ gen_coverage_base(prefix_name) = begin
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     vec = get_uvc_cfg_fld(prefix_name, :tr_props_vec)
+    verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
     
     params_prefix = get_uvc_params_prefix(prefix_name)
     
@@ -100,8 +101,8 @@ gen_coverage_base(prefix_name) = begin
     $( gen_long_str(vec, "        ", gen_line)[1:end-1] )
             \$sformat(msg, "%s------------------------------------------------------------------------------------------------------------\\n", msg);
             
-            //`uvm_info("$(uppercase(prefix_name)) COVERAGE", \$sformatf("Coverage: %2.2f%%", get_coverage()), UVM_NONE)
-            `uvm_info("$(uppercase(prefix_name)) COVERAGE", msg, UVM_NONE)
+            //`uvm_info("$(uppercase(prefix_name)) COVERAGE", \$sformatf("Coverage: %2.2f%%", get_coverage()), $(verb_dict["cov_report"]))
+            `uvm_info("$(uppercase(prefix_name)) COVERAGE", msg, $(verb_dict["cov_report"]))
         endfunction : report_phase
         
         function void sample ($(tr_type) t);
@@ -208,8 +209,8 @@ gen_env_coverage_base() = begin
     $( gen_long_str(get_uvc_cfg_fld(uvc_name, :tr_props_vec), "        ", gen_line)[1:end-1] )
             \$sformat(msg, "%s------------------------------------------------------------------------------------------------------------\\n", msg);
             
-            //`uvm_info("$(uppercase(dut_name)) COVERAGE", \$sformatf("Coverage: %2.2f%%", get_coverage()), UVM_NONE)
-            `uvm_info("$(uppercase(dut_name)) COVERAGE", msg, UVM_NONE)
+            //`uvm_info("$(uppercase(dut_name)) COVERAGE", \$sformatf("Coverage: %2.2f%%", get_coverage()), $(verbosities["cov_report"]))
+            `uvm_info("$(uppercase(dut_name)) COVERAGE", msg, $(verbosities["cov_report"]))
         endfunction : report_phase
         
         function void sample ($(tr_type) t);

@@ -101,6 +101,7 @@ mutable struct config_t
     vif_in_config::Union{Bool, Nothing}
     pass_config_thru_db::Union{Bool, Nothing}
     class_files_extension::String
+    verbosities::Dict{String, String}
     # Clock and reset info
     clock_name::String
     reset_name::String
@@ -152,6 +153,40 @@ global_config.gen_tdefs_pkg = false
 global_config.vif_in_config = true
 global_config.pass_config_thru_db = true
 global_config.class_files_extension = "svh"
+uvm_verb_dict = Dict(
+    "config_set_uvc" => "UVM_HIGH",
+    "config_set_env" => "UVM_HIGH",
+    "vif_set_uvc" => "UVM_HIGH",
+    "vif_set_env" => "UVM_HIGH",
+    "vif_set_test" => "UVM_MEDIUM",
+    "agent_active" => "UVM_MEDIUM",
+    "cov_enabled" => "UVM_HIGH",
+    "sim_init" => "UVM_HIGH",
+    "reset_dropped" => "UVM_MEDIUM",
+    "reset_detected" => "UVM_MEDIUM",
+    "enter_reset_phase" => "UVM_MEDIUM",
+    "enter_main_phase" => "UVM_MEDIUM",
+    "end_build_phase" => "UVM_MEDIUM",
+    "drive_tr" => "UVM_HIGH",
+    "collect_tr" => "UVM_MEDIUM",
+    "driver_report" => "UVM_NONE",
+    "monitor_report" => "UVM_NONE",
+    "cov_report" => "UVM_NONE",
+    "clknrst_interface" => "UVM_LOW",
+    "refmod_proc_item" => "UVM_NONE",
+    "scoreboard_actvt" => "UVM_NONE",
+    "scoreboard_report" => "UVM_NONE",
+    "raise_objection_seq" => "UVM_HIGH",
+    "drop_objection_seq" => "UVM_HIGH",
+    "phase_null_seq" => "UVM_HIGH",
+    "executing_seq" => "UVM_MEDIUM",
+    "raise_objection_vseq" => "UVM_MEDIUM",
+    "drop_objection_vseq" => "UVM_MEDIUM",
+    "phase_null_vseq" => "UVM_HIGH",
+    "executing_vseq" => "UVM_LOW",
+    "kill_vseq" => "UVM_MEDIUM",
+)
+global_config.verbosities = uvm_verb_dict
 
 # Clock and reset info
 global_config.clock_name = "clk"

@@ -5,6 +5,7 @@
 # ***********************************
 
 get_normal_drv_funcs(prefix_name) = begin
+    verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
     if reset_mechanism == run_phase_reset
         reset_name = get_uvc_cfg_fld(prefix_name, :reset_name)
         rst_is_negedge_sensitive = get_uvc_cfg_fld(prefix_name, :rst_is_negedge_sensitive)
@@ -16,7 +17,7 @@ get_normal_drv_funcs(prefix_name) = begin
                         @($((rst_is_negedge_sensitive) ? "negedge" : "posedge") vif.$(reset_name));
                         @($((rst_is_negedge_sensitive) ? "posedge" : "negedge") vif.$(reset_name));
                         
-                        `uvm_info("$(uppercase(prefix_name)) DRIVER", "Reset dropped", UVM_MEDIUM)
+                        `uvm_info("$(uppercase(prefix_name)) DRIVER", "Reset dropped", $(verb_dict["reset_dropped"]))
                         
                         get_and_drive();
                     end
@@ -27,7 +28,7 @@ get_normal_drv_funcs(prefix_name) = begin
             task reset_signals();
                 forever begin
                     vif.$(prefix_name)_reset();
-                    `uvm_info("$(uppercase(prefix_name)) DRIVER", "Detected reset", UVM_LOW)
+                    `uvm_info("$(uppercase(prefix_name)) DRIVER", "Detected reset", $(verb_dict["reset_detected"]))
                 end
             endtask : reset_signals
             
@@ -35,7 +36,7 @@ get_normal_drv_funcs(prefix_name) = begin
     elseif reset_mechanism == reset_phase_reset
         my_str =  """
             task reset_phase (uvm_phase phase);
-                `uvm_info("$(uppercase(prefix_name)) DRIVER", "Entering reset phase.", UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) DRIVER", "Entering reset phase.", $(verb_dict["enter_reset_phase"]))
                 vif.$(prefix_name)_reset();
                 get_and_drive();
             endtask: reset_phase
@@ -43,7 +44,7 @@ get_normal_drv_funcs(prefix_name) = begin
             task main_phase (uvm_phase phase);
                 super.main_phase(phase);
                 
-                `uvm_info("$(uppercase(prefix_name)) DRIVER", "Entering main phase", UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) DRIVER", "Entering main phase", $(verb_dict["enter_main_phase"]))
                 
                 get_and_drive();
             endtask : main_phase
@@ -54,7 +55,7 @@ get_normal_drv_funcs(prefix_name) = begin
         task get_and_drive();
             forever begin
                 seq_item_port.get_next_item(req);
-                `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Sending transaction:%s", req.convert2string()), UVM_HIGH)
+                `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Sending transaction:%s", req.convert2string()), $(verb_dict["drive_tr"]))
                 
                 void'(begin_tr(req, "$(uppercase(prefix_name))_DRIVER_TR"));
                 vif.send_to_dut(req);
@@ -149,6 +150,7 @@ gen_driver(prefix_name, type::uvc_class_type) = begin
     cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
     
     params_prefix = get_uvc_params_prefix(prefix_name)
     
@@ -217,11 +219,11 @@ gen_driver(prefix_name, type::uvc_class_type) = begin
     my_str *= """
         function void start_of_simulation_phase (uvm_phase phase);
             super.start_of_simulation_phase(phase);
-            `uvm_info("$(uppercase(prefix_name)) DRIVER", "Simulation initialized", UVM_HIGH)
+            `uvm_info("$(uppercase(prefix_name)) DRIVER", "Simulation initialized", $(verb_dict["sim_init"]))
         endfunction : start_of_simulation_phase
         
         function void report_phase(uvm_phase phase);
-            `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Report: $(uppercase(prefix_name)) DRIVER sent %0d transactions", num_sent), UVM_NONE)
+            `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Report: $(uppercase(prefix_name)) DRIVER sent %0d transactions", num_sent), $(verb_dict["driver_report"]))
         endfunction : report_phase
         
     endclass : $(prefix_name)_$(drv_name)

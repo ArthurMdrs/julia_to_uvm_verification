@@ -7,6 +7,7 @@
 get_normal_mon_funcs(prefix_name) = begin
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
     if reset_mechanism == run_phase_reset
         reset_name = get_uvc_cfg_fld(prefix_name, :reset_name)
         rst_is_negedge_sensitive = get_uvc_cfg_fld(prefix_name, :rst_is_negedge_sensitive)
@@ -16,7 +17,7 @@ get_normal_mon_funcs(prefix_name) = begin
                 @($((rst_is_negedge_sensitive) ? "negedge" : "posedge") vif.$(reset_name));
                 @($((rst_is_negedge_sensitive) ? "posedge" : "negedge") vif.$(reset_name));
                 
-                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Reset dropped", UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Reset dropped", $(verb_dict["reset_dropped"]))
                 
                 collect();
             endtask : run_phase
@@ -25,14 +26,14 @@ get_normal_mon_funcs(prefix_name) = begin
     elseif reset_mechanism == reset_phase_reset
         my_str =  """
             task reset_phase (uvm_phase phase);
-                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Entering reset phase.", UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Entering reset phase.", $(verb_dict["enter_reset_phase"]))
                 mon_tr = null;
                 collect();
             endtask: reset_phase
             
             task main_phase (uvm_phase phase);
                 super.main_phase(phase);
-                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Entering main phase", UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", "Entering main phase", $(verb_dict["enter_main_phase"]))
                 
                 end_tr(mon_tr);
                 
@@ -50,7 +51,7 @@ get_normal_mon_funcs(prefix_name) = begin
                 vif.collect_tr(mon_tr);
                 end_tr(mon_tr);
                 
-                `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Transaction Collected:%s", mon_tr.convert2string()), UVM_MEDIUM)
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Transaction Collected:%s", mon_tr.convert2string()), $(verb_dict["collect_tr"]))
                 item_collected_port.write(mon_tr);
                 num_tr_col++;
             end
@@ -88,6 +89,7 @@ gen_monitor(prefix_name, type::uvc_class_type) = begin
     cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
+    verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
     
     params_prefix = get_uvc_params_prefix(prefix_name)
     
@@ -159,11 +161,11 @@ gen_monitor(prefix_name, type::uvc_class_type) = begin
     my_str *= """
         function void start_of_simulation_phase (uvm_phase phase);
             super.start_of_simulation_phase(phase);
-            `uvm_info("$(uppercase(prefix_name)) MONITOR", "Simulation initialized", UVM_HIGH)
+            `uvm_info("$(uppercase(prefix_name)) MONITOR", "Simulation initialized", $(verb_dict["sim_init"]))
         endfunction : start_of_simulation_phase
         
         function void report_phase(uvm_phase phase);
-            `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Report: $(uppercase(prefix_name)) MONITOR collected %0d transactions", num_tr_col), UVM_NONE)
+            `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Report: $(uppercase(prefix_name)) MONITOR collected %0d transactions", num_tr_col), $(verb_dict["monitor_report"]))
         endfunction : report_phase
         
     endclass : $(prefix_name)_$(mon_name)

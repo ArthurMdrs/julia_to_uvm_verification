@@ -63,7 +63,7 @@ gen_refmod_base() = begin
             
             $(rm_name)_port.write(seq_item);
             
-            `uvm_info("$(uppercase(dut_name)) REFMOD", \$sformatf("Processed item: \\n%s", seq_item.convert2string()), UVM_HIGH)
+            `uvm_info("$(uppercase(dut_name)) REFMOD", \$sformatf("Processed item: \\n%s", seq_item.convert2string()), $(verbosities["refmod_proc_item"]))
         endfunction : write
         
     endclass : $(dut_name)_$(rm_name)

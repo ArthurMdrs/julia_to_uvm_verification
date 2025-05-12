@@ -100,7 +100,7 @@ gen_scoreboard_base() = begin
                 join
                 
                 // Place your code here
-                `uvm_info("$(uppercase(dut_name)) SCOREBOARD", "Scoreboard activities happening.", UVM_MEDIUM)
+                `uvm_info("$(uppercase(dut_name)) SCOREBOARD", "Scoreboard activities happening.", $(verbosities["scoreboard_actvt"]))
                 n_compared++;
                 
     """
@@ -111,7 +111,7 @@ gen_scoreboard_base() = begin
         function void report_phase(uvm_phase phase);
             super.report_phase(phase);
             
-            `uvm_info("$(uppercase(dut_name)) SCOREBOARD", \$sformatf("Compared %0d items.", n_compared), UVM_NONE)
+            `uvm_info("$(uppercase(dut_name)) SCOREBOARD", \$sformatf("Compared %0d items.", n_compared), $(verbosities["scoreboard_report"]))
         endfunction : report_phase
         
     endclass : $(dut_name)_$(sb_name)

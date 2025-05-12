@@ -7,7 +7,7 @@
 gen_vif_config_db_tests(uvc_name, tabs) = begin
     my_str = """
     $(tabs)if(uvm_config_db#($(uvc_name)_vif_t)::get(.cntxt(this), .inst_name(""), .field_name("$(uvc_name)_vif"), .value($(uvc_name)_vif)))
-    $(tabs)    `uvm_info("$(uppercase(dut_name)) BASE TEST", "$(uppercase(uvc_name)) virtual interface was successfully set!", UVM_MEDIUM)
+    $(tabs)    `uvm_info("$(uppercase(dut_name)) BASE TEST", "$(uppercase(uvc_name)) virtual interface was successfully set!", $(verbosities["vif_set_test"]))
     $(tabs)else
     $(tabs)    `uvm_fatal("$(uppercase(dut_name)) BASE TEST", "No $(uppercase(uvc_name)) interface was set!")
     """
@@ -218,7 +218,7 @@ gen_test_base() = begin
             // Create virtual sequence
             $(vseq_inst_name) = $(dut_name)_base_vsequence_t::type_id::create("$(vseq_inst_name)");
             
-            `uvm_info("$(uppercase(dut_name)) BASE TEST", "Reached the end of build phase.", UVM_HIGH)
+            `uvm_info("$(uppercase(dut_name)) BASE TEST", "Reached the end of build phase.", $(verbosities["end_build_phase"]))
             uvm_config_db#(int)::set(.cntxt(this), .inst_name("*"), .field_name("recording_detail"), .value(1));
         endfunction : build_phase
         

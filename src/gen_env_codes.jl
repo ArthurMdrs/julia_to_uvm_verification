@@ -38,7 +38,7 @@ gen_vif_config_db_env(uvc_name, tabs, env_cfg_name) = begin
     my_str = """
     $(tabs)if($(env_cfg_name).has_$(uvc_name)_agent) begin
     $(tabs)    if(uvm_config_db#($(uvc_name)_vif_t)::get(.cntxt(this), .inst_name(""), .field_name("$(uvc_name)_vif"), .value($(uvc_name)_vif)))
-    $(tabs)        `uvm_info("$(uppercase(dut_name)) ENV", "$(uppercase(uvc_name)) virtual interface was successfully set!", UVM_MEDIUM)
+    $(tabs)        `uvm_info("$(uppercase(dut_name)) ENV", "$(uppercase(uvc_name)) virtual interface was successfully set!", $(verbosities["vif_set_env"]))
     $(tabs)    else
     $(tabs)        `uvm_fatal("$(uppercase(dut_name)) ENV", "No $(uppercase(uvc_name)) interface was set!")
     $(tabs)    uvm_config_db#($(uvc_name)_vif_t)::set(.cntxt(this), .inst_name("m_$(uvc_name)_$(agent_name)"), .field_name("vif"), .value($(uvc_name)_vif));
@@ -341,7 +341,7 @@ gen_env_base() = begin
         my_str *= """
                 // Get Env config
                 if(uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(env_cfg_name)"), .value($(env_cfg_name))))
-                    `uvm_info("$(uppercase(dut_name)) ENV", "$(uppercase(dut_name)) ENV config object was successfully set!", UVM_MEDIUM)
+                    `uvm_info("$(uppercase(dut_name)) ENV", "$(uppercase(dut_name)) ENV config object was successfully set!", $(verbosities["config_set_env"]))
                 else
                     `uvm_fatal("$(uppercase(dut_name)) ENV", "No $(uppercase(dut_name)) ENV config object was set!")
                 
@@ -413,14 +413,14 @@ gen_env_base() = begin
             if ($(env_cfg_name).has_coverage) begin
                 m_$(dut_name)_$(cov_name) = $(dut_name)_$(cov_name)_t::type_id::create("m_$(dut_name)_$(cov_name)", this);
                 m_$(dut_name)_$(cov_name).$(config_inst_convention) = $(env_cfg_name);
-                `uvm_info("$(uppercase(dut_name)) ENV", "Coverage is enabled." , UVM_MEDIUM)
+                `uvm_info("$(uppercase(dut_name)) ENV", "Coverage is enabled." , $(verbosities["cov_enabled"]))
             end else begin
-                `uvm_info("$(uppercase(dut_name)) ENV", "Coverage is disabled." , UVM_MEDIUM)
+                `uvm_info("$(uppercase(dut_name)) ENV", "Coverage is disabled." , $(verbosities["cov_enabled"]))
             end
             
     """ : ""
     my_str *= """
-            `uvm_info("$(uppercase(dut_name)) ENV", "Reached the end of build phase", UVM_HIGH)
+            `uvm_info("$(uppercase(dut_name)) ENV", "Reached the end of build phase", $(verbosities["end_build_phase"]))
         endfunction : build_phase
 
         function void connect_phase (uvm_phase phase);

@@ -93,6 +93,7 @@ gen_do_compare(prefix_name, vec::Vector{tr_field_t}) = begin
     return my_str
 end
 gen_do_print(prefix_name, vec::Vector{tr_field_t}) = begin
+    # TODO: make the uvm verbority below configurable?
     my_str = """
         function void do_print (uvm_printer printer);
             if (printer.knobs.sprint == 0)
