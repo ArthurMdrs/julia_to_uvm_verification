@@ -12,7 +12,7 @@ end
 gen_lines_drv_cb(vec::Vector{if_field_t}, tabs, clock_name) = begin
     my_str = """
     $(tabs)clocking drv_cb @(posedge $(clock_name));
-    $(tabs)    default input #1ns output #1ns;
+    $(tabs)    default input #100ps output #100ps;
     $( gen_long_str(vec, tabs*"    ", gen_line_drv_cb_sig)[1:end-1] )
     $(tabs)endclocking
     """
@@ -23,7 +23,7 @@ end
 gen_lines_mon_cb(vec::Vector{if_field_t}, tabs, clock_name) = begin
     my_str = """
     $(tabs)clocking mon_cb @(posedge $(clock_name));
-    $(tabs)    default input #1ns output #1ns;
+    $(tabs)    default input #100ps output #100ps;
     $( gen_long_str(vec, tabs*"    ", gen_line_mon_cb_sig)[1:end-1] )
     $(tabs)endclocking
     """

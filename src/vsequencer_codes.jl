@@ -16,8 +16,9 @@ gen_line_sqr_instance(uvc_name, tabs) = begin
 end
 gen_line_stop_seq(uvc_name, tabs) = begin
     sqr_name = get_uvc_cfg_fld(uvc_name, :class_names)["sequencer"]
+    cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
     my_str = """
-    $(tabs)if ($(config_inst_convention).has_$(uvc_name)_agent)
+    $(tabs)if ($(config_inst_convention).has_$(uvc_name)_agent && $(config_inst_convention).m_$(uvc_name)_$(cfg_name).is_active)
     $(tabs)    m_$(uvc_name)_$(sqr_name).stop_sequences();
     """
     return my_str
@@ -76,15 +77,23 @@ gen_vsequencer() = begin
             if ($(config_inst_convention) == null)
                 `uvm_fatal("$(uppercase(dut_name)) VSEQUENCER", "No configuration object was set!")
         endfunction : build_phase
-
-        task pre_reset_phase(uvm_phase phase);
-    $( gen_long_str(uvc_names, "        ", gen_line_stop_seq)[1:end-1] )
-        endtask : pre_reset_phase
-
-        task post_reset_phase(uvm_phase phase);
-    $( gen_long_str(uvc_names, "        ", gen_line_stop_seq)[1:end-1] )
-        endtask : post_reset_phase
-
+        
+    """
+    
+    if reset_mechanism == reset_phase_reset
+        my_str *= """
+            task pre_reset_phase(uvm_phase phase);
+        $( gen_long_str(uvc_names, "        ", gen_line_stop_seq)[1:end-1] )
+            endtask : pre_reset_phase
+            
+            task post_reset_phase(uvm_phase phase);
+        $( gen_long_str(uvc_names, "        ", gen_line_stop_seq)[1:end-1] )
+            endtask : post_reset_phase
+            
+        """
+    end
+    
+        my_str *= """
     endclass : $(dut_name)_$(vsqr_name)
     """
     return my_str
