@@ -77,7 +77,7 @@ gen_config(prefix_name, type::uvc_class_type) = begin
     
     my_str *= """
         endfunction : new
-
+        
     endclass : $(prefix_name)_$(cfg_name)
     """
     return my_str

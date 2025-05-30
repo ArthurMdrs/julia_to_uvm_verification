@@ -15,7 +15,7 @@ gen_base_seq(prefix_name) = begin
     
     gen_lines_tdefs_w_param_uvc(name, tabs) = gen_lines_tdefs_w_param(params_prefix, name, tabs)
     my_str = """
-    class $(prefix_name)_base_sequence $(get_param_declaration_w_seq_item(params_prefix, "    "))extends uvm_sequence #($(tr_type));
+    class $(prefix_name)_base_seq $(get_param_declaration_w_seq_item(params_prefix, "    "))extends uvm_sequence #($(tr_type));
         
     """
     
@@ -28,19 +28,19 @@ gen_base_seq(prefix_name) = begin
     
     if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
         my_str *= """
-            `uvm_object_param_utils($(prefix_name)_base_sequence $(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
+            `uvm_object_param_utils($(prefix_name)_base_seq $(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
         """
     else
         my_str *= """
-            `uvm_object_utils($(prefix_name)_base_sequence)
+            `uvm_object_utils($(prefix_name)_base_seq)
         """
     end
     
     my_str *= """
         
         `uvm_declare_p_sequencer($(prefix_name)_$(sqr_name)$(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
-
-        function new(string name="$(prefix_name)_base_sequence");
+        
+        function new(string name="$(prefix_name)_base_seq");
             super.new(name);
         endfunction : new
         
@@ -56,7 +56,7 @@ gen_base_seq(prefix_name) = begin
             else begin
                 `uvm_info("$(uppercase(prefix_name)) SEQ", "Phase is null, so could not raise objection.", $(verb_dict["phase_null_seq"]))
             end
-        
+            
             $(config_inst_convention) = p_sequencer.$(config_inst_convention);
         endtask : pre_start
         
@@ -74,7 +74,7 @@ gen_base_seq(prefix_name) = begin
     """
     
         my_str *= """
-    endclass : $(prefix_name)_base_sequence
+    endclass : $(prefix_name)_base_seq
     """
     return my_str
 end
@@ -87,7 +87,7 @@ gen_random_seq(prefix_name) = begin
     params_prefix = get_uvc_params_prefix(prefix_name)
     
     my_str = """
-    class $(prefix_name)_random_seq $(get_param_declaration_w_seq_item(params_prefix, "    "))extends $(prefix_name)_base_sequence$(get_param_conn_w_seq_item2(params_prefix, "")[1:end-1]);
+    class $(prefix_name)_random_seq $(get_param_declaration_w_seq_item(params_prefix, "    "))extends $(prefix_name)_base_seq$(get_param_conn_w_seq_item2(params_prefix, "")[1:end-1]);
         
         `uvm_object_param_utils($(prefix_name)_random_seq$(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
         
@@ -121,10 +121,10 @@ gen_clknrst_action_seq(clknrst_action, prefix_name) = begin
     params_prefix = get_uvc_params_prefix(prefix_name)
     
     my_str = """
-    class $(prefix_name)_$(clknrst_action)_seq $(get_param_declaration_w_seq_item(params_prefix, "    "))extends $(prefix_name)_base_sequence$(get_param_conn_w_seq_item2(params_prefix, "")[1:end-1]);
-
+    class $(prefix_name)_$(clknrst_action)_seq $(get_param_declaration_w_seq_item(params_prefix, "    "))extends $(prefix_name)_base_seq$(get_param_conn_w_seq_item2(params_prefix, "")[1:end-1]);
+        
         `uvm_object_param_utils($(prefix_name)_$(clknrst_action)_seq$(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
-
+        
         function new(string name="$(prefix_name)_$(clknrst_action)_seq");
             super.new(name);
         endfunction : new
@@ -138,7 +138,7 @@ gen_clknrst_action_seq(clknrst_action, prefix_name) = begin
             req.action = $(uppercase(prefix_name))_ACTION_$(uppercase(clknrst_action));
             finish_item(req);
         endtask : body
-
+        
     endclass : $(prefix_name)_$(clknrst_action)_seq
     """
     return my_str
@@ -150,7 +150,7 @@ gen_clknrst_rst_and_start_clk_seq(prefix_name) = begin
     params_prefix = get_uvc_params_prefix(prefix_name)
     
     my_str = """
-    class $(prefix_name)_reset_and_start_clk_seq $(get_param_declaration_w_seq_item(params_prefix, "    "))extends $(prefix_name)_base_sequence$(get_param_conn_w_seq_item2(params_prefix, "")[1:end-1]);
+    class $(prefix_name)_reset_and_start_clk_seq $(get_param_declaration_w_seq_item(params_prefix, "    "))extends $(prefix_name)_base_seq$(get_param_conn_w_seq_item2(params_prefix, "")[1:end-1]);
         
         // Typedefs - begin
     """
@@ -165,7 +165,7 @@ gen_clknrst_rst_and_start_clk_seq(prefix_name) = begin
         $(prefix_name)_assert_reset_seq_t m_assert_reset_seq;
         
         `uvm_object_param_utils($(prefix_name)_reset_and_start_clk_seq$(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
-
+        
         function new(string name="$(prefix_name)_reset_and_start_clk_seq");
             super.new(name);
         endfunction : new
@@ -180,7 +180,7 @@ gen_clknrst_rst_and_start_clk_seq(prefix_name) = begin
             m_assert_reset_seq.set_starting_phase(get_starting_phase());
             m_assert_reset_seq.start(.sequencer(p_sequencer));
         endtask : body
-
+        
     endclass : $(prefix_name)_reset_and_start_clk_seq
     """
     return my_str

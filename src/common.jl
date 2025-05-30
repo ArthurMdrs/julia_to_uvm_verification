@@ -364,7 +364,7 @@ gen_if_signals(tabs, func) = begin
         gen_line(signal_vec, tabs) = func(signal_vec, uvc_name, tabs)
         str *= gen_long_str(if_sigs_vec, tabs*"    ", gen_line)
         str = (uvc_name == uvc_names_[end]) ? str[1:end-2]*"\n" : str
-        str *= "$(tabs)// Signals from $(uvc_name)'s interface - end\n"
+        str *= (uvc_name == uvc_names_[end]) ? "$(tabs)// Signals from $(uvc_name)'s interface - end" : "$(tabs)// Signals from $(uvc_name)'s interface - end\n$(tabs)"
     end
     return str
 end

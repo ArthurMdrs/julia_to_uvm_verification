@@ -65,14 +65,14 @@ end
 test_gen() = begin
     if run_test_gen == true
         output_file_setup("$(tests_dir)")
-        write_file("$(tests_dir)/$(dut_name)_test_base.$(class_files_extension)", gen_test_base())
-        write_file("$(tests_dir)/$(dut_name)_test_random.$(class_files_extension)", gen_test_random())
+        write_file("$(tests_dir)/$(dut_name)_base_test.$(class_files_extension)", gen_base_test())
+        write_file("$(tests_dir)/$(dut_name)_random_test.$(class_files_extension)", gen_random_test())
     end
 end
 
 # ****************************************************************
 
-gen_test_base() = begin 
+gen_base_test() = begin 
     # TODO: Make drain time depend on clk period? Or maybe a config?
     vsqr_name = class_names["vsequencer" ]
     cfg_name  = class_names["config"     ]
@@ -85,23 +85,12 @@ gen_test_base() = begin
     gen_line0(name, tabs) = gen_lines_tdefs_w_param_env(params_prefix, name, tabs)
     
     my_str = """
-    class $(dut_name)_test_base $(get_param_declaration(params_prefix, "    "))extends uvm_test;
+    class $(dut_name)_base_test extends uvm_test;
         
+        `uvm_component_utils($(dut_name)_base_test)
+        
+        localparam $(dut_name)_env_params_t $(uppercase(dut_name))_ENV_PARAMS = $(dut_name)_env_params_pkg::$(uppercase(dut_name))_ENV_PARAMS;
     """
-    
-    if env_has_params
-        my_str *= """
-            `uvm_component_registry($(dut_name)_test_base #(
-                .$(uppercase(dut_name))_ENV_PARAMS($(uppercase(dut_name))_ENV_PARAMS)
-            ), "$(dut_name)_test_base")
-            
-        """
-    else
-        my_str *= """
-            `uvm_component_utils($(dut_name)_test_base)
-            
-        """
-    end
     
     tdefs_list = ["$(dut_name)_env", "$(dut_name)_env_$(cfg_name)"]
     my_str *= """
@@ -121,7 +110,7 @@ gen_test_base() = begin
     end
     
     my_str *= """
-    $( gen_vseq_tdef("base_vsequence", "    ")[1:end-1] )
+    $( gen_vseq_tdef("base_vseq", "    ")[1:end-1] )
     """
     my_str *= """
     $( gen_long_str(uvc_names, "    ", gen_line_vif_typedef_env)[1:end-1] )
@@ -150,7 +139,7 @@ gen_test_base() = begin
         $(dut_name)_env_t m_$(dut_name)_env;
         
         // Virtual sequencer (re-use this with factory overrides)
-        $(dut_name)_base_vsequence_t $(vseq_inst_name);
+        $(dut_name)_base_vseq_t $(vseq_inst_name);
         
         uvm_objection obj;
         
@@ -216,7 +205,7 @@ gen_test_base() = begin
     end
     my_str *= """
             // Create virtual sequence
-            $(vseq_inst_name) = $(dut_name)_base_vsequence_t::type_id::create("$(vseq_inst_name)");
+            $(vseq_inst_name) = $(dut_name)_base_vseq_t::type_id::create("$(vseq_inst_name)");
             
             `uvm_info("$(uppercase(dut_name)) BASE TEST", "Reached the end of build phase.", $(verbosities["end_build_phase"]))
             uvm_config_db#(int)::set(.cntxt(this), .inst_name("*"), .field_name("recording_detail"), .value(1));
@@ -257,29 +246,20 @@ gen_test_base() = begin
         
     """
     my_str *= """
-    endclass : $(dut_name)_test_base
+    endclass : $(dut_name)_base_test
     """
     return my_str
 end
 
-gen_test_random() = begin 
+gen_random_test() = begin 
     params_prefix = get_uvc_params_prefix(dut_name)
     
     my_str = """
-    class $(dut_name)_test_random $(get_param_declaration(params_prefix, "    "))extends $(dut_name)_test_base $(get_param_conn(params_prefix, ""));
-    
+    class $(dut_name)_random_test extends $(dut_name)_base_test;
+        
+        `uvm_component_utils($(dut_name)_random_test)
+        
     """
-    if env_has_params
-        my_str *= """
-            `uvm_component_registry($(dut_name)_test_random $(get_param_conn(params_prefix, "    ")), "$(dut_name)_test_random")
-            
-        """
-    else
-        my_str *= """
-            `uvm_component_utils($(dut_name)_test_random)
-            
-        """
-    end
     my_str *= """
     $( gen_vseq_tdef("random_vseq", "    ")[1:end-1] )
         
@@ -293,7 +273,7 @@ gen_test_random() = begin
             //      set_type_override_by_type (original_type::get_type(), override_type::get_type());
             //      set_inst_override_by_type (original_type::get_type(), override_type::get_type(), "full_inst_path");
             
-            set_type_override_by_type($(dut_name)_base_vsequence_t::get_type(), $(dut_name)_random_vseq_t::get_type());
+            set_type_override_by_type($(dut_name)_base_vseq_t::get_type(), $(dut_name)_random_vseq_t::get_type());
             
             super.build_phase(phase);
             
@@ -319,7 +299,7 @@ gen_test_random() = begin
     # """
     my_str *= """
         
-    endclass : $(dut_name)_test_random
+    endclass : $(dut_name)_random_test
     """
     return my_str
 end

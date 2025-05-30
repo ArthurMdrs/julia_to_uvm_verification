@@ -36,9 +36,9 @@ gen_line_convert_to_string(vec::tr_field_t, tabs) = begin
 end
 gen_line_instanciate_obj(vec::tr_field_t, tabs) = begin
     if vec.type in packed_types
-        return "$(tabs)$((vec.is_rand) ? "rand" : "    ") $(vec.type) $(get_signal_range(vec))$(vec.field_name);\n"
+        return "$(tabs)$((vec.is_rand) ? "rand " : "")$(vec.type) $(get_signal_range(vec))$(vec.field_name);\n"
     else
-        return "$(tabs)$((vec.is_rand) ? "rand" : "    ") $(vec.type) $(vec.field_name)$(get_signal_dim(vec));\n"
+        return "$(tabs)$((vec.is_rand) ? "rand " : "")$(vec.type) $(vec.field_name)$(get_signal_dim(vec));\n"
     end
 end
 gen_line_attribute_copy(vec::tr_field_t, tabs) = begin

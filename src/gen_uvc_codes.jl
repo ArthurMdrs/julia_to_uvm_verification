@@ -78,7 +78,7 @@ gen_files(uvc_name) = begin
     end
     
     # Generate sequences
-    write_file("$(sequences_dir)/$(uvc_name)/$(uvc_name)_base_sequence.$(class_files_extension)", gen_base_seq(uvc_name))
+    write_file("$(sequences_dir)/$(uvc_name)/$(uvc_name)_base_seq.$(class_files_extension)", gen_base_seq(uvc_name))
     if using_this_clknrst == true && uvc_name == clknrst_name
         for action in clknrst_actions_vec
             write_file("$(sequences_dir)/$(uvc_name)/$(uvc_name)_$(action)_seq.$(class_files_extension)", gen_clknrst_action_seq(action, uvc_name))

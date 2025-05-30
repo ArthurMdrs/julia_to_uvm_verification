@@ -52,16 +52,6 @@ gen_top_base() = begin
     my_str *= """
         import $(dut_name)_tb_pkg::*;
     """
-        
-    if env_has_params
-        my_str *= """
-            
-            typedef $(dut_name)_test_base $(get_param_conn(params_prefix, "    "))$(dut_name)_test_base_rplc;
-            
-            typedef $(dut_name)_test_random $(get_param_conn(params_prefix, "    "))$(dut_name)_test_random_rplc;
-            
-        """
-    end
     
     my_str *= """
         
@@ -84,7 +74,7 @@ gen_top_base() = begin
         
         $(dut_name) $(get_param_conn(dut_name, "    "))dut (
             .$(clock_name)($(clock_name)),
-            .$(reset_name)($(reset_name)),$( gen_if_signals("        ", gen_line_if_connection)[1:end-1] )
+            .$(reset_name)($(reset_name)),$( gen_if_signals("        ", gen_line_if_connection) )
         );
         
     """
@@ -117,7 +107,7 @@ gen_top_base() = begin
     $( gen_long_str(uvc_names, "            ", gen_line_send_if_to_uvc)[1:end-1] )
             // Virtual interfaces send to UVCs - end
             
-            run_test("$(dut_name)_test_random");
+            run_test("$(dut_name)_random_test");
         end
         
     endmodule : $(dut_name)_tb_top
@@ -151,8 +141,8 @@ gen_tb_pkg() = begin
         
     $( gen_line_import("$(dut_name)_env", "    ")[1:end-1] )
         
-        `include "$(dut_name)_test_base.$(class_files_extension)"
-        `include "$(dut_name)_test_random.$(class_files_extension)"
+        `include "$(dut_name)_base_test.$(class_files_extension)"
+        `include "$(dut_name)_random_test.$(class_files_extension)"
         
     endpackage: $(dut_name)_tb_pkg
     """

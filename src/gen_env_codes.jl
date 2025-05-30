@@ -29,7 +29,7 @@ gen_line_connect_sequencers(uvc_name, tabs, env_cfg_name) = begin
     my_str = """
     $(tabs)if ($(env_cfg_name).has_$(uvc_name)_agent)
     $(tabs)    if (m_$(uvc_name)_$(cfg_name).is_active == UVM_ACTIVE)
-    $(tabs)        m_$(dut_name)_$(vsqr_name).m_$(uvc_name)_$(sqr_name) = m_$(uvc_name)_$(agent_name).m_sequencer;\n
+    $(tabs)        m_$(dut_name)_$(vsqr_name).m_$(uvc_name)_$(sqr_name) = m_$(uvc_name)_$(agent_name).m_sequencer;
     """
     return my_str
 end
@@ -191,7 +191,7 @@ env_gen() = begin
             write_file("$(env_dir)/$(dut_name)_env_params_pkg.sv", gen_env_params_pkg())
         end
         write_file("$(env_dir)/$(dut_name)_$(vsqr_name).$(class_files_extension)", gen_vsequencer())
-        write_file("$(sequences_dir)/$(dut_name)_base_vsequence.$(class_files_extension)", gen_vseq_base())
+        write_file("$(sequences_dir)/$(dut_name)_base_vseq.$(class_files_extension)", gen_vseq_base())
         write_file("$(sequences_dir)/$(dut_name)_random_vseq.$(class_files_extension)", gen_vseq_random())
         if gen_scoreboard 
             write_file("$(env_dir)/$(dut_name)_$(sb_name).$(class_files_extension)", gen_scoreboard_base())
@@ -331,7 +331,7 @@ gen_env_base() = begin
         function new(string name, uvm_component parent);
             super.new(name, parent);
         endfunction : new
-
+        
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             
@@ -422,7 +422,7 @@ gen_env_base() = begin
     my_str *= """
             `uvm_info("$(uppercase(dut_name)) ENV", "Reached the end of build phase", $(verbosities["end_build_phase"]))
         endfunction : build_phase
-
+        
         function void connect_phase (uvm_phase phase);
             super.connect_phase(phase);
             
@@ -431,7 +431,7 @@ gen_env_base() = begin
     """
     gen_line1(uvc_name, tabs) = gen_line_connect_sequencers(uvc_name, tabs, env_cfg_name)
     my_str *= """
-    $( gen_long_str(uvc_names, "            ", gen_line1)[1:end-2] )
+    $( gen_long_str(uvc_names, "            ", gen_line1)[1:end-1] )
             end
             // Sequencers connect - end
             
@@ -443,7 +443,7 @@ gen_env_base() = begin
     """ : ""
     my_str *= gen_scoreboard ? """
             // Connect agents to scoreboard
-    $( get_sb_ports_conn("        ", env_cfg_name) )
+    $( get_sb_ports_conn("        ", env_cfg_name)[1:end-1] )
             
     """ : ""
     my_str *= env_has_coverage ? """
@@ -453,7 +453,7 @@ gen_env_base() = begin
     """ : ""
     my_str *= """
         endfunction : connect_phase
-
+        
     endclass : $(dut_name)_env
     """
     return my_str
@@ -496,7 +496,7 @@ gen_env_pkg() = begin
     my_str *= """
         `include "$(dut_name)_env.$(class_files_extension)"
         
-        `include "$(dut_name)_base_vsequence.$(class_files_extension)"
+        `include "$(dut_name)_base_vseq.$(class_files_extension)"
         `include "$(dut_name)_random_vseq.$(class_files_extension)"
         
     endpackage: $(dut_name)_env_pkg
@@ -556,10 +556,11 @@ gen_env_params_pkg() = begin
     """
     
     my_str *= """
-    $( gen_param_inst("    ") )
+    $( gen_param_inst("    ")[1:end-1] )
     """
     
     my_str *= """
+        
     endpackage : $(dut_name)_env_params_pkg
     """
     return my_str
@@ -644,7 +645,7 @@ gen_env_cfg() = begin
             
     $( gen_long_str(uvc_names, "        ", gen_line_has_agent_assign)[1:end-1] )
         endfunction : new
-
+        
     endclass : $(dut_name)_env_$(cfg_name)
     """
     return my_str

@@ -72,7 +72,7 @@ gen_pkg(prefix_name, type::uvc_class_type) = begin
     my_str *= """
     $( gen_long_str(vec, "    ", gen_line_include)[1:end-1] )
         
-        `include "$(prefix_name)_base_sequence.$(class_files_extension)"
+        `include "$(prefix_name)_base_seq.$(class_files_extension)"
     """
     
     if type == normal::uvc_class_type

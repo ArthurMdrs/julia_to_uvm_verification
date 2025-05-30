@@ -29,10 +29,12 @@ gen_line_rnd_seq_start(uvc_name, tabs) = begin
     sqr_name = get_uvc_cfg_fld(uvc_name, :class_names)["sequencer"]
     cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
     my_str = """
-    $(tabs)if ($(config_inst_convention).has_$(uvc_name)_agent && $(config_inst_convention).m_$(uvc_name)_$(cfg_name).is_active) begin
-    $( gen_line_rnd_seq_creation(uvc_name, tabs*"    ")[1:end-1] )
-    $( gen_line_rnd_seq_set_phase(uvc_name, tabs*"    ")[1:end-1] )
-    $(tabs)    m_$(uvc_name)_random_seq.start(.sequencer(p_sequencer.m_$(uvc_name)_$(sqr_name)), .call_pre_post(0));
+    $(tabs)if ($(config_inst_convention).has_$(uvc_name)_agent) begin
+    $(tabs)    if ($(config_inst_convention).m_$(uvc_name)_$(cfg_name).is_active) begin
+    $( gen_line_rnd_seq_creation(uvc_name, tabs*"        ")[1:end-1] )
+    $( gen_line_rnd_seq_set_phase(uvc_name, tabs*"        ")[1:end-1] )
+    $(tabs)        m_$(uvc_name)_random_seq.start(.sequencer(p_sequencer.m_$(uvc_name)_$(sqr_name)), .call_pre_post(0));
+    $(tabs)    end
     $(tabs)end
     """
     return my_str
@@ -46,22 +48,22 @@ gen_vseq_base() = begin
     params_prefix = get_uvc_params_prefix(dut_name)
     
     my_str = """
-    class $(dut_name)_base_vsequence $(get_vsqr_param_declaration("    "))extends uvm_sequence;
+    class $(dut_name)_base_vseq $(get_vsqr_param_declaration("    "))extends uvm_sequence;
         
     """
     
     if env_has_params
         my_str *= """
-            `uvm_object_param_utils($(dut_name)_base_vsequence $(get_vsqr_param_conn("    ")[1:end-1]))
+            `uvm_object_param_utils($(dut_name)_base_vseq $(get_vsqr_param_conn("    ")[1:end-1]))
         """
     else
         my_str *= """
-            `uvm_object_utils($(dut_name)_base_vsequence)
+            `uvm_object_utils($(dut_name)_base_vseq)
         """
     end
     
     my_str *= """
-    
+        
         // Typedefs - begin
     $( gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1] )
     """
@@ -97,7 +99,7 @@ gen_vseq_base() = begin
     $( gen_long_str(seq_list, "    ", gen_line_seq_instance)[1:end-1] )
         // Sequence instances - end
         
-        function new (string name="$(dut_name)_base_vsequence");
+        function new (string name="$(dut_name)_base_vseq");
             super.new(name);
         endfunction : new
         
@@ -113,7 +115,7 @@ gen_vseq_base() = begin
             else begin
                 `uvm_info("$(uppercase(dut_name)) VSEQ", "Phase is null, so could not raise objection.", $(verbosities["phase_null_vseq"]))
             end
-        
+            
             $(config_inst_convention) = p_sequencer.$(config_inst_convention);
         endtask : pre_start
         
@@ -142,7 +144,7 @@ gen_vseq_base() = begin
     """
     
     my_str *= """
-    endclass : $(dut_name)_base_vsequence
+    endclass : $(dut_name)_base_vseq
     """
     return my_str
 end
@@ -156,7 +158,7 @@ gen_vseq_random() = begin
     end
     
     my_str = """
-    class $(dut_name)_random_vseq $(get_vsqr_param_declaration("    "))extends $(dut_name)_base_vsequence$(gen_vsqr_param_conn("")[1:end-1]);
+    class $(dut_name)_random_vseq $(get_vsqr_param_declaration("    "))extends $(dut_name)_base_vseq$(gen_vsqr_param_conn("")[1:end-1]);
         
     """
     
@@ -183,10 +185,12 @@ gen_vseq_random() = begin
     
     if using_this_clknrst == true
         my_str *= """
-                if ($(config_inst_convention).has_$(clknrst_name)_agent && $(config_inst_convention).m_$(clknrst_name)_$(get_uvc_cfg_fld(clknrst_name, :class_names)["config"]).is_active) begin
-                    m_$(clknrst_name)_reset_and_start_clk_seq = $(clknrst_name)_reset_and_start_clk_seq_t::type_id::create("m_$(clknrst_name)_reset_and_start_clk_seq");
-                    m_$(clknrst_name)_reset_and_start_clk_seq.set_starting_phase(get_starting_phase());
-                    m_$(clknrst_name)_reset_and_start_clk_seq.start(.sequencer(p_sequencer.m_$(clknrst_name)_$(sqr_name)), .call_pre_post(0));
+                if ($(config_inst_convention).has_$(clknrst_name)_agent) begin
+                    if ($(config_inst_convention).m_$(clknrst_name)_$(get_uvc_cfg_fld(clknrst_name, :class_names)["config"]).is_active) begin
+                        m_$(clknrst_name)_reset_and_start_clk_seq = $(clknrst_name)_reset_and_start_clk_seq_t::type_id::create("m_$(clknrst_name)_reset_and_start_clk_seq");
+                        m_$(clknrst_name)_reset_and_start_clk_seq.set_starting_phase(get_starting_phase());
+                        m_$(clknrst_name)_reset_and_start_clk_seq.start(.sequencer(p_sequencer.m_$(clknrst_name)_$(sqr_name)), .call_pre_post(0));
+                    end
                 end
                 
         """
