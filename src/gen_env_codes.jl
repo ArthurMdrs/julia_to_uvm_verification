@@ -27,9 +27,11 @@ gen_line_connect_sequencers(uvc_name, tabs, env_cfg_name) = begin
     # $(tabs)    m_$(dut_name)_$(vsqr_name).m_$(uvc_name)_$(sqr_name) = m_$(uvc_name)_$(agent_name).m_sequencer;\n
     # """
     my_str = """
-    $(tabs)if ($(env_cfg_name).has_$(uvc_name)_agent)
-    $(tabs)    if (m_$(uvc_name)_$(cfg_name).is_active == UVM_ACTIVE)
+    $(tabs)if ($(env_cfg_name).has_$(uvc_name)_agent) begin
+    $(tabs)    if (m_$(uvc_name)_$(cfg_name).is_active == UVM_ACTIVE) begin
     $(tabs)        m_$(dut_name)_$(vsqr_name).m_$(uvc_name)_$(sqr_name) = m_$(uvc_name)_$(agent_name).m_sequencer;
+    $(tabs)    end
+    $(tabs)end
     """
     return my_str
 end

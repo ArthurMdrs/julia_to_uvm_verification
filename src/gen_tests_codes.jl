@@ -90,6 +90,7 @@ gen_base_test() = begin
         `uvm_component_utils($(dut_name)_base_test)
         
         localparam $(dut_name)_env_params_t $(uppercase(dut_name))_ENV_PARAMS = $(dut_name)_env_params_pkg::$(uppercase(dut_name))_ENV_PARAMS;
+        
     """
     
     tdefs_list = ["$(dut_name)_env", "$(dut_name)_env_$(cfg_name)"]

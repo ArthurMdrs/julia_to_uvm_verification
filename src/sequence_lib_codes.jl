@@ -73,6 +73,17 @@ gen_base_seq(prefix_name) = begin
         
     """
     
+    my_str *= """
+        function void do_kill ();
+            uvm_phase phase = get_starting_phase();
+            if (phase != null) begin
+                phase.drop_objection(this, get_type_name());
+                `uvm_info("$(uppercase(prefix_name)) SEQ", "Sequence killed.", $(verbosities["kill_seq"]))
+            end
+        endfunction : do_kill
+        
+    """
+    
         my_str *= """
     endclass : $(prefix_name)_base_seq
     """

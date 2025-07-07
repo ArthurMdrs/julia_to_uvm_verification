@@ -19,7 +19,7 @@ gen_line_convert_to_string(vec::tr_field_t, tabs) = begin
             my_str *= "$(tabs)    string_aux = {string_aux, \$sformatf(\"** $(vec.field_name)[%0d] value: $(fmt)\\n\", i, $(vec.field_name)[i])};\n"
         end
     elseif vec.type in integer_types
-        if size(vec.size)[1] == 1 && vec.size == 1
+        if size(vec.size)[1] == 1 && vec.size[1] == 1
             my_str = "$(tabs)string_aux = {string_aux, \$sformatf(\"** $(vec.field_name) value: $(fmt)\\n\", $(vec.field_name))};\n"
         else
             my_str  = "$(tabs)foreach ($(vec.field_name)[i])\n"
@@ -117,7 +117,7 @@ gen_line_attribute_record_int(vec::tr_field_t, tabs) = begin
             my_str *= "$(tabs)    `uvm_record_int(\$sformatf(\"$(vec.field_name)[%0d]\", i), $(vec.field_name)[i], $(vec.size[2]), UVM_$(uppercase(vec.radix)))\n"
         end
     else
-        if size(vec.size)[1] == 1 && vec.size == 1
+        if size(vec.size)[1] == 1 && vec.size[1] == 1
             my_str = "$(tabs)`uvm_record_int(\"$(vec.field_name)\", $(vec.field_name), $(vec.size[1]), UVM_$(uppercase(vec.radix)))\n"
         else
             my_str  = "$(tabs)foreach ($(vec.field_name)[i])\n"
@@ -167,7 +167,7 @@ gen_line_attribute_pack_unpack(vec::tr_field_t, tabs, un) = begin
             my_str *= "$(tabs)    `uvm_$(un)pack_int($(vec.field_name)[i])\n"
         end
     elseif vec.type in integer_types
-        if size(vec.size)[1] == 1 && vec.size == 1
+        if size(vec.size)[1] == 1 && vec.size[1] == 1
             my_str = "$(tabs)`uvm_$(un)pack_int($(vec.field_name))\n"
         else
             my_str  = "$(tabs)foreach ($(vec.field_name)[i])\n"

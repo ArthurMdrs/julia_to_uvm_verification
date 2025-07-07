@@ -18,8 +18,11 @@ gen_line_stop_seq(uvc_name, tabs) = begin
     sqr_name = get_uvc_cfg_fld(uvc_name, :class_names)["sequencer"]
     cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
     my_str = """
-    $(tabs)if ($(config_inst_convention).has_$(uvc_name)_agent && $(config_inst_convention).m_$(uvc_name)_$(cfg_name).is_active)
-    $(tabs)    m_$(uvc_name)_$(sqr_name).stop_sequences();
+    $(tabs)if ($(config_inst_convention).has_$(uvc_name)_agent) begin
+    $(tabs)    if ($(config_inst_convention).m_$(uvc_name)_$(cfg_name).is_active) begin
+    $(tabs)        m_$(uvc_name)_$(sqr_name).stop_sequences();
+    $(tabs)    end
+    $(tabs)end
     """
     return my_str
 end

@@ -185,6 +185,7 @@ uvm_verb_dict = Dict(
     "phase_null_vseq" => "UVM_HIGH",
     "executing_vseq" => "UVM_LOW",
     "kill_vseq" => "UVM_MEDIUM",
+    "kill_seq" => "UVM_MEDIUM",
 )
 global_config.verbosities = uvm_verb_dict
 
