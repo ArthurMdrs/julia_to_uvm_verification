@@ -251,6 +251,7 @@ mutable struct uvc_config_t
     use_env_params::Union{Bool, Nothing}
     params_vec::Vector{sv_params_t}
     class_names::Dict{String, String}
+    use_env_class_names::Union{Bool, Nothing}
     uvc_config_t() = new()
 end
 StructTypes.StructType(::Type{uvc_config_t}) = StructTypes.Mutable()

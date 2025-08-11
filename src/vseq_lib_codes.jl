@@ -189,7 +189,7 @@ gen_vseq_random() = begin
                     if ($(config_inst_convention).m_$(clknrst_name)_$(get_uvc_cfg_fld(clknrst_name, :class_names)["config"]).is_active) begin
                         m_$(clknrst_name)_reset_and_start_clk_seq = $(clknrst_name)_reset_and_start_clk_seq_t::type_id::create("m_$(clknrst_name)_reset_and_start_clk_seq");
                         m_$(clknrst_name)_reset_and_start_clk_seq.set_starting_phase(get_starting_phase());
-                        m_$(clknrst_name)_reset_and_start_clk_seq.start(.sequencer(p_sequencer.m_$(clknrst_name)_$(sqr_name)), .call_pre_post(0));
+                        m_$(clknrst_name)_reset_and_start_clk_seq.start(.sequencer(p_sequencer.m_$(clknrst_name)_$(get_uvc_cfg_fld(clknrst_name, :class_names)["sequencer"])), .call_pre_post(0));
                     end
                 end
                 

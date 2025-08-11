@@ -145,21 +145,21 @@ elapsed_time_array["set_configs"] = (time_ns() - time_now) / 1e9
 #######################################################################################################################
 
 # Define a default UVC configuration
-def_uvc_config = uvc_config_t()
-def_uvc_config.uvc = ""
-def_uvc_config.rst_is_negedge_sensitive = rst_is_negedge_sensitive
-def_uvc_config.clock_name = clock_name
-def_uvc_config.reset_name = reset_name
-def_uvc_config.use_short_names = use_short_names
-def_uvc_config.agent_has_coverage = agent_has_coverage
-def_uvc_config.gen_tdefs_pkg = gen_tdefs_pkg
-def_uvc_config.vif_in_config = vif_in_config
-def_uvc_config.tr_props_vec = []
-def_uvc_config.if_sigs_vec = []
-def_uvc_config.uvc_has_params = uvc_has_params
-def_uvc_config.use_env_params = use_env_params
-def_uvc_config.params_vec = params_vec
-def_uvc_config.class_names = use_short_names ? short_names_dict : long_names_dict
+# def_uvc_config = uvc_config_t()
+# def_uvc_config.uvc = ""
+# def_uvc_config.rst_is_negedge_sensitive = rst_is_negedge_sensitive
+# def_uvc_config.clock_name = clock_name
+# def_uvc_config.reset_name = reset_name
+# def_uvc_config.use_short_names = use_short_names
+# def_uvc_config.agent_has_coverage = agent_has_coverage
+# def_uvc_config.gen_tdefs_pkg = gen_tdefs_pkg
+# def_uvc_config.vif_in_config = vif_in_config
+# def_uvc_config.tr_props_vec = []
+# def_uvc_config.if_sigs_vec = []
+# def_uvc_config.uvc_has_params = uvc_has_params
+# def_uvc_config.use_env_params = use_env_params
+# def_uvc_config.params_vec = params_vec
+# def_uvc_config.class_names = use_short_names ? short_names_dict : long_names_dict
 
 # Load UVC configuration
 time_now = time_ns()
@@ -213,6 +213,16 @@ for x in uvc_yaml_obj
                 end
             end
             # println(uvc_config_dict[x[:uvc]].tr_props_vec)
+        elseif y == :use_env_class_names
+            # if !(isdefined(uvc_config_dict[x[:uvc]], y))
+            if uvc_config_dict[x[:uvc]].use_env_class_names == nothing
+                println("UVC $(x[:uvc]) will use Env's class_names.")
+                uvc_config_dict[x[:uvc]].use_env_class_names = true
+            elseif uvc_config_dict[x[:uvc]].use_env_class_names == true
+                println("UVC $(x[:uvc]) will use Env's class_names.")
+            else
+                println("UVC $(x[:uvc]) will use its own class_names.")
+            end
         elseif !(isdefined(uvc_config_dict[x[:uvc]], y))
             @warn "Field $(y) of UVC $(x[:uvc]) is undefined."
         end
@@ -223,6 +233,10 @@ for x in uvc_yaml_obj
         end
     end
     # println(uvc_config_dict[x[:uvc]])
+    
+    if uvc_config_dict[x[:uvc]].use_env_class_names
+        uvc_config_dict[x[:uvc]].class_names = class_names
+    end
 end
 elapsed_time_array["build_config_dict"] = (time_ns() - time_now) / 1e9
 
@@ -241,8 +255,8 @@ if gen_clknrst == true && !haskey(uvc_config_dict, clknrst_name)
     clknrst_config.vif_in_config = true
     clknrst_config.tr_props_vec = []
     clknrst_config.if_sigs_vec = []
-    def_uvc_config.uvc_has_params = false
-    def_uvc_config.use_env_params = false
+    clknrst_config.uvc_has_params = false
+    clknrst_config.use_env_params = false
     clknrst_config.class_names = use_short_names ? short_names_dict : long_names_dict
     uvc_config_dict[clknrst_name] = clknrst_config
 end
@@ -335,3 +349,5 @@ if debug_elapsed_time
         println("    $(rpad(key, 20)) => $(value)")
     end
 end
+
+println("Generation finished.")
