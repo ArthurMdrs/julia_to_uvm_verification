@@ -1,4 +1,9 @@
-import YAML, StructTypes, ArgParse
+import YAML
+import StructTypes
+import ArgParse
+import ProgressBars
+using ProgressBars: ProgressBar
+using Dates  # Added for timestamp
 
 cwd = pwd()
 
@@ -28,17 +33,52 @@ function parse_command_line()
             help = "Print elapsed time messages"
             action = :store_true
     end
-
+    
     return ArgParse.parse_args(ARGS, settings)
 end
 
 elapsed_time_array = Dict()
 
-println("You are using the Julia to UVM generator!")
+# Pretty startup banner (replaces plain println)
+const _RESET  = "\e[0m"
+const _BOLD   = "\e[1m"
+const _CYAN   = "\e[36m"
+const _DIM    = "\e[2m"
+
+function _print_banner()
+    ts = Dates.format(Dates.now(), "yyyy-mm-dd HH:MM:SS")
+    title_plain = "Julia → UVM Generator"
+    date_plain  = "Started at: " * ts
+    pad_left  = 3
+    pad_right = 3
+    inner_text_width = max(length(title_plain), length(date_plain))
+    inner_width = inner_text_width + pad_left + pad_right
+    bar = repeat("─", inner_width)
+    function make_line(text; bold=false, dim=false)
+        shown = text
+        deco_left = bold ? _BOLD : (dim ? _DIM : "")
+        deco_right = _RESET
+        # visible length excludes ANSI (we only add ANSI around whole text)
+        visible_len = length(shown)
+        spaces_after = inner_text_width - visible_len
+        return _CYAN * "│" * _RESET *
+               repeat(" ", pad_left) * deco_left * shown * deco_right *
+               repeat(" ", pad_right + spaces_after) *
+               _CYAN * "│" * _RESET
+    end
+    println(_CYAN * "┌" * bar * "┐" * _RESET)
+    println(make_line(title_plain; bold=true))
+    println(make_line(date_plain; dim=true))
+    println(_CYAN * "└" * bar * "┘" * _RESET)
+end
+
+_print_banner()
 
 # Check for arguments
 time_now = time_ns()
+println("\n → Parsing command line arguments.")
 parsed_args = parse_command_line()
+println(" → Finished parsing command line arguments.\n")
 verbose = parsed_args["verbose"]
 debug_elapsed_time = parsed_args["debug_time"]
 if verbose
@@ -163,15 +203,16 @@ elapsed_time_array["set_configs"] = (time_ns() - time_now) / 1e9
 
 # Load UVC configuration
 time_now = time_ns()
-if verbose
-    println("Loading UVC configuration from $(uvc_config_file).")
-end
+println(" → Loading UVC configuration YAML file from $(uvc_config_file).")
 uvc_yaml_obj = YAML.load_file(uvc_config_file; dicttype=Dict{Symbol,Any})
+println(" → Finished loading UVC configuration YAML file.\n")
 elapsed_time_array["load_yaml"] = (time_ns() - time_now) / 1e9
 
 time_now = time_ns()
 uvc_config_dict = Dict()
-for x in uvc_yaml_obj
+uvc_yaml_obj_iter = ProgressBar(uvc_yaml_obj)
+ProgressBars.set_description(uvc_yaml_obj_iter, "Building UVC config dict:")
+for x in uvc_yaml_obj_iter
     if !haskey(x, :uvc) || x[:uvc] == nothing
         my_str = "UVC name is not defined for the following UVC:\n"
         for (key, value) in x
@@ -216,12 +257,18 @@ for x in uvc_yaml_obj
         elseif y == :use_env_class_names
             # if !(isdefined(uvc_config_dict[x[:uvc]], y))
             if uvc_config_dict[x[:uvc]].use_env_class_names == nothing
-                println("UVC $(x[:uvc]) will use Env's class_names.")
+                if verbose
+                    println("\nUVC $(x[:uvc]) will use Env's class_names.")
+                end
                 uvc_config_dict[x[:uvc]].use_env_class_names = true
             elseif uvc_config_dict[x[:uvc]].use_env_class_names == true
-                println("UVC $(x[:uvc]) will use Env's class_names.")
+                if verbose
+                    println("\nUVC $(x[:uvc]) will use Env's class_names.")
+                end
             else
-                println("UVC $(x[:uvc]) will use its own class_names.")
+                if verbose
+                    println("\nUVC $(x[:uvc]) will use its own class_names.")
+                end
             end
         elseif !(isdefined(uvc_config_dict[x[:uvc]], y))
             @warn "Field $(y) of UVC $(x[:uvc]) is undefined."
@@ -350,4 +397,4 @@ if debug_elapsed_time
     end
 end
 
-println("Generation finished.")
+println("\nGeneration finished.")

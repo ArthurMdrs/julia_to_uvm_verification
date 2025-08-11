@@ -94,11 +94,13 @@ uvc_files_gen() = begin
         # output_file_setup("$(agents_dir)"; reset_folder=false)
         output_file_setup("$(agents_dir)")
         output_file_setup("$(sequences_dir)"; reset_folder=false)
-        for uvc_name in uvc_names
+        uvc_names_iter = ProgressBar(uvc_names)
+        ProgressBars.set_description(uvc_names_iter, "Generating UVC files:")
+        for uvc_name in uvc_names_iter
             output_file_setup("$(agents_dir)/$(uvc_name)")
             output_file_setup("$(sequences_dir)/$(uvc_name)")
             # output_file_setup("$(agents_dir)/$(uvc_name)/parameter_folder")
-              
+            
             gen_files(uvc_name)
         end
     end

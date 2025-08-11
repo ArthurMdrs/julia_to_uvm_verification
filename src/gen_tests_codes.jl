@@ -65,8 +65,16 @@ end
 test_gen() = begin
     if run_test_gen == true
         output_file_setup("$(tests_dir)")
-        write_file("$(tests_dir)/$(dut_name)_base_test.$(class_files_extension)", gen_base_test())
-        write_file("$(tests_dir)/$(dut_name)_random_test.$(class_files_extension)", gen_random_test())
+        # Collect (filepath, generator_function) pairs
+        tasks = Tuple{String,Function}[]
+        push!(tasks, ("$(tests_dir)/$(dut_name)_base_test.$(class_files_extension)", gen_base_test))
+        push!(tasks, ("$(tests_dir)/$(dut_name)_random_test.$(class_files_extension)", gen_random_test))
+        # Generate all files
+        tasks_iter = ProgressBar(tasks)
+        ProgressBars.set_description(tasks_iter, "Generating Test files:")
+        for (path, genfun) in tasks_iter
+            write_file(path, genfun())
+        end
     end
 end
 
@@ -293,7 +301,7 @@ gen_random_test() = begin
     # """
     # my_str *= gen_clknrst ? "        uvm_config_wrapper::set(this, \"m_$(dut_name)_env.agent_clknrst.sequencer.run_phase\", \"default_sequence\", clknrst_reset_and_start_clk_seq::get_type());\n" : ""
     # my_str *= """
-    # $( gen_long_str(uvc_names, "        ", gen_line_sequences_config) )        // Random sequences config - end
+    # $( gen_long_str(uvc_names, "        ", gen_line_sequences_config) )        # Random sequences config - end
             
     #     endfunction : build_phase
     #     */

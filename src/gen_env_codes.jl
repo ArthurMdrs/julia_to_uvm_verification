@@ -183,26 +183,36 @@ env_gen() = begin
         rm_name   = class_names["ref_model"]
         cov_name  = class_names["coverage"]
         
+        # Ensure target directories exist
         output_file_setup("$(env_dir)")
         output_file_setup("$(sequences_dir)"; reset_folder=false)
         
-        write_file("$(env_dir)/$(dut_name)_env.$(class_files_extension)", gen_env_base())
-        write_file("$(env_dir)/$(dut_name)_env_pkg.sv", gen_env_pkg())
-        write_file("$(env_dir)/$(dut_name)_env_$(cfg_name).$(class_files_extension)", gen_env_cfg())
-        if env_has_params 
-            write_file("$(env_dir)/$(dut_name)_env_params_pkg.sv", gen_env_params_pkg())
+        # Collect (filepath, generator_function) pairs
+        tasks = Tuple{String,Function}[]
+        push!(tasks, ("$(env_dir)/$(dut_name)_env.$(class_files_extension)", gen_env_base))
+        push!(tasks, ("$(env_dir)/$(dut_name)_env_pkg.sv", gen_env_pkg))
+        push!(tasks, ("$(env_dir)/$(dut_name)_env_$(cfg_name).$(class_files_extension)", gen_env_cfg))
+        if env_has_params
+            push!(tasks, ("$(env_dir)/$(dut_name)_env_params_pkg.sv", gen_env_params_pkg))
         end
-        write_file("$(env_dir)/$(dut_name)_$(vsqr_name).$(class_files_extension)", gen_vsequencer())
-        write_file("$(sequences_dir)/$(dut_name)_base_vseq.$(class_files_extension)", gen_vseq_base())
-        write_file("$(sequences_dir)/$(dut_name)_random_vseq.$(class_files_extension)", gen_vseq_random())
-        if gen_scoreboard 
-            write_file("$(env_dir)/$(dut_name)_$(sb_name).$(class_files_extension)", gen_scoreboard_base())
+        push!(tasks, ("$(env_dir)/$(dut_name)_$(vsqr_name).$(class_files_extension)", gen_vsequencer))
+        push!(tasks, ("$(sequences_dir)/$(dut_name)_base_vseq.$(class_files_extension)", gen_vseq_base))
+        push!(tasks, ("$(sequences_dir)/$(dut_name)_random_vseq.$(class_files_extension)", gen_vseq_random))
+        if gen_scoreboard
+            push!(tasks, ("$(env_dir)/$(dut_name)_$(sb_name).$(class_files_extension)", gen_scoreboard_base))
         end
         if gen_refmod
-            write_file("$(env_dir)/$(dut_name)_$(rm_name).$(class_files_extension)", gen_refmod_base())
+            push!(tasks, ("$(env_dir)/$(dut_name)_$(rm_name).$(class_files_extension)", gen_refmod_base))
         end
         if env_has_coverage
-            write_file("$(env_dir)/$(dut_name)_$(cov_name).$(class_files_extension)", gen_env_coverage_base())
+            push!(tasks, ("$(env_dir)/$(dut_name)_$(cov_name).$(class_files_extension)", gen_env_coverage_base))
+        end
+        
+        # Generate all files
+        tasks_iter = ProgressBar(tasks)
+        ProgressBars.set_description(tasks_iter, "Generating Env files:")
+        for (path, genfun) in tasks_iter
+            write_file(path, genfun())
         end
     end
 end
