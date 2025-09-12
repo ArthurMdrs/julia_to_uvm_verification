@@ -22,7 +22,11 @@ gen_vif_config_db_tests(uvc_name, tabs) = begin
     return my_str
 end
 gen_line_cfg_create(uvc_name, tabs) = begin
-    cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    end
     my_str = """
     $(tabs)m_$(uvc_name)_$(cfg_name) = $(uvc_name)_$(cfg_name)_t::type_id::create("m_$(uvc_name)_$(cfg_name)");
     """
@@ -36,7 +40,11 @@ gen_vseq_tdef(vseq_name, tabs) = begin
     return my_str
 end
 gen_line_assign_vif_to_config(uvc_name, tabs) = begin
-    cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    end
     if get_uvc_cfg_fld(uvc_name, :vif_in_config) == true
         my_str = """
         $(tabs)m_$(uvc_name)_$(cfg_name).vif = $(uvc_name)_vif;
@@ -47,15 +55,27 @@ gen_line_assign_vif_to_config(uvc_name, tabs) = begin
     return my_str
 end
 gen_line_assign_config_test(uvc_name, tabs) = begin
-    cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
-    env_cfg_name = class_names["config"]
-    my_str = "$(tabs)m_$(dut_name)_env_$(env_cfg_name).m_$(uvc_name)_$(cfg_name) = m_$(uvc_name)_$(cfg_name);\n"
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    end
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        env_cfg_name = "env_$(class_names["config"])"
+    else
+        env_cfg_name = "$(class_names["config"])"
+    end
+    my_str = "$(tabs)m_$(dut_name)_$(env_cfg_name).m_$(uvc_name)_$(cfg_name) = m_$(uvc_name)_$(cfg_name);\n"
     return my_str
 end
 gen_line_has_agent_comment(uvc_name, tabs) = begin
-    env_cfg_name = class_names["config"]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        env_cfg_name = "env_$(class_names["config"])"
+    else
+        env_cfg_name = "$(class_names["config"])"
+    end
     my_str = """
-    $(tabs)// m_$(dut_name)_env_$(env_cfg_name).has_$(uvc_name)_agent = 0;
+    $(tabs)// m_$(dut_name)_$(env_cfg_name).has_$(uvc_name)_agent = 0;
     """
     return my_str
 end
@@ -82,11 +102,14 @@ end
 
 gen_base_test() = begin 
     # TODO: Make drain time depend on clk period? Or maybe a config?
-    vsqr_name = class_names["vsequencer" ]
-    cfg_name  = class_names["config"     ]
-    vseq_inst_name = "m_vseq"
-    
-    env_cfg_name = config_inst_convention
+    vsqr_name = class_names["vsequencer"]
+    cfg_name  = class_names["config"    ]
+    vseq_name = class_names["vsequence" ]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        env_cfg_name = "env_$(class_names["config"])"
+    else
+        env_cfg_name = "$(class_names["config"])"
+    end
     
     params_prefix = get_uvc_params_prefix(dut_name)
     
@@ -101,7 +124,7 @@ gen_base_test() = begin
         
     """
     
-    tdefs_list = ["$(dut_name)_env", "$(dut_name)_env_$(cfg_name)"]
+    tdefs_list = ["$(dut_name)_env", "$(dut_name)_$(env_cfg_name)"]
     my_str *= """
         // Typedefs - begin
     $( gen_long_str(tdefs_list, "    ", gen_line0)[1:end-1] )
@@ -109,7 +132,11 @@ gen_base_test() = begin
     
     for uvc_name in uvc_names
         tdefs_list = []
-        push!(tdefs_list, "$(uvc_name)_$(get_uvc_cfg_fld(uvc_name, :class_names)["config"])")
+        if get_usr_cfg_fld(:use_detailed_config_instances) == true
+            push!(tdefs_list, "$(uvc_name)_agent_$(get_uvc_cfg_fld(uvc_name, :class_names)["config"])")
+        else
+            push!(tdefs_list, "$(uvc_name)_$(get_uvc_cfg_fld(uvc_name, :class_names)["config"])")
+        end
         push!(tdefs_list, "$(uvc_name)_$(get_uvc_cfg_fld(uvc_name, :class_names)["transaction"])")
         params_prefix = get_uvc_params_prefix(uvc_name)
         gen_line1(name, tabs) = gen_lines_tdefs_w_param_env(params_prefix, name, tabs)
@@ -119,7 +146,7 @@ gen_base_test() = begin
     end
     
     my_str *= """
-    $( gen_vseq_tdef("base_vseq", "    ")[1:end-1] )
+    $( gen_vseq_tdef("base_$(vseq_name)", "    ")[1:end-1] )
     """
     my_str *= """
     $( gen_long_str(uvc_names, "    ", gen_line_vif_typedef_env)[1:end-1] )
@@ -144,11 +171,11 @@ gen_base_test() = begin
     
     my_str *= """
         // Env
-        $(dut_name)_env_$(cfg_name)_t m_$(dut_name)_env_$(cfg_name);
+        $(dut_name)_$(env_cfg_name)_t m_$(dut_name)_$(env_cfg_name);
         $(dut_name)_env_t m_$(dut_name)_env;
         
         // Virtual sequencer (re-use this with factory overrides)
-        $(dut_name)_base_vseq_t $(vseq_inst_name);
+        $(dut_name)_base_$(vseq_name)_t m_$(vseq_name);
         
         uvm_objection obj;
         
@@ -179,13 +206,13 @@ gen_base_test() = begin
     
     my_str *= """
             // Create ENV config
-            m_$(dut_name)_env_$(cfg_name) = $(dut_name)_env_$(cfg_name)_t::type_id::create(\"m_$(dut_name)_env_$(cfg_name)\");
+            m_$(dut_name)_$(env_cfg_name) = $(dut_name)_$(env_cfg_name)_t::type_id::create(\"m_$(dut_name)_$(env_cfg_name)\");
             
             // Set ENV configuration
-            // m_$(dut_name)_env_$(cfg_name).has_virtual_sequencer = 1'b1;
+            // m_$(dut_name)_$(env_cfg_name).has_virtual_sequencer = 1'b1;
     """
     if env_has_coverage
-        my_str *= "        // m_$(dut_name)_env_$(cfg_name).has_coverage = 1'b1;\n"
+        my_str *= "        // m_$(dut_name)_$(env_cfg_name).has_coverage = 1'b1;\n"
     end 
     my_str *= """
     $( gen_long_str(uvc_names, "        ", gen_line_has_agent_comment)[1:end-1] )
@@ -196,7 +223,7 @@ gen_base_test() = begin
     if pass_config_thru_db
         my_str *= """
                 // Set env config to the database
-                uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(dut_name)_env"), .field_name("$(env_cfg_name)"), .value(m_$(dut_name)_env_$(cfg_name)));
+                uvm_config_db#($(dut_name)_$(env_cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(dut_name)_env"), .field_name("m_$(env_cfg_name)"), .value(m_$(dut_name)_$(env_cfg_name)));
                 
                 // Create Env
                 m_$(dut_name)_env = $(dut_name)_env_t::type_id::create("m_$(dut_name)_env", this);
@@ -208,13 +235,13 @@ gen_base_test() = begin
                 m_$(dut_name)_env = $(dut_name)_env_t::type_id::create("m_$(dut_name)_env", this);
                 
                 // Assign env config
-                m_$(dut_name)_env.$(env_cfg_name) = m_$(dut_name)_env_$(cfg_name);
+                m_$(dut_name)_env.m_$(env_cfg_name) = m_$(dut_name)_$(env_cfg_name);
                 
         """
     end
     my_str *= """
             // Create virtual sequence
-            $(vseq_inst_name) = $(dut_name)_base_vseq_t::type_id::create("$(vseq_inst_name)");
+            m_$(vseq_name) = $(dut_name)_base_$(vseq_name)_t::type_id::create("m_$(vseq_name)");
             
             `uvm_info("$(uppercase(dut_name)) BASE TEST", "Reached the end of build phase.", $(verbosities["end_build_phase"]))
             uvm_config_db#(int)::set(.cntxt(this), .inst_name("*"), .field_name("recording_detail"), .value(1));
@@ -233,11 +260,11 @@ gen_base_test() = begin
     """
     my_str *= """
         task pre_reset_phase(uvm_phase phase);
-            $(vseq_inst_name).kill();
+            m_$(vseq_name).kill();
         endtask : pre_reset_phase
         
         task post_reset_phase(uvm_phase phase);
-            $(vseq_inst_name).kill();
+            m_$(vseq_name).kill();
         endtask : post_reset_phase
         
     """
@@ -249,8 +276,8 @@ gen_base_test() = begin
             `endif
             obj.set_drain_time(this, 200ns);
             
-            $(vseq_inst_name).set_starting_phase(phase);
-            $(vseq_inst_name).start(.sequencer(m_$(dut_name)_env.m_$(dut_name)_$(vsqr_name)));
+            m_$(vseq_name).set_starting_phase(phase);
+            m_$(vseq_name).start(.sequencer(m_$(dut_name)_env.m_$(dut_name)_$(vsqr_name)));
         endtask : main_phase
         
     """
@@ -261,6 +288,7 @@ gen_base_test() = begin
 end
 
 gen_random_test() = begin 
+    vseq_name = class_names["vsequence"]
     params_prefix = get_uvc_params_prefix(dut_name)
     
     my_str = """
@@ -270,7 +298,7 @@ gen_random_test() = begin
         
     """
     my_str *= """
-    $( gen_vseq_tdef("random_vseq", "    ")[1:end-1] )
+    $( gen_vseq_tdef("random_$(vseq_name)", "    ")[1:end-1] )
         
         function new(string name, uvm_component parent);
             super.new(name, parent);
@@ -282,7 +310,7 @@ gen_random_test() = begin
             //      set_type_override_by_type (original_type::get_type(), override_type::get_type());
             //      set_inst_override_by_type (original_type::get_type(), override_type::get_type(), "full_inst_path");
             
-            set_type_override_by_type($(dut_name)_base_vseq_t::get_type(), $(dut_name)_random_vseq_t::get_type());
+            set_type_override_by_type($(dut_name)_base_$(vseq_name)_t::get_type(), $(dut_name)_random_$(vseq_name)_t::get_type());
             
             super.build_phase(phase);
             

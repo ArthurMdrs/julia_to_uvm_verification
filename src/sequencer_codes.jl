@@ -5,8 +5,12 @@
 # ***********************************
 
 gen_sequencer_base(prefix_name) = begin 
-    sqr_name = get_uvc_cfg_fld(prefix_name, :class_names)["sequencer"]
-    cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    sqr_name = get_uvc_cfg_fld(prefix_name, :class_names)["sequencer"  ]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config" ]
+    end
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     
@@ -33,7 +37,7 @@ gen_sequencer_base(prefix_name) = begin
     $( gen_lines_tdefs_w_param_uvc("$(prefix_name)_$(cfg_name)", "    ")[1:end-1] )
     $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
         
-        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
+        $(prefix_name)_$(cfg_name)_t m_$(cfg_name);
         
         $(prefix_name)_vif_t vif;
         
@@ -44,7 +48,7 @@ gen_sequencer_base(prefix_name) = begin
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             
-            if ($(config_inst_convention) == null)
+            if (m_$(cfg_name) == null)
                 `uvm_fatal("$(uppercase(prefix_name)) SEQUENCER", "No configuration object was set!")
     """
     if get_uvc_cfg_fld(prefix_name, :vif_in_config) == false
@@ -55,9 +59,9 @@ gen_sequencer_base(prefix_name) = begin
     else
         my_str *= """
                 
-                if ($(config_inst_convention).vif == null)
+                if (m_$(cfg_name).vif == null)
                     `uvm_fatal("$(uppercase(prefix_name)) SEQUENCER", "No interface was set!")
-                vif = $(config_inst_convention).vif;
+                vif = m_$(cfg_name).vif;
         """
     end
     my_str *= """

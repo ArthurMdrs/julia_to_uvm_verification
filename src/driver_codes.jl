@@ -70,17 +70,22 @@ get_normal_drv_funcs(prefix_name) = begin
     return my_str
 end
 get_clknrst_drv_funcs(prefix_name) = begin
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config" ]
+    end
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     my_str =  """
         task run_phase (uvm_phase phase);
             super.run_phase(phase);
             
-            case ($(config_inst_convention).initial_rst_val)
+            case (m_$(cfg_name).initial_rst_val)
                 $(uppercase(prefix_name))_INITIAL_VALUE_0: vif.set_rst_val(1'b0);
                 $(uppercase(prefix_name))_INITIAL_VALUE_1: vif.set_rst_val(1'b1);
                 $(uppercase(prefix_name))_INITIAL_VALUE_X: vif.set_rst_val(1'bx);
-                default: `uvm_fatal("$(uppercase(prefix_name)) DRIVER", \$sformatf("Illegal initial value for reset: %s", $(config_inst_convention).initial_rst_val))
+                default: `uvm_fatal("$(uppercase(prefix_name)) DRIVER", \$sformatf("Illegal initial value for reset: %s", m_$(cfg_name).initial_rst_val))
             endcase
             
             forever begin
@@ -100,8 +105,8 @@ get_clknrst_drv_funcs(prefix_name) = begin
                         `uvm_warning("$(uppercase(prefix_name)) DRIVER", \$sformatf("Attempting to start clock generation while it is already active. Ignoring req:\\n%s", req.sprint()))
                     end
                     else begin
-                        if ($(config_inst_convention).set_clk_period_from_config) begin
-                            vif.set_period($(config_inst_convention).clk_period * 1ps);
+                        if (m_$(cfg_name).set_clk_period_from_config) begin
+                            vif.set_period(m_$(cfg_name).clk_period * 1ps);
                         end else if (req.clk_period != 0) begin
                             vif.set_period(req.clk_period * 1ps);
                         end
@@ -147,7 +152,11 @@ end
 
 gen_driver(prefix_name, type::uvc_class_type) = begin
     drv_name = get_uvc_cfg_fld(prefix_name, :class_names)["driver"     ]
-    cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config" ]
+    end
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
@@ -175,7 +184,7 @@ gen_driver(prefix_name, type::uvc_class_type) = begin
     $( gen_lines_tdefs_w_param_uvc("$(prefix_name)_$(cfg_name)", "    ")[1:end-1] )
     $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
         
-        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
+        $(prefix_name)_$(cfg_name)_t m_$(cfg_name);
         
         $(prefix_name)_vif_t vif;
         
@@ -189,7 +198,7 @@ gen_driver(prefix_name, type::uvc_class_type) = begin
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             
-            if ($(config_inst_convention) == null)
+            if (m_$(cfg_name) == null)
                 `uvm_fatal("$(uppercase(prefix_name)) DRIVER", "No configuration object was set!")
     """
     if get_uvc_cfg_fld(prefix_name, :vif_in_config) == false
@@ -200,9 +209,9 @@ gen_driver(prefix_name, type::uvc_class_type) = begin
     else
         my_str *= """
                 
-                if ($(config_inst_convention).vif == null)
+                if (m_$(cfg_name).vif == null)
                     `uvm_fatal("$(uppercase(prefix_name)) DRIVER", "No interface was set!")
-                vif = $(config_inst_convention).vif;
+                vif = m_$(cfg_name).vif;
         """
     end
     my_str *= """

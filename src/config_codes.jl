@@ -5,7 +5,11 @@
 # ***********************************
 
 gen_config(prefix_name, type::uvc_class_type) = begin 
-    cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    end
     agent_has_coverage = get_uvc_cfg_fld(prefix_name, :agent_has_coverage)
     
     params_prefix = get_uvc_params_prefix(prefix_name)

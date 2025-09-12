@@ -39,6 +39,7 @@ gen_tdefs_base(prefix_name) = begin
 end
 
 gen_pkg(prefix_name, type::uvc_class_type) = begin
+    seq_name = get_uvc_cfg_fld(prefix_name, :class_names)["sequence"]
     vec = vector_to_pattern(prefix_name)
     my_str = """
     package $(prefix_name)_pkg;
@@ -72,21 +73,21 @@ gen_pkg(prefix_name, type::uvc_class_type) = begin
     my_str *= """
     $( gen_long_str(vec, "    ", gen_line_include)[1:end-1] )
         
-        `include "$(prefix_name)_base_seq.$(class_files_extension)"
+        `include "$(prefix_name)_base_$(seq_name).$(class_files_extension)"
     """
     
     if type == normal::uvc_class_type
         my_str *= """
-            `include "$(prefix_name)_random_seq.$(class_files_extension)"
+            `include "$(prefix_name)_random_$(seq_name).$(class_files_extension)"
         """
     elseif type == clknrst::uvc_class_type
         seq_vec = []
         for x in clknrst_actions_vec
-            push!(seq_vec, prefix_name*"_"*x*"_seq")
+            push!(seq_vec, prefix_name*"_"*x*"_$(seq_name)")
         end
         my_str *= """
         $( gen_long_str(seq_vec, "    ", gen_line_include)[1:end-1] )
-            `include "$(prefix_name)_reset_and_start_clk_seq.$(class_files_extension)"
+            `include "$(prefix_name)_reset_and_start_clk_$(seq_name).$(class_files_extension)"
         """
     end
         

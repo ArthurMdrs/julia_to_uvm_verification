@@ -8,7 +8,11 @@
 gen_scoreboard_base() = begin
     sb_name  = class_names["scoreboard"]
     rm_name  = class_names["ref_model" ]
-    cfg_name = class_names["config"    ]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "env_$(class_names["config"])"
+    else
+        cfg_name = "$(class_names["config"])"
+    end
     
     params_prefix = get_uvc_params_prefix(dut_name)
     
@@ -33,9 +37,9 @@ gen_scoreboard_base() = begin
     
     my_str *= """
         
-    $(gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1])
+    $(gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_$(cfg_name)", "    ")[1:end-1])
         
-        $(dut_name)_env_$(cfg_name)_t $(config_inst_convention);
+        $(dut_name)_$(cfg_name)_t m_$(cfg_name);
     """
     
     my_str *= """
@@ -69,7 +73,7 @@ gen_scoreboard_base() = begin
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             
-            if ($(config_inst_convention) == null)
+            if (m_$(cfg_name) == null)
                 `uvm_fatal("$(uppercase(dut_name)) SCOREBOARD", "No configuration object was set!")
         endfunction : build_phase
         

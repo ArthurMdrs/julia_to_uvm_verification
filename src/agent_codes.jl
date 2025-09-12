@@ -8,7 +8,11 @@
 
 gen_agent_base(prefix_name) = begin 
     agent_name = get_uvc_cfg_fld(prefix_name, :class_names)["agent"      ]
-    cfg_name   = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"   ]
+    end
     mon_name   = get_uvc_cfg_fld(prefix_name, :class_names)["monitor"    ]
     drv_name   = get_uvc_cfg_fld(prefix_name, :class_names)["driver"     ]
     sqr_name   = get_uvc_cfg_fld(prefix_name, :class_names)["sequencer"  ]
@@ -64,7 +68,7 @@ gen_agent_base(prefix_name) = begin
     
     my_str *= """
         
-        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
+        $(prefix_name)_$(cfg_name)_t m_$(cfg_name);
         
     """
     if get_uvc_cfg_fld(prefix_name, :vif_in_config) == false
@@ -97,7 +101,7 @@ gen_agent_base(prefix_name) = begin
     
     if pass_config_thru_db
         my_str *= """
-                if(uvm_config_db#($(prefix_name)_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(config_inst_convention)"), .value($(config_inst_convention))))
+                if(uvm_config_db#($(prefix_name)_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("m_$(cfg_name)"), .value(m_$(cfg_name))))
                     `uvm_info("$(uppercase(prefix_name)) AGENT", "Configuration object was successfully set!", $(verb_dict["config_set_uvc"]))
                 else
                     `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No configuration object was set!")
@@ -105,7 +109,7 @@ gen_agent_base(prefix_name) = begin
         """
     else
         my_str *= """
-                if($(config_inst_convention) == null)
+                if(m_$(cfg_name) == null)
                     `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No configuration object was set!")
                 
         """
@@ -122,22 +126,22 @@ gen_agent_base(prefix_name) = begin
         """
     else
         my_str *= """
-                if($(config_inst_convention).vif == null)
+                if(m_$(cfg_name).vif == null)
                     `uvm_fatal("$(uppercase(prefix_name)) AGENT", "No interface was set!")
                 
         """
     end
     
     my_str *= """
-            if ($(config_inst_convention).has_monitor == 1'b1) begin
+            if (m_$(cfg_name).has_monitor == 1'b1) begin
                 m_monitor = $(prefix_name)_$(mon_name)_t::type_id::create("m_monitor", this);
-                m_monitor.$(config_inst_convention) = $(config_inst_convention);
+                m_monitor.m_$(cfg_name) = m_$(cfg_name);
             end
-            if ($(config_inst_convention).is_active == UVM_ACTIVE) begin
+            if (m_$(cfg_name).is_active == UVM_ACTIVE) begin
                 m_sequencer = $(prefix_name)_$(sqr_name)_t::type_id::create("m_sequencer", this);
-                m_sequencer.$(config_inst_convention) = $(config_inst_convention);
+                m_sequencer.m_$(cfg_name) = m_$(cfg_name);
                 m_driver = $(prefix_name)_$(drv_name)_t::type_id::create("m_driver", this);
-                m_driver.$(config_inst_convention) = $(config_inst_convention);
+                m_driver.m_$(cfg_name) = m_$(cfg_name);
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Agent is active." , $(verb_dict["agent_active"]))
             end else begin
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Agent is not active." , $(verb_dict["agent_active"]))
@@ -145,9 +149,9 @@ gen_agent_base(prefix_name) = begin
             
     """
     my_str *= agent_has_coverage ? """
-            if ($(config_inst_convention).has_coverage == 1'b1) begin
+            if (m_$(cfg_name).has_coverage == 1'b1) begin
                 m_$(prefix_name)_$(cov_name) = $(prefix_name)_$(cov_name)_t::type_id::create("m_$(prefix_name)_$(cov_name)", this);
-                m_$(prefix_name)_$(cov_name).$(config_inst_convention) = $(config_inst_convention);
+                m_$(prefix_name)_$(cov_name).m_$(cfg_name) = m_$(cfg_name);
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Coverage is enabled.", $(verb_dict["cov_enabled"]))
             end else begin
                 `uvm_info("$(uppercase(prefix_name)) AGENT", "Coverage is disabled.", $(verb_dict["cov_enabled"]))
@@ -159,17 +163,17 @@ gen_agent_base(prefix_name) = begin
         function void connect_phase (uvm_phase phase);
             super.connect_phase(phase);
             
-            if ($(config_inst_convention).has_monitor == 1'b1) begin
+            if (m_$(cfg_name).has_monitor == 1'b1) begin
                 m_monitor.item_collected_port.connect(item_from_monitor_port);
             end
             
-            if ($(config_inst_convention).is_active == UVM_ACTIVE) begin
+            if (m_$(cfg_name).is_active == UVM_ACTIVE) begin
                 m_driver.seq_item_port.connect(m_sequencer.seq_item_export);
             end
             
     """
     my_str *= agent_has_coverage ? """
-            if ($(config_inst_convention).has_coverage == 1'b1 && $(config_inst_convention).has_monitor == 1'b1) begin
+            if (m_$(cfg_name).has_coverage == 1'b1 && m_$(cfg_name).has_monitor == 1'b1) begin
                 m_monitor.item_collected_port.connect(m_$(prefix_name)_$(cov_name).analysis_export);
             end
     """ : ""

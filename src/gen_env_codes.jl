@@ -10,7 +10,7 @@ gen_line_uvc_instance(uvc_name, tabs) = begin
     my_str = "$(tabs)$(uvc_name)_$(agent_name)_t m_$(uvc_name)_$(agent_name);\n"
     return my_str
 end
-gen_line_uvc_creation(uvc_name, tabs, env_cfg_name) = begin
+gen_line_uvc_creation(uvc_name, tabs) = begin
     agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
     my_str = """
     $(tabs)m_$(uvc_name)_$(agent_name) = $(uvc_name)_$(agent_name)_t::type_id::create("m_$(uvc_name)_$(agent_name)", this);
@@ -21,14 +21,14 @@ gen_line_connect_sequencers(uvc_name, tabs, env_cfg_name) = begin
     vsqr_name = class_names["vsequencer"]
     sqr_name   = get_uvc_cfg_fld(uvc_name, :class_names)["sequencer"]
     agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
-    cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
-    # my_str = """
-    # $(tabs)if ($(env_cfg_name).has_virtual_sequencer && m_$(uvc_name)_$(cfg_name).is_active == UVM_ACTIVE && $(env_cfg_name).has_$(uvc_name)_agent)
-    # $(tabs)    m_$(dut_name)_$(vsqr_name).m_$(uvc_name)_$(sqr_name) = m_$(uvc_name)_$(agent_name).m_sequencer;\n
-    # """
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    end
     my_str = """
-    $(tabs)if ($(env_cfg_name).has_$(uvc_name)_agent) begin
-    $(tabs)    if (m_$(uvc_name)_$(cfg_name).is_active == UVM_ACTIVE) begin
+    $(tabs)if (m_$(env_cfg_name).has_$(uvc_name)_agent) begin
+    $(tabs)    if (m_$(env_cfg_name).m_$(uvc_name)_$(cfg_name).is_active == UVM_ACTIVE) begin
     $(tabs)        m_$(dut_name)_$(vsqr_name).m_$(uvc_name)_$(sqr_name) = m_$(uvc_name)_$(agent_name).m_sequencer;
     $(tabs)    end
     $(tabs)end
@@ -38,7 +38,7 @@ end
 gen_vif_config_db_env(uvc_name, tabs, env_cfg_name) = begin
     agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
     my_str = """
-    $(tabs)if($(env_cfg_name).has_$(uvc_name)_agent) begin
+    $(tabs)if(m_$(env_cfg_name).has_$(uvc_name)_agent) begin
     $(tabs)    if(uvm_config_db#($(uvc_name)_vif_t)::get(.cntxt(this), .inst_name(""), .field_name("$(uvc_name)_vif"), .value($(uvc_name)_vif)))
     $(tabs)        `uvm_info("$(uppercase(dut_name)) ENV", "$(uppercase(uvc_name)) virtual interface was successfully set!", $(verbosities["vif_set_env"]))
     $(tabs)    else
@@ -75,8 +75,8 @@ get_sb_ports_conn(tabs, env_cfg_name) = begin
     @assert size(uvc_names, 1) >= 1
     agent_name = get_uvc_cfg_fld(uvc_names[1], :class_names)["agent"]
     my_str = """
-    $(tabs)if ($(env_cfg_name).has_scoreboard) begin
-    $(tabs)    if ($(env_cfg_name).has_$(uvc_names[1])_agent)
+    $(tabs)if (m_$(env_cfg_name).has_scoreboard) begin
+    $(tabs)    if (m_$(env_cfg_name).has_$(uvc_names[1])_agent)
     $(tabs)        m_$(uvc_names[1])_$(agent_name).item_from_monitor_port.connect(m_$(dut_name)_$(sb_name).item_from_monitor_fifo.analysis_export);
     $(tabs)end
     """
@@ -88,16 +88,16 @@ get_rm_ports_conn(tabs, env_cfg_name) = begin
     @assert size(uvc_names, 1) >= 1
     agent_name = get_uvc_cfg_fld(uvc_names[1], :class_names)["agent"]
     my_str = """
-    $(tabs)if ($(env_cfg_name).has_refmod) begin
-    $(tabs)    if ($(env_cfg_name).has_$(uvc_names[1])_agent)
+    $(tabs)if (m_$(env_cfg_name).has_refmod) begin
+    $(tabs)    if (m_$(env_cfg_name).has_$(uvc_names[1])_agent)
     $(tabs)        m_$(uvc_names[1])_$(agent_name).item_from_monitor_port.connect(m_$(dut_name)_$(rm_name).analysis_export);
     $(tabs)end
     """
     if gen_scoreboard
-        my_str *= "$(tabs)if ($(env_cfg_name).has_refmod && $(env_cfg_name).has_scoreboard)\n"
+        my_str *= "$(tabs)if (m_$(env_cfg_name).has_refmod && m_$(env_cfg_name).has_scoreboard)\n"
         my_str *= "$(tabs)    m_$(dut_name)_$(rm_name).$(rm_name)_port.connect(m_$(dut_name)_$(sb_name).item_from_refmod_fifo.analysis_export);\n"
         my_str = """
-        $(tabs)if ($(env_cfg_name).has_refmod && $(env_cfg_name).has_scoreboard) begin
+        $(tabs)if (m_$(env_cfg_name).has_refmod && m_$(env_cfg_name).has_scoreboard) begin
         $(tabs)    m_$(dut_name)_$(rm_name).$(rm_name)_port.connect(m_$(dut_name)_$(sb_name).item_from_refmod_fifo.analysis_export);
         $(tabs)end
         """
@@ -109,35 +109,34 @@ get_cov_ports_conn(tabs, env_cfg_name) = begin
     @assert size(uvc_names, 1) >= 1
     agent_name = get_uvc_cfg_fld(uvc_names[1], :class_names)["agent"]
     my_str = """
-    $(tabs)if ($(env_cfg_name).has_coverage) begin
-    $(tabs)    if ($(env_cfg_name).has_$(uvc_names[1])_agent)
+    $(tabs)if (m_$(env_cfg_name).has_coverage) begin
+    $(tabs)    if (m_$(env_cfg_name).has_$(uvc_names[1])_agent)
     $(tabs)        m_$(uvc_names[1])_$(agent_name).item_from_monitor_port.connect(m_$(dut_name)_$(cov_name).analysis_export);
     $(tabs)end
     """
     return my_str
 end
-gen_line_assign_uvc_config(uvc_name, tabs, env_cfg_name) = begin
-    cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
-    my_str = "$(tabs)m_$(uvc_name)_$(cfg_name) = $(env_cfg_name).m_$(uvc_name)_$(cfg_name);\n"
-    # my_str = """
-    # $(tabs)if ($(env_cfg_name).has_$(uvc_name)_agent)
-    # $(tabs)    m_$(uvc_name)_$(cfg_name) = $(env_cfg_name).m_$(uvc_name)_$(cfg_name);
-    # """
-    return my_str
-end
 gen_line_cfg_config_db(uvc_name, tabs, env_cfg_name) = begin
     agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
-    cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    end
     my_str = """
-    $(tabs)uvm_config_db#($(uvc_name)_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(uvc_name)_$(agent_name)"), .field_name("$(config_inst_convention)"), .value(m_$(uvc_name)_$(cfg_name)));
+    $(tabs)uvm_config_db#($(uvc_name)_$(cfg_name)_t)::set(.cntxt(this), .inst_name("m_$(uvc_name)_$(agent_name)"), .field_name("m_$(cfg_name)"), .value(m_$(uvc_name)_$(cfg_name)));
     """
     return my_str
 end
 gen_assign_config_to_agent(uvc_name, tabs, env_cfg_name) = begin
     agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
-    cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    end
     my_str = """
-    $(tabs)m_$(uvc_name)_$(agent_name).$(config_inst_convention) = m_$(uvc_name)_$(cfg_name);
+    $(tabs)m_$(uvc_name)_$(agent_name).m_$(cfg_name) = m_$(env_cfg_name).m_$(uvc_name)_$(cfg_name);
     """
     return my_str
 end
@@ -155,17 +154,17 @@ gen_line_has_agent_assign(uvc_name, tabs) = begin
 end
 gen_lines_set_config_db_and_create_agents(uvc_name, tabs, env_cfg_name) = begin
     my_str  = """
-    $(tabs)if ($(env_cfg_name).has_$(uvc_name)_agent) begin
+    $(tabs)if (m_$(env_cfg_name).has_$(uvc_name)_agent) begin
     $( gen_line_cfg_config_db(uvc_name, tabs*"    ", env_cfg_name)[1:end-1] )
-    $( gen_line_uvc_creation(uvc_name, tabs*"    ", env_cfg_name)[1:end-1] )
+    $( gen_line_uvc_creation(uvc_name, tabs*"    ")[1:end-1] )
     $(tabs)end
     """
     return my_str
 end
 gen_lines_create_agents_and_assign_config(uvc_name, tabs, env_cfg_name) = begin
     my_str  = """
-    $(tabs)if ($(env_cfg_name).has_$(uvc_name)_agent) begin
-    $( gen_line_uvc_creation(uvc_name, tabs*"    ", env_cfg_name)[1:end-1] )
+    $(tabs)if (m_$(env_cfg_name).has_$(uvc_name)_agent) begin
+    $( gen_line_uvc_creation(uvc_name, tabs*"    ")[1:end-1] )
     $( gen_assign_config_to_agent(uvc_name, tabs*"    ", env_cfg_name)[1:end-1] )
     $(tabs)end
     """
@@ -176,12 +175,17 @@ end
 
 env_gen() = begin
     if run_env_gen == true
-        cfg_name  = class_names["config"]
-        vsqr_name = class_names["vsequencer"]
+        if get_usr_cfg_fld(:use_detailed_config_instances) == true
+            cfg_name = "env_$(class_names["config"])"
+        else
+            cfg_name = "$(class_names["config"])"
+        end
+        vsqr_name = class_names["vsequencer"  ]
         slib_name = class_names["sequence_lib"]
-        sb_name   = class_names["scoreboard"]
-        rm_name   = class_names["ref_model"]
-        cov_name  = class_names["coverage"]
+        sb_name   = class_names["scoreboard"  ]
+        rm_name   = class_names["ref_model"   ]
+        cov_name  = class_names["coverage"    ]
+        vseq_name = class_names["vsequence"   ]
         
         # Ensure target directories exist
         output_file_setup("$(env_dir)")
@@ -191,13 +195,13 @@ env_gen() = begin
         tasks = Tuple{String,Function}[]
         push!(tasks, ("$(env_dir)/$(dut_name)_env.$(class_files_extension)", gen_env_base))
         push!(tasks, ("$(env_dir)/$(dut_name)_env_pkg.sv", gen_env_pkg))
-        push!(tasks, ("$(env_dir)/$(dut_name)_env_$(cfg_name).$(class_files_extension)", gen_env_cfg))
+        push!(tasks, ("$(env_dir)/$(dut_name)_$(cfg_name).$(class_files_extension)", gen_env_cfg))
         if env_has_params
             push!(tasks, ("$(env_dir)/$(dut_name)_env_params_pkg.sv", gen_env_params_pkg))
         end
         push!(tasks, ("$(env_dir)/$(dut_name)_$(vsqr_name).$(class_files_extension)", gen_vsequencer))
-        push!(tasks, ("$(sequences_dir)/$(dut_name)_base_vseq.$(class_files_extension)", gen_vseq_base))
-        push!(tasks, ("$(sequences_dir)/$(dut_name)_random_vseq.$(class_files_extension)", gen_vseq_random))
+        push!(tasks, ("$(sequences_dir)/$(dut_name)_base_$(vseq_name).$(class_files_extension)", gen_vseq_base))
+        push!(tasks, ("$(sequences_dir)/$(dut_name)_random_$(vseq_name).$(class_files_extension)", gen_vseq_random))
         if gen_scoreboard
             push!(tasks, ("$(env_dir)/$(dut_name)_$(sb_name).$(class_files_extension)", gen_scoreboard_base))
         end
@@ -227,8 +231,11 @@ gen_env_base() = begin
     rm_name    = class_names["ref_model"   ]
     cov_name   = class_names["coverage"    ]
     
-    # env_cfg_name = "m_$(dut_name)_env_$(cfg_name)"
-    env_cfg_name = config_inst_convention
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        env_cfg_name = "env_$(cfg_name)"
+    else
+        env_cfg_name = "$(cfg_name)"
+    end
     
     vif_list = []
     for uvc_name in uvc_names
@@ -257,22 +264,20 @@ gen_env_base() = begin
     my_str *= """
         
         // Typedefs - begin
-    $( gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1] )
+    $( gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_$(env_cfg_name)", "    ")[1:end-1] )
     """
     
     for uvc_name in uvc_names
         tdefs_list = []
         params_prefix = get_uvc_params_prefix(uvc_name)
         agent_name = get_uvc_cfg_fld(uvc_name, :class_names)["agent"]
-        cfg_name   = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
         tr_name    = get_uvc_cfg_fld(uvc_name, :class_names)["transaction"]
         my_str *= """
         $( gen_lines_tdefs_w_param_env(params_prefix, "$(uvc_name)_$(agent_name)", "    ")[1:end-1] )
-        $( gen_lines_tdefs_w_param_env(params_prefix, "$(uvc_name)_$(cfg_name)", "    ")[1:end-1] )
         $( gen_lines_tdefs_w_param_env(params_prefix, "$(uvc_name)_$(tr_name)", "    ")[1:end-1] )
         """
     end
-    cfg_name = class_names["config"]
+    # cfg_name = class_names["config"]
     
     # $( gen_long_str(tdefs_list, "    ", gen_lines_tdefs_w_param_env)[1:end-1] )
     my_str *="""
@@ -294,13 +299,6 @@ gen_env_base() = begin
         
     """
     
-    my_str *= """
-        // Config objects - begin
-    $( gen_long_str(uvc_names, "    ", gen_line_cfg_instance)[1:end-1] )
-        // Config objects - end
-        
-    """
-    
     if size(vif_list, 1) != 0
         my_str *= """
             // Interfaces instances - begin
@@ -317,7 +315,7 @@ gen_env_base() = begin
         
         
         // Env config
-        $(dut_name)_env_$(cfg_name)_t $(env_cfg_name);
+        $(dut_name)_$(env_cfg_name)_t m_$(env_cfg_name);
         
         // Virtual Sequencer
         $(dut_name)_$(vsqr_name)_t m_$(dut_name)_$(vsqr_name);
@@ -352,7 +350,7 @@ gen_env_base() = begin
     if pass_config_thru_db
         my_str *= """
                 // Get Env config
-                if(uvm_config_db#($(dut_name)_env_$(cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("$(env_cfg_name)"), .value($(env_cfg_name))))
+                if(uvm_config_db#($(dut_name)_$(env_cfg_name)_t)::get(.cntxt(this), .inst_name(""), .field_name("m_$(env_cfg_name)"), .value(m_$(env_cfg_name))))
                     `uvm_info("$(uppercase(dut_name)) ENV", "$(uppercase(dut_name)) ENV config object was successfully set!", $(verbosities["config_set_env"]))
                 else
                     `uvm_fatal("$(uppercase(dut_name)) ENV", "No $(uppercase(dut_name)) ENV config object was set!")
@@ -361,7 +359,7 @@ gen_env_base() = begin
     else
         my_str *= """
                 // Check for Env config
-                if($(env_cfg_name) == null)
+                if(m_$(env_cfg_name) == null)
                     `uvm_fatal("$(uppercase(dut_name)) ENV", "No $(uppercase(dut_name)) ENV config object was set!")
                 
         """
@@ -375,12 +373,6 @@ gen_env_base() = begin
         """
     end
     
-    gen_line2(uvc_name, tabs) = gen_line_assign_uvc_config(uvc_name, tabs, env_cfg_name)
-    my_str *= """
-            // Assign local UVC config objects
-    $( gen_long_str(uvc_names, "        ", gen_line2)[1:end-1] )
-            
-    """
     if pass_config_thru_db
         gen_line3(uvc_name, tabs) = gen_lines_set_config_db_and_create_agents(uvc_name, tabs, env_cfg_name)
         my_str *= """
@@ -398,33 +390,33 @@ gen_env_base() = begin
     end
     my_str *= """
             // Create virtual sequencer
-            if ($(env_cfg_name).has_virtual_sequencer) begin
+            if (m_$(env_cfg_name).has_virtual_sequencer) begin
                 m_$(dut_name)_$(vsqr_name) = $(dut_name)_$(vsqr_name)_t::type_id::create("m_$(dut_name)_$(vsqr_name)", this);
-                m_$(dut_name)_$(vsqr_name).$(config_inst_convention) = $(env_cfg_name);
+                m_$(dut_name)_$(vsqr_name).m_$(env_cfg_name) = m_$(env_cfg_name);
             end
             
     """
     my_str *= gen_refmod ? """
             // Create reference model
-            if ($(env_cfg_name).has_refmod) begin
+            if (m_$(env_cfg_name).has_refmod) begin
                 m_$(dut_name)_$(rm_name) = $(dut_name)_$(rm_name)_t::type_id::create("m_$(dut_name)_$(rm_name)", this);
-                m_$(dut_name)_$(rm_name).$(config_inst_convention) = $(env_cfg_name);
+                m_$(dut_name)_$(rm_name).m_$(env_cfg_name) = m_$(env_cfg_name);
             end
             
     """ : ""
     my_str *= gen_scoreboard ? """
             // Create scoreboard
-            if ($(env_cfg_name).has_scoreboard) begin
+            if (m_$(env_cfg_name).has_scoreboard) begin
                 m_$(dut_name)_$(sb_name) = $(dut_name)_$(sb_name)_t::type_id::create("m_$(dut_name)_$(sb_name)", this);
-                m_$(dut_name)_$(sb_name).$(config_inst_convention) = $(env_cfg_name);
+                m_$(dut_name)_$(sb_name).m_$(env_cfg_name) = m_$(env_cfg_name);
             end
             
     """ : ""
     my_str *= env_has_coverage ? """
             // Create coverage collector
-            if ($(env_cfg_name).has_coverage) begin
+            if (m_$(env_cfg_name).has_coverage) begin
                 m_$(dut_name)_$(cov_name) = $(dut_name)_$(cov_name)_t::type_id::create("m_$(dut_name)_$(cov_name)", this);
-                m_$(dut_name)_$(cov_name).$(config_inst_convention) = $(env_cfg_name);
+                m_$(dut_name)_$(cov_name).m_$(env_cfg_name) = m_$(env_cfg_name);
                 `uvm_info("$(uppercase(dut_name)) ENV", "Coverage is enabled." , $(verbosities["cov_enabled"]))
             end else begin
                 `uvm_info("$(uppercase(dut_name)) ENV", "Coverage is disabled." , $(verbosities["cov_enabled"]))
@@ -439,7 +431,7 @@ gen_env_base() = begin
             super.connect_phase(phase);
             
             // Sequencers connect - begin
-            if ($(env_cfg_name).has_virtual_sequencer) begin
+            if (m_$(env_cfg_name).has_virtual_sequencer) begin
     """
     gen_line1(uvc_name, tabs) = gen_line_connect_sequencers(uvc_name, tabs, env_cfg_name)
     my_str *= """
@@ -474,7 +466,12 @@ end
 # ****************************************************************
 
 gen_env_pkg() = begin
-    cfg_name  = class_names["config"      ]
+    vseq_name = class_names["vsequence"]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "env_$(class_names["config"])"
+    else
+        cfg_name = "$(class_names["config"])"
+    end
     vsqr_name = class_names["vsequencer"  ]
     slib_name = class_names["sequence_lib"]
     sb_name   = class_names["scoreboard"  ]
@@ -488,12 +485,13 @@ gen_env_pkg() = begin
         
     """
     my_str *= env_has_params ? gen_line_import("$(dut_name)_env_params", "    ") : ""
-    my_str *= env_has_params ? "    " : ""
+    my_str *= env_has_params ? "    \n" : ""
     my_str *= """
     $( gen_long_str(uvc_names, "    ", gen_line_import_tdefs)[1:end-1] )
+    
     $( gen_long_str(uvc_names, "    ", gen_line_import)[1:end-1] )
         
-        `include "$(dut_name)_env_$(cfg_name).$(class_files_extension)"
+        `include "$(dut_name)_$(cfg_name).$(class_files_extension)"
         `include "$(dut_name)_$(vsqr_name).$(class_files_extension)"
     """
     if gen_refmod
@@ -508,8 +506,8 @@ gen_env_pkg() = begin
     my_str *= """
         `include "$(dut_name)_env.$(class_files_extension)"
         
-        `include "$(dut_name)_base_vseq.$(class_files_extension)"
-        `include "$(dut_name)_random_vseq.$(class_files_extension)"
+        `include "$(dut_name)_base_$(vseq_name).$(class_files_extension)"
+        `include "$(dut_name)_random_$(vseq_name).$(class_files_extension)"
         
     endpackage: $(dut_name)_env_pkg
     """
@@ -531,10 +529,16 @@ gen_line_default_uvc_param(uvc_name, tabs) = begin
     return my_str
 end
 gen_param_inst(tabs) = begin
-    aux_str = """
-    $( gen_long_str(params_vec, tabs*"    ", gen_line_param_assign)[1:end-1] )
-    $( gen_long_str(uvc_names, tabs*"    ", gen_line_default_uvc_param)[1:end-1] )
-    """
+    aux_str = ""
+    param_assign_str = gen_long_str(params_vec, tabs*"    ", gen_line_param_assign)
+    if length(param_assign_str) != 0
+        aux_str *= param_assign_str
+    end
+    uvc_param_str = gen_long_str(uvc_names, tabs*"    ", gen_line_default_uvc_param)
+    if length(uvc_param_str) != 0
+        aux_str *= uvc_param_str
+    end
+    
     str = ""
     str *= "$(tabs)localparam $(dut_name)_env_params_t $(uppercase(dut_name))_ENV_PARAMS = '{\n"
     str *= aux_str[1:end-2]
@@ -549,7 +553,7 @@ gen_env_params_pkg() = begin
     """
     for uvc_name in uvc_names
         if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
-            my_str *= gen_line_import("$(uvc_name)_params", "    ")
+            my_str *= gen_line_import_param_type("$(uvc_name)", "    ")
         end
     end
     my_str *= """
@@ -581,36 +585,38 @@ end
 # ****************************************************************
 
 gen_env_cfg() = begin
-    tdefs_list = []
-    for uvc_name in uvc_names
-        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
-        push!(tdefs_list, "$(uvc_name)_$(cfg_name)")
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        env_cfg_name = "env_$(class_names["config"])"
+    else
+        env_cfg_name = "$(class_names["config"])"
     end
-    
-    cfg_name = class_names["config"]
     
     params_prefix = get_uvc_params_prefix(dut_name)
     
     my_str = """
-    class $(dut_name)_env_$(cfg_name) $(get_param_declaration(params_prefix, "    "))extends uvm_object;
+    class $(dut_name)_$(env_cfg_name) $(get_param_declaration(params_prefix, "    "))extends uvm_object;
         
     """
     
     if env_has_params
         my_str *= """
-            `uvm_object_param_utils($(dut_name)_env_$(cfg_name) $(get_param_conn(params_prefix, "    ")))
+            `uvm_object_param_utils($(dut_name)_$(env_cfg_name) $(get_param_conn(params_prefix, "    ")))
             
         """
     else
         my_str *= """
-            `uvm_object_utils($(dut_name)_env_$(cfg_name))
+            `uvm_object_utils($(dut_name)_$(env_cfg_name))
             
         """
     end
     
     for uvc_name in uvc_names
         params_prefix = get_uvc_params_prefix(uvc_name)
-        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+        if get_usr_cfg_fld(:use_detailed_config_instances) == true
+            cfg_name = "agent_" * get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+        else
+            cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+        end
         my_str *= """
         $( gen_lines_tdefs_w_param_env(params_prefix, "$(uvc_name)_$(cfg_name)", "    ")[1:end-1] )
         """
@@ -637,7 +643,7 @@ gen_env_cfg() = begin
     
     my_str *="""
         
-        function new (string name = "$(dut_name)_env_$(cfg_name)");
+        function new (string name = "$(dut_name)_$(env_cfg_name)");
             super.new(name);
             
             has_virtual_sequencer = 1'b1;
@@ -658,7 +664,7 @@ gen_env_cfg() = begin
     $( gen_long_str(uvc_names, "        ", gen_line_has_agent_assign)[1:end-1] )
         endfunction : new
         
-    endclass : $(dut_name)_env_$(cfg_name)
+    endclass : $(dut_name)_$(env_cfg_name)
     """
     return my_str
 end

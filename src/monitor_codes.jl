@@ -27,7 +27,7 @@ get_normal_mon_funcs(prefix_name) = begin
         my_str =  """
             task reset_phase (uvm_phase phase);
                 `uvm_info("$(uppercase(prefix_name)) MONITOR", "Entering reset phase.", $(verb_dict["enter_reset_phase"]))
-                mon_tr = null;
+                mon_$(tr_name) = null;
                 collect();
             endtask: reset_phase
             
@@ -35,7 +35,7 @@ get_normal_mon_funcs(prefix_name) = begin
                 super.main_phase(phase);
                 `uvm_info("$(uppercase(prefix_name)) MONITOR", "Entering main phase", $(verb_dict["enter_main_phase"]))
                 
-                end_tr(mon_tr);
+                end_tr(mon_$(tr_name));
                 
                 collect();
             endtask : main_phase
@@ -45,14 +45,14 @@ get_normal_mon_funcs(prefix_name) = begin
     my_str *= """
         task collect ();
             forever begin
-                mon_tr = $(tr_type)::type_id::create("mon_tr", this);
+                mon_$(tr_name) = $(tr_type)::type_id::create("mon_$(tr_name)", this);
                 
-                void'(begin_tr(mon_tr, "$(uppercase(prefix_name))_MONITOR_TR"));
-                vif.collect_tr(mon_tr);
-                end_tr(mon_tr);
+                void'(begin_tr(mon_$(tr_name), "$(uppercase(prefix_name))_MONITOR_$(uppercase(tr_name))"));
+                vif.collect_tr(mon_$(tr_name));
+                end_tr(mon_$(tr_name));
                 
-                `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Transaction Collected:%s", mon_tr.convert2string()), $(verb_dict["collect_tr"]))
-                item_collected_port.write(mon_tr);
+                `uvm_info("$(uppercase(prefix_name)) MONITOR", \$sformatf("Transaction Collected:%s", mon_$(tr_name).convert2string()), $(verb_dict["collect_tr"]))
+                item_collected_port.write(mon_$(tr_name));
                 num_tr_col++;
             end
         endtask : collect
@@ -70,7 +70,7 @@ get_clknrst_mon_funcs(prefix_name) = begin
             // What should we do here?
             forever begin
                 // tr = $(tr_type)::type_id::create("tr", this);
-                // void'(begin_tr(tr, "$(uppercase(prefix_name))_MONITOR_TR"));
+                // void'(begin_tr(tr, "$(uppercase(prefix_name))_MONITOR_$(uppercase(tr_name))"));
                 
                 vif.wait_clk_posedge();
                 
@@ -86,7 +86,11 @@ end
 
 gen_monitor(prefix_name, type::uvc_class_type) = begin 
     mon_name = get_uvc_cfg_fld(prefix_name, :class_names)["monitor"    ]
-    cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"     ]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config" ]
+    end
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
@@ -114,10 +118,10 @@ gen_monitor(prefix_name, type::uvc_class_type) = begin
     $( gen_lines_tdefs_w_param_uvc("$(prefix_name)_$(cfg_name)", "    ")[1:end-1] )
     $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
         
-        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
+        $(prefix_name)_$(cfg_name)_t m_$(cfg_name);
         
         $(prefix_name)_vif_t vif;
-        $(tr_type) mon_tr;
+        $(tr_type) mon_$(tr_name);
         int num_tr_col;
         
         uvm_analysis_port #($(tr_type)) item_collected_port;
@@ -131,7 +135,7 @@ gen_monitor(prefix_name, type::uvc_class_type) = begin
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             
-            if ($(config_inst_convention) == null)
+            if (m_$(cfg_name) == null)
                 `uvm_fatal("$(uppercase(prefix_name)) MONITOR", "No configuration object was set!")
     """
     if get_uvc_cfg_fld(prefix_name, :vif_in_config) == false
@@ -142,9 +146,9 @@ gen_monitor(prefix_name, type::uvc_class_type) = begin
     else
         my_str *= """
                 
-                if ($(config_inst_convention).vif == null)
+                if (m_$(cfg_name).vif == null)
                     `uvm_fatal("$(uppercase(prefix_name)) MONITOR", "No interface was set!")
-                vif = $(config_inst_convention).vif;
+                vif = m_$(cfg_name).vif;
         """
     end
     my_str *= """

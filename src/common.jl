@@ -54,13 +54,18 @@ vector_to_pattern(prefix_name) = begin
     vec_out = []
     for class_symbol in fieldnames(typeof(pkg_classes))
         class_name = String(class_symbol)
-        if String(class_symbol) == "coverage"
+        if class_name == "coverage"
             if get_uvc_cfg_fld(prefix_name, :agent_has_coverage) == true
                 class_name = get_uvc_cfg_fld(prefix_name, :class_names)[class_name]
                 push!(vec_out, prefix_name*"_"*class_name)
             end
         elseif getfield(pkg_classes, class_symbol) == true
             class_name = get_uvc_cfg_fld(prefix_name, :class_names)[class_name]
+            if class_name == "config"
+                if get_usr_cfg_fld(:use_detailed_config_instances) == true
+                    class_name = "agent_config"
+                end
+            end
             push!(vec_out, prefix_name*"_"*class_name)
         end
     end
@@ -307,7 +312,11 @@ gen_line_seq_item_t_conn(uvc_name, tabs) = begin
 end
 
 gen_line_cfg_instance(uvc_name, tabs) = begin
-    cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config" ]
+    end
     return """$(tabs)$(uvc_name)_$(cfg_name)_t m_$(uvc_name)_$(cfg_name);\n"""
 end
 
@@ -367,5 +376,11 @@ gen_if_signals(tabs, func) = begin
         str *= (uvc_name == uvc_names_[end]) ? "$(tabs)// Signals from $(uvc_name)'s interface - end" : "$(tabs)// Signals from $(uvc_name)'s interface - end\n$(tabs)"
     end
     return str
+end
+
+gen_line_import_param_type(uvc_name, tabs) = begin
+    return """
+    $(tabs)import $(uvc_name)_params_pkg::$(uvc_name)_params_t;
+    """
 end
 

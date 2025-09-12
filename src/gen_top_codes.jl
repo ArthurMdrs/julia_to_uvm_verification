@@ -98,8 +98,8 @@ gen_top_base() = begin
         
         initial begin
             \$timeformat(-9, 3, "ns", 12); // e.g.: "   900.000ns"
-            \$dumpfile("dump.vcd");
-            \$dumpvars;
+            // \$dumpfile("dump.vcd");
+            // \$dumpvars;
             
             // Virtual interfaces send to UVCs - begin
     """

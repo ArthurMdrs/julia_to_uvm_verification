@@ -21,12 +21,12 @@ user_config.params_vec = [ # Make sure to include all your params in this vector
     sv_params_t("int", "MY_PARAM1", "10"),
     sv_params_t("int", "MY_PARAM2", "20"),
 ]
-user_config.config_inst_convention = "m_config"
 user_config.class_names = short_names_dict
 user_config.gen_tdefs_pkg = false
 user_config.vif_in_config = true
 user_config.pass_config_thru_db = false
 user_config.class_files_extension = "svh"
+user_config.use_detailed_config_instances = true
 
 # Clock and reset info
 user_config.clock_name = "clk"

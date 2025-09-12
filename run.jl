@@ -152,13 +152,13 @@ env_has_params = get_usr_cfg_fld(:env_has_params)
 uvc_has_params = get_usr_cfg_fld(:uvc_has_params)
 use_env_params = get_usr_cfg_fld(:use_env_params)
 params_vec = get_usr_cfg_fld(:params_vec)
-config_inst_convention = get_usr_cfg_fld(:config_inst_convention)
 class_names = get_usr_cfg_fld(:class_names)
 gen_tdefs_pkg = get_usr_cfg_fld(:gen_tdefs_pkg)
 vif_in_config = get_usr_cfg_fld(:vif_in_config)
 pass_config_thru_db = get_usr_cfg_fld(:pass_config_thru_db)
 class_files_extension = get_usr_cfg_fld(:class_files_extension)
 verbosities = get_usr_cfg_fld(:verbosities)
+use_detailed_config_instances = get_usr_cfg_fld(:use_detailed_config_instances)
 
 # Clock and reset info
 clock_name = get_usr_cfg_fld(:clock_name)
@@ -304,7 +304,24 @@ if gen_clknrst == true && !haskey(uvc_config_dict, clknrst_name)
     clknrst_config.if_sigs_vec = []
     clknrst_config.uvc_has_params = false
     clknrst_config.use_env_params = false
-    clknrst_config.class_names = use_short_names ? short_names_dict : long_names_dict
+    clknrst_config.class_names = use_short_names ? short_names_dict : Dict(
+        "transaction" => "seq_item",
+        "sequence_lib" => "sequence_lib",
+        "monitor" => "monitor",
+        "sequencer" => "sequencer",
+        "driver" => "driver",
+        "coverage" => "coverage",
+        "config" => "config",
+        "agent" => "agent",
+        "tdefs_pkg" => "tdefs_pkg",
+        "pkg" => "pkg",
+        "interface" => "if",
+        "vsequencer" => "virtual_sequencer",
+        "sequence" => "sequence",
+        "vsequence" => "virtual_sequence",
+        "scoreboard" => "scoreboard",
+        "ref_model" => "refmod",
+    )
     uvc_config_dict[clknrst_name] = clknrst_config
 end
 elapsed_time_array["build_clknrst_config"] = (time_ns() - time_now) / 1e9

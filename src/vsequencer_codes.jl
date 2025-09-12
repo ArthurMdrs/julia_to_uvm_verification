@@ -16,10 +16,19 @@ gen_line_sqr_instance(uvc_name, tabs) = begin
 end
 gen_line_stop_seq(uvc_name, tabs) = begin
     sqr_name = get_uvc_cfg_fld(uvc_name, :class_names)["sequencer"]
-    cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    end
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        env_cfg_name = "env_$(class_names["config"])"
+    else
+        env_cfg_name = "$(class_names["config"])"
+    end
     my_str = """
-    $(tabs)if ($(config_inst_convention).has_$(uvc_name)_agent) begin
-    $(tabs)    if ($(config_inst_convention).m_$(uvc_name)_$(cfg_name).is_active) begin
+    $(tabs)if (m_$(env_cfg_name).has_$(uvc_name)_agent) begin
+    $(tabs)    if (m_$(env_cfg_name).m_$(uvc_name)_$(cfg_name).is_active) begin
     $(tabs)        m_$(uvc_name)_$(sqr_name).stop_sequences();
     $(tabs)    end
     $(tabs)end
@@ -30,7 +39,11 @@ end
 gen_vsequencer() = begin
     vsqr_name = class_names["vsequencer"]
     sqr_name  = class_names["sequencer" ]
-    cfg_name  = class_names["config"    ]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "env_$(class_names["config"])"
+    else
+        cfg_name = "$(class_names["config"])"
+    end
     
     params_prefix = get_uvc_params_prefix(dut_name)
     
@@ -52,7 +65,7 @@ gen_vsequencer() = begin
     my_str *= """
         
         // Typedefs - begin
-    $(gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1])
+    $(gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_$(cfg_name)", "    ")[1:end-1])
     """
     
     for uvc_name in uvc_names
@@ -68,7 +81,7 @@ gen_vsequencer() = begin
         // Sequencers - end
         
         // Env config
-        $(dut_name)_env_$(cfg_name)_t $(config_inst_convention);
+        $(dut_name)_$(cfg_name)_t m_$(cfg_name);
         
         function new(string name="$(dut_name)_$(vsqr_name)", uvm_component parent = null);
             super.new(name, parent);
@@ -77,7 +90,7 @@ gen_vsequencer() = begin
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             
-            if ($(config_inst_convention) == null)
+            if (m_$(cfg_name) == null)
                 `uvm_fatal("$(uppercase(dut_name)) VSEQUENCER", "No configuration object was set!")
         endfunction : build_phase
         

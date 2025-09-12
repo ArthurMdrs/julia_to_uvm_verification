@@ -42,6 +42,7 @@ short_names_dict = Dict(
     "interface" => "if",
     "vsequencer" => "vsqr",
     "sequence" => "seq",
+    "vsequence" => "vseq",
     "scoreboard" => "sb",
     "ref_model" => "refmod",
 )
@@ -59,6 +60,7 @@ long_names_dict = Dict(
     "interface" => "interface",
     "vsequencer" => "vsequencer",
     "sequence" => "sequence",
+    "virtual_sequence" => "vsequence",
     "scoreboard" => "scoreboard",
     "ref_model" => "ref_model",
 )
@@ -95,13 +97,13 @@ mutable struct config_t
     uvc_has_params::Union{Bool, Nothing}
     use_env_params::Union{Bool, Nothing}
     params_vec::Vector{sv_params_t}
-    config_inst_convention::String
     class_names::Dict{String, String}
     gen_tdefs_pkg::Union{Bool, Nothing}
     vif_in_config::Union{Bool, Nothing}
     pass_config_thru_db::Union{Bool, Nothing}
     class_files_extension::String
     verbosities::Dict{String, String}
+    use_detailed_config_instances::Union{Bool, Nothing}
     # Clock and reset info
     clock_name::String
     reset_name::String
@@ -147,7 +149,6 @@ global_config.env_has_params = false
 global_config.uvc_has_params = false
 global_config.use_env_params = false
 global_config.params_vec = []
-global_config.config_inst_convention = "m_config"
 global_config.class_names = short_names_dict
 global_config.gen_tdefs_pkg = false
 global_config.vif_in_config = true
@@ -188,6 +189,7 @@ uvm_verb_dict = Dict(
     "kill_seq" => "UVM_MEDIUM",
 )
 global_config.verbosities = uvm_verb_dict
+global_config.use_detailed_config_instances = true
 
 # Clock and reset info
 global_config.clock_name = "clk"

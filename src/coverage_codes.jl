@@ -33,8 +33,12 @@ gen_line_report_coverage(vec::tr_field_t, tabs, prefix_name) = begin
 end
 
 gen_coverage_base(prefix_name) = begin
-    cov_name = get_uvc_cfg_fld(prefix_name, :class_names)["coverage"]
-    cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    cov_name = get_uvc_cfg_fld(prefix_name, :class_names)["coverage"   ]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(prefix_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(prefix_name, :class_names)["config" ]
+    end
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     vec = get_uvc_cfg_fld(prefix_name, :tr_props_vec)
@@ -62,7 +66,7 @@ gen_coverage_base(prefix_name) = begin
         
     $( gen_lines_tdefs_w_param_uvc("$(prefix_name)_$(cfg_name)", "    ")[1:end-1] )
         
-        $(prefix_name)_$(cfg_name)_t $(config_inst_convention);
+        $(prefix_name)_$(cfg_name)_t m_$(cfg_name);
         
         real coverage_value;
         $(tr_type) cov_transaction;
@@ -83,7 +87,7 @@ gen_coverage_base(prefix_name) = begin
         
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
-            if ($(config_inst_convention) == null)
+            if (m_$(cfg_name) == null)
                 `uvm_fatal("$(uppercase(prefix_name)) COVERAGE", "No configuration object was set!")
         endfunction : build_phase
         
@@ -130,7 +134,11 @@ gen_clknrst_coverage(prefix_name) = gen_coverage_base(prefix_name)
 
 gen_env_coverage_base() = begin
     cov_name = class_names["coverage"   ]
-    cfg_name = class_names["config"     ]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "env_$(class_names["config"])"
+    else
+        cfg_name = "$(class_names["config"])"
+    end
     @assert size(uvc_names, 1) >= 1
     uvc_name = uvc_names[1]
     tr_name  = get_uvc_cfg_fld(uvc_name, :class_names)["transaction"]
@@ -155,9 +163,9 @@ gen_env_coverage_base() = begin
     
     my_str *= """
         
-    $(gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1])
+    $(gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_$(cfg_name)", "    ")[1:end-1])
         
-        $(dut_name)_env_$(cfg_name)_t $(config_inst_convention);
+        $(dut_name)_$(cfg_name)_t m_$(cfg_name);
     """
     
     my_str *= """
@@ -189,7 +197,7 @@ gen_env_coverage_base() = begin
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
             
-            if ($(config_inst_convention) == null)
+            if (m_$(cfg_name) == null)
                 `uvm_fatal("$(uppercase(dut_name)) COVERAGE", "No configuration object was set!")
         endfunction : build_phase
         

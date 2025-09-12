@@ -9,16 +9,28 @@ gen_line_seq_instance(seq_name, tabs) = begin
     return my_str
 end
 gen_line_rnd_seq_creation(uvc_name, tabs) = begin
-    my_str = "$(tabs)m_$(uvc_name)_random_seq = $(uvc_name)_random_seq_t::type_id::create(\"m_$(uvc_name)_random_seq\");\n"
+    seq_name = get_uvc_cfg_fld(uvc_name, :class_names)["sequence"]
+    my_str = "$(tabs)m_$(uvc_name)_random_$(seq_name) = $(uvc_name)_random_$(seq_name)_t::type_id::create(\"m_$(uvc_name)_random_$(seq_name)\");\n"
     return my_str
 end
 gen_line_rnd_seq_set_phase(uvc_name, tabs) = begin
-    my_str = "$(tabs)m_$(uvc_name)_random_seq.set_starting_phase(get_starting_phase());\n"
+    seq_name = get_uvc_cfg_fld(uvc_name, :class_names)["sequence"]
+    my_str = "$(tabs)m_$(uvc_name)_random_$(seq_name).set_starting_phase(get_starting_phase());\n"
     return my_str
 end
 gen_rnd_seq_setup(uvc_name, tabs) = begin
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    end
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        env_cfg_name = "env_$(class_names["config"])"
+    else
+        env_cfg_name = "$(class_names["config"])"
+    end
     my_str = """
-    $(tabs)if ($(config_inst_convention).has_$(uvc_name)_agent) begin
+    $(tabs)if (m_$(env_cfg_name).has_$(uvc_name)_agent) begin
     $( gen_line_rnd_seq_creation(uvc_name, tabs*"    ")[1:end-1] )
     $( gen_line_rnd_seq_set_phase(uvc_name, tabs*"    ")[1:end-1] )
     $(tabs)end
@@ -27,13 +39,23 @@ gen_rnd_seq_setup(uvc_name, tabs) = begin
 end
 gen_line_rnd_seq_start(uvc_name, tabs) = begin
     sqr_name = get_uvc_cfg_fld(uvc_name, :class_names)["sequencer"]
-    cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    seq_name = get_uvc_cfg_fld(uvc_name, :class_names)["sequence" ]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "agent_" * get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    else
+        cfg_name = get_uvc_cfg_fld(uvc_name, :class_names)["config"]
+    end
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        env_cfg_name = "env_$(class_names["config"])"
+    else
+        env_cfg_name = "$(class_names["config"])"
+    end
     my_str = """
-    $(tabs)if ($(config_inst_convention).has_$(uvc_name)_agent) begin
-    $(tabs)    if ($(config_inst_convention).m_$(uvc_name)_$(cfg_name).is_active) begin
+    $(tabs)if (m_$(env_cfg_name).has_$(uvc_name)_agent) begin
+    $(tabs)    if (m_$(env_cfg_name).m_$(uvc_name)_$(cfg_name).is_active) begin
     $( gen_line_rnd_seq_creation(uvc_name, tabs*"        ")[1:end-1] )
     $( gen_line_rnd_seq_set_phase(uvc_name, tabs*"        ")[1:end-1] )
-    $(tabs)        m_$(uvc_name)_random_seq.start(.sequencer(p_sequencer.m_$(uvc_name)_$(sqr_name)), .call_pre_post(0));
+    $(tabs)        m_$(uvc_name)_random_$(seq_name).start(.sequencer(p_sequencer.m_$(uvc_name)_$(sqr_name)), .call_pre_post(0));
     $(tabs)    end
     $(tabs)end
     """
@@ -43,37 +65,43 @@ end
 gen_vseq_base() = begin
     vsqr_name = class_names["vsequencer"]
     sqr_name  = class_names["sequencer" ]
-    cfg_name = class_names["config"]
+    vseq_name = class_names["vsequence" ]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "env_$(class_names["config"])"
+    else
+        cfg_name = "$(class_names["config"])"
+    end
     
     params_prefix = get_uvc_params_prefix(dut_name)
     
     my_str = """
-    class $(dut_name)_base_vseq $(get_vsqr_param_declaration("    "))extends uvm_sequence;
+    class $(dut_name)_base_$(vseq_name) $(get_vsqr_param_declaration("    "))extends uvm_sequence;
         
     """
     
     if env_has_params
         my_str *= """
-            `uvm_object_param_utils($(dut_name)_base_vseq $(get_vsqr_param_conn("    ")[1:end-1]))
+            `uvm_object_param_utils($(dut_name)_base_$(vseq_name) $(get_vsqr_param_conn("    ")[1:end-1]))
         """
     else
         my_str *= """
-            `uvm_object_utils($(dut_name)_base_vseq)
+            `uvm_object_utils($(dut_name)_base_$(vseq_name))
         """
     end
     
     my_str *= """
         
         // Typedefs - begin
-    $( gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_env_$(cfg_name)", "    ")[1:end-1] )
+    $( gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_$(cfg_name)", "    ")[1:end-1] )
     """
     
     seq_list = []
     if using_this_clknrst == true
+        seq_name = get_uvc_cfg_fld(clknrst_name, :class_names)["sequence"]
         for x in clknrst_actions_vec
-            push!(seq_list, clknrst_name*"_"*x*"_seq")
+            push!(seq_list, clknrst_name*"_"*x*"_$(seq_name)")
         end
-        push!(seq_list, "$(clknrst_name)_reset_and_start_clk_seq")
+        push!(seq_list, "$(clknrst_name)_reset_and_start_clk_$(seq_name)")
     end
     for x in seq_list
         my_str *= gen_lines_tdefs_w_param_w_seq_item_env(x, clknrst_name, "    ")
@@ -82,8 +110,9 @@ gen_vseq_base() = begin
         if uvc_name == clknrst_name && using_this_clknrst == true
             continue
         end
-        push!(seq_list, "$(uvc_name)_random_seq")
-        my_str *= gen_lines_tdefs_w_param_w_seq_item_env("$(uvc_name)_random_seq", uvc_name, "    ")
+        seq_name = get_uvc_cfg_fld(uvc_name, :class_names)["sequence"]
+        push!(seq_list, "$(uvc_name)_random_$(seq_name)")
+        my_str *= gen_lines_tdefs_w_param_w_seq_item_env("$(uvc_name)_random_$(seq_name)", uvc_name, "    ")
     end
     my_str = my_str[1:end-1]
     
@@ -93,13 +122,13 @@ gen_vseq_base() = begin
         
         `uvm_declare_p_sequencer($(dut_name)_$(vsqr_name)_t)
         
-        $(dut_name)_env_$(cfg_name)_t $(config_inst_convention);
+        $(dut_name)_$(cfg_name)_t m_$(cfg_name);
         
         // Sequence instances - begin
     $( gen_long_str(seq_list, "    ", gen_line_seq_instance)[1:end-1] )
         // Sequence instances - end
         
-        function new (string name="$(dut_name)_base_vseq");
+        function new (string name="$(dut_name)_base_$(vseq_name)");
             super.new(name);
         endfunction : new
         
@@ -116,7 +145,7 @@ gen_vseq_base() = begin
                 `uvm_info("$(uppercase(dut_name)) VSEQ", "Phase is null, so could not raise objection.", $(verbosities["phase_null_vseq"]))
             end
             
-            $(config_inst_convention) = p_sequencer.$(config_inst_convention);
+            m_$(cfg_name) = p_sequencer.m_$(cfg_name);
         endtask : pre_start
         
         task post_start ();
@@ -144,13 +173,19 @@ gen_vseq_base() = begin
     """
     
     my_str *= """
-    endclass : $(dut_name)_base_vseq
+    endclass : $(dut_name)_base_$(vseq_name)
     """
     return my_str
 end
 
 gen_vseq_random() = begin
-    sqr_name  = class_names["sequencer" ]
+    sqr_name  = class_names["sequencer"]
+    vseq_name = class_names["vsequence"]
+    if get_usr_cfg_fld(:use_detailed_config_instances) == true
+        cfg_name = "env_$(class_names["config"])"
+    else
+        cfg_name = "$(class_names["config"])"
+    end
     
     uvc_names_ = uvc_names
     if using_this_clknrst == true
@@ -158,23 +193,23 @@ gen_vseq_random() = begin
     end
     
     my_str = """
-    class $(dut_name)_random_vseq $(get_vsqr_param_declaration("    "))extends $(dut_name)_base_vseq$(gen_vsqr_param_conn("")[1:end-1]);
+    class $(dut_name)_random_$(vseq_name) $(get_vsqr_param_declaration("    "))extends $(dut_name)_base_$(vseq_name)$(gen_vsqr_param_conn("")[1:end-1]);
         
     """
     
     if env_has_params
         my_str *= """
-            `uvm_object_param_utils($(dut_name)_random_vseq $(get_vsqr_param_conn("    ")[1:end-1]))
+            `uvm_object_param_utils($(dut_name)_random_$(vseq_name) $(get_vsqr_param_conn("    ")[1:end-1]))
         """
     else
         my_str *= """
-            `uvm_object_utils($(dut_name)_random_vseq)
+            `uvm_object_utils($(dut_name)_random_$(vseq_name))
         """
     end
     
     my_str *= """
         
-        function new(string name="$(dut_name)_random_vseq");
+        function new(string name="$(dut_name)_random_$(vseq_name)");
             super.new(name);
         endfunction : new
         
@@ -184,12 +219,18 @@ gen_vseq_random() = begin
     """
     
     if using_this_clknrst == true
+        if get_usr_cfg_fld(:use_detailed_config_instances) == true
+            clknrst_cfg_name = "agent_" * get_uvc_cfg_fld(clknrst_name, :class_names)["config"]
+        else
+            clknrst_cfg_name = get_uvc_cfg_fld(clknrst_name, :class_names)["config"]
+        end
+        seq_name = get_uvc_cfg_fld(clknrst_name, :class_names)["sequence"]
         my_str *= """
-                if ($(config_inst_convention).has_$(clknrst_name)_agent) begin
-                    if ($(config_inst_convention).m_$(clknrst_name)_$(get_uvc_cfg_fld(clknrst_name, :class_names)["config"]).is_active) begin
-                        m_$(clknrst_name)_reset_and_start_clk_seq = $(clknrst_name)_reset_and_start_clk_seq_t::type_id::create("m_$(clknrst_name)_reset_and_start_clk_seq");
-                        m_$(clknrst_name)_reset_and_start_clk_seq.set_starting_phase(get_starting_phase());
-                        m_$(clknrst_name)_reset_and_start_clk_seq.start(.sequencer(p_sequencer.m_$(clknrst_name)_$(get_uvc_cfg_fld(clknrst_name, :class_names)["sequencer"])), .call_pre_post(0));
+                if (m_$(cfg_name).has_$(clknrst_name)_agent) begin
+                    if (m_$(cfg_name).m_$(clknrst_name)_$(clknrst_cfg_name).is_active) begin
+                        m_$(clknrst_name)_reset_and_start_clk_$(seq_name) = $(clknrst_name)_reset_and_start_clk_$(seq_name)_t::type_id::create("m_$(clknrst_name)_reset_and_start_clk_$(seq_name)");
+                        m_$(clknrst_name)_reset_and_start_clk_$(seq_name).set_starting_phase(get_starting_phase());
+                        m_$(clknrst_name)_reset_and_start_clk_$(seq_name).start(.sequencer(p_sequencer.m_$(clknrst_name)_$(get_uvc_cfg_fld(clknrst_name, :class_names)["sequencer"])), .call_pre_post(0));
                     end
                 end
                 
@@ -205,7 +246,7 @@ gen_vseq_random() = begin
             
         endtask : body
         
-    endclass : $(dut_name)_random_vseq
+    endclass : $(dut_name)_random_$(vseq_name)
     """
     return my_str
 end
