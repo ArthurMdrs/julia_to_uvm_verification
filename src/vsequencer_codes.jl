@@ -27,8 +27,8 @@ gen_line_stop_seq(uvc_name, tabs) = begin
         env_cfg_name = "$(class_names["config"])"
     end
     my_str = """
-    $(tabs)if (m_$(env_cfg_name).has_$(uvc_name)_agent) begin
-    $(tabs)    if (m_$(env_cfg_name).m_$(uvc_name)_$(cfg_name).is_active) begin
+    $(tabs)if (m_$(env_cfg_name).m_has_$(uvc_name)_agent) begin
+    $(tabs)    if (m_$(env_cfg_name).m_$(uvc_name)_$(cfg_name).m_is_active) begin
     $(tabs)        m_$(uvc_name)_$(sqr_name).stop_sequences();
     $(tabs)    end
     $(tabs)end
@@ -44,14 +44,14 @@ gen_vsequencer() = begin
     else
         cfg_name = "$(class_names["config"])"
     end
-    
+
     params_prefix = get_uvc_params_prefix(dut_name)
-    
+
     my_str = """
     class $(dut_name)_$(vsqr_name) $(get_vsqr_param_declaration("    "))extends uvm_sequencer;
-        
+
     """
-    
+
     if env_has_params
         my_str *= """
             `uvm_component_param_utils($(dut_name)_$(vsqr_name) $(get_vsqr_param_conn("    ")[1:end-1]))
@@ -61,54 +61,54 @@ gen_vsequencer() = begin
             `uvm_component_utils($(dut_name)_$(vsqr_name))
         """
     end
-    
+
     my_str *= """
-        
+
         // Typedefs - begin
     $(gen_lines_tdefs_w_param_env(params_prefix, "$(dut_name)_$(cfg_name)", "    ")[1:end-1])
     """
-    
+
     for uvc_name in uvc_names
         sqr_name = get_uvc_cfg_fld(uvc_name, :class_names)["sequencer"]
         my_str *= gen_lines_tdefs_w_param_w_seq_item_env("$(uvc_name)_$(sqr_name)", uvc_name, "    ")
     end
-    
+
     my_str *= """
-        // Typedefs - end    
-        
+        // Typedefs - end
+
         // Sequencers - begin
     $( gen_long_str(uvc_names, "    ", gen_line_sqr_instance)[1:end-1] )
         // Sequencers - end
-        
+
         // Env config
         $(dut_name)_$(cfg_name)_t m_$(cfg_name);
-        
+
         function new(string name="$(dut_name)_$(vsqr_name)", uvm_component parent = null);
             super.new(name, parent);
         endfunction : new
-        
+
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
-            
+
             if (m_$(cfg_name) == null)
                 `uvm_fatal("$(uppercase(dut_name)) VSEQUENCER", "No configuration object was set!")
         endfunction : build_phase
-        
+
     """
-    
+
     if reset_mechanism == reset_phase_reset
         my_str *= """
             task pre_reset_phase(uvm_phase phase);
         $( gen_long_str(uvc_names, "        ", gen_line_stop_seq)[1:end-1] )
             endtask : pre_reset_phase
-            
+
             task post_reset_phase(uvm_phase phase);
         $( gen_long_str(uvc_names, "        ", gen_line_stop_seq)[1:end-1] )
             endtask : post_reset_phase
-            
+
         """
     end
-    
+
         my_str *= """
     endclass : $(dut_name)_$(vsqr_name)
     """

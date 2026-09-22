@@ -16,22 +16,22 @@ get_normal_drv_funcs(prefix_name) = begin
                     begin
                         @($((rst_is_negedge_sensitive) ? "negedge" : "posedge") vif.$(reset_name));
                         @($((rst_is_negedge_sensitive) ? "posedge" : "negedge") vif.$(reset_name));
-                        
+
                         `uvm_info("$(uppercase(prefix_name)) DRIVER", "Reset dropped", $(verb_dict["reset_dropped"]))
-                        
+
                         get_and_drive();
                     end
                     reset_signals();
                 join
             endtask : run_phase
-            
+
             task reset_signals();
                 forever begin
                     vif.$(prefix_name)_reset();
                     `uvm_info("$(uppercase(prefix_name)) DRIVER", "Detected reset", $(verb_dict["reset_detected"]))
                 end
             endtask : reset_signals
-            
+
         """
     elseif reset_mechanism == reset_phase_reset
         my_str =  """
@@ -40,15 +40,15 @@ get_normal_drv_funcs(prefix_name) = begin
                 vif.$(prefix_name)_reset();
                 get_and_drive();
             endtask: reset_phase
-            
+
             task main_phase (uvm_phase phase);
                 super.main_phase(phase);
-                
+
                 `uvm_info("$(uppercase(prefix_name)) DRIVER", "Entering main phase", $(verb_dict["enter_main_phase"]))
-                
+
                 get_and_drive();
             endtask : main_phase
-            
+
         """
     end
     my_str *= """
@@ -56,16 +56,16 @@ get_normal_drv_funcs(prefix_name) = begin
             forever begin
                 seq_item_port.get_next_item(req);
                 `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Sending transaction:%s", req.convert2string()), $(verb_dict["drive_tr"]))
-                
+
                 void'(begin_tr(req, "$(uppercase(prefix_name))_DRIVER_TR"));
                 vif.send_to_dut(req);
                 end_tr(req);
-                
-                num_sent++;
+
+                m_num_sent++;
                 seq_item_port.item_done();
             end
         endtask : get_and_drive
-        
+
     """
     return my_str
 end
@@ -80,24 +80,24 @@ get_clknrst_drv_funcs(prefix_name) = begin
     my_str =  """
         task run_phase (uvm_phase phase);
             super.run_phase(phase);
-            
+
             case (m_$(cfg_name).initial_rst_val)
                 $(uppercase(prefix_name))_INITIAL_VALUE_0: vif.set_rst_val(1'b0);
                 $(uppercase(prefix_name))_INITIAL_VALUE_1: vif.set_rst_val(1'b1);
                 $(uppercase(prefix_name))_INITIAL_VALUE_X: vif.set_rst_val(1'bx);
                 default: `uvm_fatal("$(uppercase(prefix_name)) DRIVER", \$sformatf("Illegal initial value for reset: %s", m_$(cfg_name).initial_rst_val))
             endcase
-            
+
             forever begin
                 seq_item_port.get_next_item(req);
                 void'(begin_tr(req, "$(uppercase(prefix_name))_DRIVER_TR"));
                 drive_req(req);
                 end_tr(req);
-                num_sent++;
+                m_num_sent++;
                 seq_item_port.item_done();
             end
         endtask : run_phase
-        
+
         task drive_req ($(tr_type) req);
             case (req.action)
                 $(uppercase(prefix_name))_ACTION_START_CLK: begin
@@ -119,7 +119,7 @@ get_clknrst_drv_funcs(prefix_name) = begin
                         //vif.wait_clk_negedge();
                     end
                 end
-                
+
                 $(uppercase(prefix_name))_ACTION_STOP_CLK: begin
                     if (!vif.clk_active) begin
                         `uvm_warning("$(uppercase(prefix_name)) DRIVER", \$sformatf("Attempting to stop clock generation while it is already inactive. Ignoring req:\\n%s", req.sprint()))
@@ -129,7 +129,7 @@ get_clknrst_drv_funcs(prefix_name) = begin
                         vif.stop_clk();
                     end
                 end
-            
+
                 $(uppercase(prefix_name))_ACTION_RESTART_CLK: begin
                     if (vif.clk_active) begin
                         `uvm_warning("$(uppercase(prefix_name)) DRIVER", \$sformatf("Attempting to restart clock generation while it is already active. Ignoring req:\\n%s", req.sprint()))
@@ -139,13 +139,13 @@ get_clknrst_drv_funcs(prefix_name) = begin
                         //vif.wait_clk_negedge();
                     end
                 end
-                
+
                 $(uppercase(prefix_name))_ACTION_ASSERT_RESET: begin
                     vif.assert_rst(req.rst_assert_duration);
                 end
             endcase
         endtask : drive_req
-        
+
     """
     return my_str
 end
@@ -160,15 +160,15 @@ gen_driver(prefix_name, type::uvc_class_type) = begin
     tr_name  = get_uvc_cfg_fld(prefix_name, :class_names)["transaction"]
     tr_type = get_uvc_cfg_fld(prefix_name, :uvc_has_params) ? "seq_item_t" : "$(prefix_name)_$(tr_name)"
     verb_dict = get_uvc_cfg_fld(prefix_name, :verbosities)
-    
+
     params_prefix = get_uvc_params_prefix(prefix_name)
-    
+
     gen_lines_tdefs_w_param_uvc(name, tabs) = gen_lines_tdefs_w_param(params_prefix, name, tabs)
     my_str = """
     class $(prefix_name)_$(drv_name) $(get_param_declaration_w_seq_item(params_prefix, "    "))extends uvm_driver #($(tr_type));
-        
+
     """
-    
+
     if get_uvc_cfg_fld(prefix_name, :uvc_has_params)
         my_str *= """
             `uvm_component_param_utils($(prefix_name)_$(drv_name) $(get_param_conn_w_seq_item2(params_prefix, "    ")[1:end-1]))
@@ -178,37 +178,37 @@ gen_driver(prefix_name, type::uvc_class_type) = begin
             `uvm_component_utils($(prefix_name)_$(drv_name))
         """
     end
-    
+
     my_str *= """
-        
+
     $( gen_lines_tdefs_w_param_uvc("$(prefix_name)_$(cfg_name)", "    ")[1:end-1] )
     $( gen_line_vif_typedef(prefix_name, "    ")[1:end-1] )
-        
+
         $(prefix_name)_$(cfg_name)_t m_$(cfg_name);
-        
+
         $(prefix_name)_vif_t vif;
-        
-        int num_sent;
-        
+
+        int m_num_sent;
+
         function new(string name, uvm_component parent);
             super.new(name, parent);
-            num_sent = 0;
+            m_num_sent = 0;
         endfunction : new
-        
+
         function void build_phase (uvm_phase phase);
             super.build_phase(phase);
-            
+
             if (m_$(cfg_name) == null)
                 `uvm_fatal("$(uppercase(prefix_name)) DRIVER", "No configuration object was set!")
     """
     if get_uvc_cfg_fld(prefix_name, :vif_in_config) == false
         my_str *= """
-                
+
         $( gen_vif_config_db_component(prefix_name, "        ", "DRIVER")[1:end-1] )
         """
     else
         my_str *= """
-                
+
                 if (m_$(cfg_name).vif == null)
                     `uvm_fatal("$(uppercase(prefix_name)) DRIVER", "No interface was set!")
                 vif = m_$(cfg_name).vif;
@@ -216,25 +216,25 @@ gen_driver(prefix_name, type::uvc_class_type) = begin
     end
     my_str *= """
         endfunction : build_phase
-        
+
     """
-    
+
     if type == normal::uvc_class_type
         my_str *= get_normal_drv_funcs(prefix_name)
     elseif type == clknrst::uvc_class_type
         my_str *= get_clknrst_drv_funcs(prefix_name)
     end
-    
+
     my_str *= """
         function void start_of_simulation_phase (uvm_phase phase);
             super.start_of_simulation_phase(phase);
             `uvm_info("$(uppercase(prefix_name)) DRIVER", "Simulation initialized", $(verb_dict["sim_init"]))
         endfunction : start_of_simulation_phase
-        
+
         function void report_phase(uvm_phase phase);
-            `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Report: $(uppercase(prefix_name)) DRIVER sent %0d transactions", num_sent), $(verb_dict["driver_report"]))
+            `uvm_info("$(uppercase(prefix_name)) DRIVER", \$sformatf("Report: $(uppercase(prefix_name)) DRIVER sent %0d transactions", m_num_sent), $(verb_dict["driver_report"]))
         endfunction : report_phase
-        
+
     endclass : $(prefix_name)_$(drv_name)
     """
     return my_str

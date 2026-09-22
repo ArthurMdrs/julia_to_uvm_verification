@@ -25,10 +25,10 @@ end
 
 get_usr_cfg_fld(field::Symbol) = begin
     if isdefined(user_config, field) && getfield(user_config, field) != nothing
-        # println("usr")
+        # println("User config:", field, ": ", getfield(user_config, field))
         return getfield(user_config, field)
     elseif isdefined(global_config, field) && getfield(global_config, field) != nothing
-        # println("glob")
+        # println("Global config:", field, ": ", getfield(global_config, field))
         return getfield(global_config, field)
     else
         error("Trying to access non-existent config field: $(String(field)).")
@@ -37,13 +37,13 @@ end
 
 get_uvc_cfg_fld(uvc_name::String, field::Symbol) = begin
     if isdefined(uvc_config_dict[uvc_name], field) && getfield(uvc_config_dict[uvc_name], field) != nothing
-        # println("uvc_name")
+        # println("UVC config:", field, ": ", getfield(uvc_config_dict[uvc_name], field))
         return getfield(uvc_config_dict[uvc_name], field)
     elseif isdefined(user_config, field) && getfield(user_config, field) != nothing
-        # println("usr")
+        # println("User config:", field, ": ", getfield(user_config, field))
         return getfield(user_config, field)
     elseif isdefined(global_config, field) && getfield(global_config, field) != nothing
-        # println("glob")
+        # println("Global config:", field, ": ", getfield(global_config, field))
         return getfield(global_config, field)
     else
         error("Trying to access non-existent UVC config field: $(String(field)).")
@@ -281,27 +281,27 @@ gen_vsqr_param_conn(tabs) = begin
 end
 
 gen_lines_tdefs_w_param(params_prefix, name, tabs) = begin
-    my_str = "$(tabs)typedef $(name) $(get_param_conn(params_prefix, tabs))$(name)_t;\n"
+    my_str = "$(tabs)typedef $(name) $(get_param_conn(params_prefix, tabs))$(name)_t;\n\n"
     return my_str
 end
 
 gen_lines_tdefs_w_param_env(params_prefix, name, tabs) = begin
-    my_str = "$(tabs)typedef $(name) $(get_param_conn_env(params_prefix, tabs))$(name)_t;\n"
+    my_str = "$(tabs)typedef $(name) $(get_param_conn_env(params_prefix, tabs))$(name)_t;\n\n"
     return my_str
 end
 
 gen_lines_tdefs_w_param_w_seq_item(name, uvc_name, tabs) = begin
-    my_str = "$(tabs)typedef $(name) $(get_param_conn_w_seq_item(uvc_name, tabs))$(name)_t;\n"
+    my_str = "$(tabs)typedef $(name) $(get_param_conn_w_seq_item(uvc_name, tabs))$(name)_t;\n\n"
     return my_str
 end
 
 gen_lines_tdefs_w_param_w_seq_item_env(name, uvc_name, tabs) = begin
-    my_str = "$(tabs)typedef $(name) $(get_param_conn_w_seq_item_env(uvc_name, tabs))$(name)_t;\n"
+    my_str = "$(tabs)typedef $(name) $(get_param_conn_w_seq_item_env(uvc_name, tabs))$(name)_t;\n\n"
     return my_str
 end
 
 gen_lines_tdefs_w_param_w_seq_item2(params_prefix, name, tabs) = begin
-    my_str = "$(tabs)typedef $(name) $(get_param_conn_w_seq_item2(params_prefix, tabs))$(name)_t;\n"
+    my_str = "$(tabs)typedef $(name) $(get_param_conn_w_seq_item2(params_prefix, tabs))$(name)_t;\n\n"
     return my_str
 end
 

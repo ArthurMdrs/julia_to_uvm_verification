@@ -12,7 +12,7 @@ gen_line_stub_if_signal(vec::if_field_t, uvc_name, tabs) = begin
         return "$(tabs)input      $(get_signal_range(vec))$(vec.field_name),\n"
     end
 end
-# gen_stub_parameters_str_file(if_vector) = 
+# gen_stub_parameters_str_file(if_vector) =
 #     "if_vector = $(if_vector)\nuvc_names = $(uvc_names)\nclk_rst_vec = $([clock_name, reset_name, rst_is_negedge_sensitive])"
 # get_interface_signals() = begin
 #     if_gather = []
@@ -26,20 +26,20 @@ end
 stub_gen() = begin
     if run_stub_gen == true
         # if_vector = get_interface_signals()
-        
+
         output_file_setup("$(rtl_dir)")
-        
+
         write_file("$(rtl_dir)/$(dut_name).sv", gen_stub_base())
         # write_file("$(rtl_dir)/$(dut_name)_parameters.jl", gen_stub_parameters_str_file(if_vector))
     end
 end
 
-gen_stub_base() = begin 
+gen_stub_base() = begin
     param_str = env_has_params ? "import $(dut_name)_env_params_pkg::*; " : ""
     return """
     module $(dut_name) $(param_str)$(get_param_declaration(dut_name, "    "))(
-        input $(clock_name), 
-        input $(reset_name), 
+        input $(clock_name),
+        input $(reset_name),
     $( gen_if_signals("    ", gen_line_stub_if_signal)[1:end-1] )
     );
 

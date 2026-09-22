@@ -7,3 +7,8 @@ test*
 
 my_env/
 TODO.txt
+
+waves.shm
+xcelium.d
+xrun.*
+cov_work

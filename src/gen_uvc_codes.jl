@@ -6,30 +6,30 @@
 # ***********************************
 
 function_dict = Dict()
-function_dict["transaction" ] = gen_tr_base          
-function_dict["tdefs_pkg"   ] = gen_tdefs_base       
-function_dict["pkg"         ] = gen_pkg_base         
-function_dict["sequencer"   ] = gen_sequencer_base   
+function_dict["transaction" ] = gen_tr_base
+function_dict["tdefs_pkg"   ] = gen_tdefs_base
+function_dict["pkg"         ] = gen_pkg_base
+function_dict["sequencer"   ] = gen_sequencer_base
 # function_dict["sequence_lib"] = gen_sequence_lib_base
-function_dict["interface"   ] = gen_if_base          
-function_dict["driver"      ] = gen_driver_base      
-function_dict["monitor"     ] = gen_monitor_base     
-function_dict["agent"       ] = gen_agent_base       
-function_dict["coverage"    ] = gen_coverage_base    
-function_dict["config"      ] = gen_config_base      
+function_dict["interface"   ] = gen_if_base
+function_dict["driver"      ] = gen_driver_base
+function_dict["monitor"     ] = gen_monitor_base
+function_dict["agent"       ] = gen_agent_base
+function_dict["coverage"    ] = gen_coverage_base
+function_dict["config"      ] = gen_config_base
 
 clknrst_function_dict = Dict()
-clknrst_function_dict["transaction" ] = gen_clknrst_tr          
-clknrst_function_dict["tdefs_pkg"   ] = gen_clknrst_tdefs       
-clknrst_function_dict["pkg"         ] = gen_clknrst_pkg         
-clknrst_function_dict["sequencer"   ] = gen_clknrst_sequencer   
+clknrst_function_dict["transaction" ] = gen_clknrst_tr
+clknrst_function_dict["tdefs_pkg"   ] = gen_clknrst_tdefs
+clknrst_function_dict["pkg"         ] = gen_clknrst_pkg
+clknrst_function_dict["sequencer"   ] = gen_clknrst_sequencer
 # clknrst_function_dict["sequence_lib"] = gen_clknrst_sequence_lib
-clknrst_function_dict["interface"   ] = gen_clknrst_if          
-clknrst_function_dict["driver"      ] = gen_clknrst_driver      
-clknrst_function_dict["monitor"     ] = gen_clknrst_monitor     
-clknrst_function_dict["agent"       ] = gen_clknrst_agent       
-clknrst_function_dict["coverage"    ] = gen_clknrst_coverage    
-clknrst_function_dict["config"      ] = gen_clknrst_config      
+clknrst_function_dict["interface"   ] = gen_clknrst_if
+clknrst_function_dict["driver"      ] = gen_clknrst_driver
+clknrst_function_dict["monitor"     ] = gen_clknrst_monitor
+clknrst_function_dict["agent"       ] = gen_clknrst_agent
+clknrst_function_dict["coverage"    ] = gen_clknrst_coverage
+clknrst_function_dict["config"      ] = gen_clknrst_config
 
 gen_single_file(uvc_name, class_name, function_dict, classes_vec) = begin
     gen_class_func = function_dict[class_name]
@@ -54,14 +54,14 @@ gen_files(uvc_name) = begin
     else
         function_dict_ = function_dict
     end
-    
+
     classes_vec = vector_to_pattern(uvc_name)
-    
+
     # Generate components
     for class_symbol in fieldnames(typeof(gen_classes))
         class_name = String(class_symbol)
         do_not_gen = true
-        
+
         if class_name == "coverage"
             if get_uvc_cfg_fld(uvc_name, :agent_has_coverage) == true
                 do_not_gen = false
@@ -73,17 +73,17 @@ gen_files(uvc_name) = begin
         elseif getfield(gen_classes, class_symbol) == true
             do_not_gen = false
         end
-        
+
         if do_not_gen == false
             gen_single_file(uvc_name, class_name, function_dict_, classes_vec)
         end
     end
-    
+
     # Generate parameters vector
     if get_uvc_cfg_fld(uvc_name, :uvc_has_params) && !get_uvc_cfg_fld(uvc_name, :use_env_params)
         write_file("$(agents_dir)/$(uvc_name)/$(uvc_name)_params_pkg.sv", gen_uvc_params_pkg(uvc_name))
     end
-    
+
     # Generate sequences
     seq_name = get_uvc_cfg_fld(uvc_name, :class_names)["sequence"]
     write_file("$(sequences_dir)/$(uvc_name)/$(uvc_name)_base_$(seq_name).$(class_files_extension)", gen_base_seq(uvc_name))
@@ -108,7 +108,7 @@ uvc_files_gen() = begin
             output_file_setup("$(agents_dir)/$(uvc_name)")
             output_file_setup("$(sequences_dir)/$(uvc_name)")
             # output_file_setup("$(agents_dir)/$(uvc_name)/parameter_folder")
-            
+
             gen_files(uvc_name)
         end
     end

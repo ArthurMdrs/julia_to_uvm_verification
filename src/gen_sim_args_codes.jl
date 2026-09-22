@@ -29,7 +29,7 @@ gen_line_agent_lst(uvc_name, tabs) = begin
     $(tabs)-f $(srclists_dir)/agents/$(uvc_name).lst
     """
 end
-    
+
 sim_args_gen() = begin
     if run_sim_args_gen == true
         # if !(simulator in supported_simulators) # This check is done in run.jl now
@@ -53,7 +53,7 @@ end
 
 gen_env_srclist() = begin
     my_str = ""
-    
+
     agts_bef_env_params = []
     agts_aft_env_params = []
     for uvc_name in uvc_names
@@ -63,31 +63,31 @@ gen_env_srclist() = begin
             push!(agts_aft_env_params, uvc_name)
         end
     end
-    
+
     if size(agts_bef_env_params)[1] > 0
         my_str *= """
         // Agents
         $( gen_long_str(agts_bef_env_params, "    ", gen_line_agent_lst)[1:end-1] )
-        
+
         """
     end
-    
+
     if env_has_params
         my_str *= """
         // Parameters package
             $(env_dir)/$(dut_name)_env_params_pkg.sv
-            
+
         """
     end
-    
+
     if size(agts_aft_env_params)[1] > 0
         my_str *= """
         // Agents
         $( gen_long_str(agts_aft_env_params, "    ", gen_line_agent_lst)[1:end-1] )
-        
+
         """
     end
-    
+
     my_str *= """
     // Env
         -incdir $(env_dir)
@@ -102,7 +102,7 @@ gen_tb_srclist() = begin
     my_str = """
     // Env
         -f $(srclists_dir)/$(dut_name)_env.lst
-    
+
     // RTL
         $(rtl_dir)/$(dut_name).sv
 
@@ -118,13 +118,13 @@ common_args() = begin
         +UVM_VERBOSITY=UVM_HIGH
         +UVM_NO_RELNOTES
         //+UVM_TESTNAME=random_test
-        
+
         -f $(srclists_dir)/$(dut_name)_tb.lst
     """
     return my_str
 end
 
-gen_xrun_args_base() = begin 
+gen_xrun_args_base() = begin
     my_str = """
     // xrun options
         -timescale 1ns/1ps
@@ -133,6 +133,9 @@ gen_xrun_args_base() = begin
         -coverage all
         -covoverwrite
         //+SVSEED=random
+        -nowarn STARMT
+        -nowarn COVDCL
+        -nowarn CGPIDF
 
     // UVM options
         -uvmhome CDNS-1.2
@@ -141,7 +144,7 @@ gen_xrun_args_base() = begin
     return my_str
 end
 
-gen_dsim_args_base() = begin 
+gen_dsim_args_base() = begin
     my_str = """
     // dsim options
         -timescale 1ns/1ps

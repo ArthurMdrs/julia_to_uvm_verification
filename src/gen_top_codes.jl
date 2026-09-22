@@ -30,53 +30,53 @@ end
 
 gen_top_base() = begin
     if_name = class_names["interface"]
-    
+
     params_prefix = get_uvc_params_prefix(dut_name)
-    
+
     my_str = """
     `default_nettype none
-    
+
     module $(dut_name)_tb_top;
-        
+
         import uvm_pkg::*;
         `include "uvm_macros.svh"
-        
+
     """
-    
+
     if env_has_params
         my_str *= """
             import $(dut_name)_env_params_pkg::*;
         """
     end
-        
+
     my_str *= """
         import $(dut_name)_tb_pkg::*;
     """
-    
+
     my_str *= """
-        
+
         logic $(clock_name), $(reset_name);
-        
-        
+
+
         // Virtual interface typedefs - begin
     """
     my_str *= """
     $( gen_long_str(uvc_names, "        ", gen_line_vif_typedef_env)[1:end-1] )
         // Virtual interface typedefs - end
-        
-        
+
+
         // Interfaces instances - begin
     """
     my_str *= """
     $( gen_long_str(uvc_names, "        ", gen_line_interfaces_instances)[1:end-1] )
         // Interfaces instances - end
-        
-        
+
+
         $(dut_name) $(get_param_conn(dut_name, "    "))dut (
             .$(clock_name)($(clock_name)),
             .$(reset_name)($(reset_name)),$( gen_if_signals("        ", gen_line_if_connection) )
         );
-        
+
     """
     if using_this_clknrst
         # my_str *= """
@@ -95,23 +95,23 @@ gen_top_base() = begin
         """
     end
     my_str *= """
-        
+
         initial begin
             \$timeformat(-9, 3, "ns", 12); // e.g.: "   900.000ns"
             // \$dumpfile("dump.vcd");
             // \$dumpvars;
-            
+
             // Virtual interfaces send to UVCs - begin
     """
     my_str *= """
     $( gen_long_str(uvc_names, "            ", gen_line_send_if_to_uvc)[1:end-1] )
             // Virtual interfaces send to UVCs - end
-            
+
             run_test("$(dut_name)_random_test");
         end
-        
+
     endmodule : $(dut_name)_tb_top
-    
+
     `default_nettype wire
     """
     return my_str
@@ -122,10 +122,10 @@ end
 gen_tb_pkg() = begin
     my_str = """
     package $(dut_name)_tb_pkg;
-        
+
         import uvm_pkg::*;
         `include "uvm_macros.svh"
-        
+
     """
     my_str *= env_has_params ? gen_line_import("$(dut_name)_env_params", "    ") : ""
     for uvc_name in uvc_names
@@ -133,17 +133,16 @@ gen_tb_pkg() = begin
             my_str *= gen_line_import("$(uvc_name)_params", "    ")
         end
     end
-    my_str *= env_has_params ? "    \n" : ""
     my_str *= """
     $( gen_long_str(uvc_names, "    ", gen_line_import_tdefs)[1:end-1] )
-        
+
     $( gen_long_str(uvc_names, "    ", gen_line_import)[1:end-1] )
-        
+
     $( gen_line_import("$(dut_name)_env", "    ")[1:end-1] )
-        
+
         `include "$(dut_name)_base_test.$(class_files_extension)"
         `include "$(dut_name)_random_test.$(class_files_extension)"
-        
+
     endpackage: $(dut_name)_tb_pkg
     """
     return my_str
