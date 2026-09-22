@@ -3,7 +3,7 @@ import StructTypes
 import ArgParse
 import ProgressBars
 using ProgressBars: ProgressBar
-using Dates  # Added for timestamp
+using Dates
 
 cwd = pwd()
 
@@ -33,9 +33,11 @@ function parse_command_line()
             help = "Print elapsed time messages"
             action = :store_true
     end
-    
+
     return ArgParse.parse_args(ARGS, settings)
 end
+
+include_jl("functions/print_fields.jl")
 
 elapsed_time_array = Dict()
 
@@ -58,7 +60,6 @@ function _print_banner()
         shown = text
         deco_left = bold ? _BOLD : (dim ? _DIM : "")
         deco_right = _RESET
-        # visible length excludes ANSI (we only add ANSI around whole text)
         visible_len = length(shown)
         spaces_after = inner_text_width - visible_len
         return _CYAN * "│" * _RESET *
@@ -96,7 +97,6 @@ uvc_config_file = parsed_args["uvc_config"]
 src_path = "$(cwd)/src"
 global_config_file = "$(cwd)/global_definitions.jl"
 generated_files_dir = "$(cwd)/generated_files"
-# tb_top_dir = "$(generated_files_dir)/test_top"
 tb_top_dir = generated_files_dir
 tests_dir = "$(tb_top_dir)/tests"
 sequences_dir = "$(tb_top_dir)/sequences"
@@ -114,10 +114,6 @@ time_now = time_ns()
 include_jl(global_config_file)
 # User parameters
 include_jl(user_config_file)
-
-# I think it's easier for global and user config to be straight Julia
-# global_config = YAML.load_file("global_config.yaml"; dicttype=Dict{Symbol,Any})
-# user_config = YAML.load_file("user_config.yaml"; dicttype=Dict{Symbol,Any})
 
 # Common functions
 include_jl("$(src_path)/common.jl")
@@ -183,23 +179,6 @@ simulator = get_usr_cfg_fld(:simulator)
 elapsed_time_array["set_configs"] = (time_ns() - time_now) / 1e9
 
 #######################################################################################################################
-
-# Define a default UVC configuration
-# def_uvc_config = uvc_config_t()
-# def_uvc_config.uvc = ""
-# def_uvc_config.rst_is_negedge_sensitive = rst_is_negedge_sensitive
-# def_uvc_config.clock_name = clock_name
-# def_uvc_config.reset_name = reset_name
-# def_uvc_config.use_short_names = use_short_names
-# def_uvc_config.agent_has_coverage = agent_has_coverage
-# def_uvc_config.gen_tdefs_pkg = gen_tdefs_pkg
-# def_uvc_config.vif_in_config = vif_in_config
-# def_uvc_config.tr_props_vec = []
-# def_uvc_config.if_sigs_vec = []
-# def_uvc_config.uvc_has_params = uvc_has_params
-# def_uvc_config.use_env_params = use_env_params
-# def_uvc_config.params_vec = params_vec
-# def_uvc_config.class_names = use_short_names ? short_names_dict : long_names_dict
 
 # Load UVC configuration
 time_now = time_ns()
@@ -279,12 +258,25 @@ for x in uvc_yaml_obj_iter
             end
         end
     end
-    # println(uvc_config_dict[x[:uvc]])
-    
+
     if uvc_config_dict[x[:uvc]].use_env_class_names
         uvc_config_dict[x[:uvc]].class_names = class_names
     end
 end
+
+if verbose
+    println("\nUVC Configurations:")
+    println("===================")
+
+    for (uvc_name, uvc_config) in uvc_config_dict
+        println("\nUVC: $(uvc_name)")
+        println("-------------------")
+        print_fields(uvc_config; indent=2)
+    end
+
+    println()
+end
+
 elapsed_time_array["build_config_dict"] = (time_ns() - time_now) / 1e9
 
 time_now = time_ns()
